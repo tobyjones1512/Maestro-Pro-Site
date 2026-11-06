@@ -307,3 +307,8 @@ a.get:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(246,168,40,.3
 .price-list li{padding:.4em 0;border-bottom:1px solid var(--hair)}
 .price-list b{font-family:var(--serif);font-size:1.15rem}
 .plain .pay__title{font-style:normal;font-size:1.35rem;margin:0 0 1.1em}
+
+/* buy button */
+.buy{display:inline-flex;align-items:center;padding:12px 24px;border-radius:999px;background:var(--amber);color:var(--walnut);font-weight:700;text-decoration:none;transition:transform .35s var(--ease),box-shadow .35s var(--ease),background-color .2s}
+.buy:hover{background:#FFB840;transform:translateY(-2px);box-shadow:0 12px 28px rgba(246,168,40,.38),0 1px 0 rgba(255,255,255,.4) inset}
+.buy:active{transform:scale(.98)}
