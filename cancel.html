@@ -30,7 +30,9 @@
   <button class="pay__btn" id="check" type="submit">Check my licence</button>
   <div id="result" hidden>
     <div class="notice"><p id="text"></p></div>
-    <button class="pay__btn" id="confirm" type="button" hidden>Confirm cancellation</button>
+    <label class="field" id="why" hidden>Why are you cancelling?<textarea id="reason" maxlength="3000" aria-describedby="count"></textarea>
+      <span class="hint" id="count">Please tell us in at least 20 words. It helps make Maestro Pro better. 0 of 20 words.</span></label>
+    <button class="pay__btn" id="confirm" type="button" hidden disabled>Confirm cancellation</button>
     <button class="pay__btn pay__btn--ghost" id="keep" type="button" hidden>Keep my licence</button>
   </div>
   <p id="msg" class="pay__msg" role="status"></p>
@@ -52,7 +54,10 @@ function call(body) {
   return fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
     .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Something went wrong. Try again."); return j; }); });
 }
-function reset() { state = null; $("result").hidden = true; $("confirm").hidden = true; $("keep").hidden = true; $("check").hidden = false; $("key").readOnly = false; }
+function words() { return ($("reason").value.match(/[\p{L}\p{N}]+/gu) || []).length; }
+function sync() { var n = words(); $("count").textContent = "Please tell us in at least 20 words. It helps make Maestro Pro better. " + Math.min(n, 20) + " of 20 words."; $("confirm").disabled = n < 20; }
+$("reason").addEventListener("input", sync);
+function reset() { $("why").hidden = true; $("reason").value = ""; sync(); state = null; $("result").hidden = true; $("confirm").hidden = true; $("keep").hidden = true; $("check").hidden = false; $("key").readOnly = false; }
 function err(m) { $("msg").className = "pay__msg err"; $("msg").textContent = m; }
 $("f").addEventListener("submit", function (e) {
   e.preventDefault();
@@ -65,7 +70,7 @@ $("f").addEventListener("submit", function (e) {
     $("result").hidden = false;
     if (d.canConfirm) {
       state = { key: key, refund: d.refund, fee: d.fee };
-      $("confirm").hidden = false; $("keep").hidden = false; $("check").hidden = true; $("key").readOnly = true;
+      $("why").hidden = false; sync(); $("confirm").hidden = false; $("keep").hidden = false; $("check").hidden = true; $("key").readOnly = true;
     } else { state = null; $("confirm").hidden = true; $("keep").hidden = true; }
   }).catch(function (x) { $("result").hidden = true; err(x.message); })
   .then(function () { $("check").disabled = false; });
@@ -73,19 +78,20 @@ $("f").addEventListener("submit", function (e) {
 $("keep").addEventListener("click", function () { reset(); $("msg").textContent = "Nothing has been changed."; });
 $("confirm").addEventListener("click", function () {
   if (!state) return;
+  if (words() < 20) return;
   var b = $("confirm"); b.disabled = true; $("keep").hidden = true;
   $("msg").className = "pay__msg"; $("msg").textContent = "Cancelling. Please don't close this page...";
-  call({ key: state.key, action: "confirm", refund: state.refund, fee: state.fee }).then(function (d) {
+  call({ key: state.key, action: "confirm", refund: state.refund, fee: state.fee, reason: $("reason").value }).then(function (d) {
     $("text").textContent = d.message; $("msg").textContent = "Done. We have emailed you a confirmation.";
-    b.hidden = true;
+    b.hidden = true; $("why").hidden = true;
     if (d.offer) {
-      var o = $("offer"), t = document.createElement("p"), b = document.createElement("strong"), c = document.createElement("p"), a = document.createElement("a");
-      b.textContent = d.offer.title; t.appendChild(b); t.appendChild(document.createTextNode(" " + d.offer.text));
+      var o = $("offer"), t = document.createElement("p"), st = document.createElement("strong"), c = document.createElement("p"), a = document.createElement("a");
+      st.textContent = d.offer.title; t.appendChild(st); t.appendChild(document.createTextNode(" " + d.offer.text));
       a.className = "buy"; a.href = d.offer.url; a.rel = "noopener"; a.textContent = d.offer.cta; c.appendChild(a);
       o.textContent = ""; o.appendChild(t); o.appendChild(c); o.hidden = false;
     }
     state = null;
-  }).catch(function (x) { err(x.message); b.disabled = false; $("keep").hidden = false; });
+  }).catch(function (x) { err(x.message); b.disabled = words() < 20; $("keep").hidden = false; });
 });
 </script>
 </body>
