@@ -64,6 +64,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .msg{max-width:760px;margin:0 0 14px;border:1px solid var(--rule);border-radius:12px;background:var(--walnut-2)}
 .msg--toby{margin-left:auto;border-color:var(--amber-deep);background:#2A1E0C}
 .msg--bot{background:var(--walnut)}
+.msg--pending{border-style:dashed;border-color:var(--amber)}
+.msg--cancelled{opacity:.55}.msg--cancelled .msg__b{text-decoration:line-through}
+.pill--wait{border-color:var(--amber);color:var(--amber)}
 .msg__h{display:flex;justify-content:space-between;gap:10px;padding:8px 14px;border-bottom:1px solid var(--rule);font-size:12px;color:var(--brass-dim)}
 .msg__h b{color:var(--cream);letter-spacing:.04em;text-transform:uppercase}
 .msg__b{padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -189,6 +192,7 @@ function renderList(){
     if(t.escalated){var p=el("span","pill pill--"+(t.status==="open"?"open":t.status==="answered"?"answered":""),t.status);left.append(p);left.append(" ")}
     if(state.tab==="all"&&t.escalated){left.append(el("span","pill pill--esc","escalated"))}
     if(!t.escalated)left.append(el("span","pill","bot"));
+    if(waiting(t.scheduledAt)){left.append(" ");left.append(el("span","pill pill--wait","reply scheduled"))}
     meta.append(left,el("span",null,t.count+" message"+(t.count===1?"":"s")));
     b.append(top,tags,el("div","row__pre",t.preview),meta);
     b.addEventListener("click",function(){openThread(t.id)});
@@ -196,6 +200,7 @@ function renderList(){
   });
 }
 
+function waiting(iso){return !!iso&&Date.parse(iso)>Date.now()}
 function openThread(id,quiet){
   state.cur=id;if(!quiet)$("app").setAttribute("data-open","true");
   return call("GET","?id="+encodeURIComponent(id)).then(function(j){state.thread=j.thread;renderThread();renderList()}).catch(showErr);
@@ -214,16 +219,27 @@ function renderThread(){
   l.append(meta);head.append(l);
   var acts=el("div","meta");acts.append(back);
   if(t.escalated){var s=el("button","btn btn--ghost btn--sm",t.status==="done"?"Reopen":"Mark done");s.type="button";s.addEventListener("click",function(){setStatus(t.status==="done"?"open":"done")});acts.append(s)}
+  if(!t.escalated){
+    var pend=t.messages.filter(function(m){return m.scheduledAt&&!m.cancelled&&waiting(m.scheduledAt)}).length;
+    var e=el("button","btn btn--sm","Escalate to me");e.type="button";
+    e.addEventListener("click",function(){
+      var ask=pend?"This deletes the support reply that is waiting to be sent, so the customer never gets it, and moves the chain to Escalations. Continue?":"Move this chain to Escalations so you can reply to it yourself?";
+      if(!confirm(ask))return;
+      e.disabled=true;call("POST","",{action:"escalate",id:state.cur}).then(function(j){setTab("esc");$("statusFilter").value="active";state.thread=j.thread;state.cur=t.id;$("app").setAttribute("data-open","true");renderThread();loadList()}).catch(function(err){e.disabled=false;showErr(err)});
+    });
+    acts.append(e);
+  }
   head.append(acts);v.append(head);
   t.messages.forEach(function(m){
-    var box=el("article","msg msg--"+m.by),h=el("div","msg__h");
-    h.append(el("b",null,LABEL[m.by]||m.by),el("span",null,when(m.at)));
+    var pend=m.scheduledAt&&!m.cancelled&&waiting(m.scheduledAt);
+    var box=el("article","msg msg--"+m.by+(pend?" msg--pending":"")+(m.cancelled?" msg--cancelled":"")),h=el("div","msg__h");
+    h.append(el("b",null,(LABEL[m.by]||m.by)+(pend?" - not sent yet":m.cancelled?" - deleted, never sent":"")),el("span",null,pend?"due "+when(m.scheduledAt):when(m.at)));
     box.append(h,el("div","msg__b",m.text));
     if(m.guides&&m.guides.length)box.append(el("div","msg__g","Guides sent: "+m.guides.join(", ")));
     v.append(box);
   });
   if(t.escalated)v.append(composer(draft));
-  else if(state.tab==="all")v.append(el("p","hint","This chain was answered by the bot and has not been escalated."));
+  else v.append(el("p","hint","This chain was answered by the bot and has not been escalated. Use Escalate to me to take it over."));
 }
 function composer(draft){
   var c=el("form","composer");c.append(el("h3",null,"Reply from escalations@maestro-pro.app"));
