@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Feedback - Maestro Pro</title>
+<meta name="description" content="Report a bug or suggest a feature for Maestro Pro.">
+<meta name="theme-color" content="#15100B">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="canonical" href="https://maestro-pro.app/feedback.html">
+<link rel="preload" href="assets/fonts/BodoniModa-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/maestro.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="index.html"><img width="160" height="160" src="assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="index.html#features">Features</a><a href="index.html#plans">Plans</a><a href="index.html#compatibility">Compatibility</a><a href="guide/index.html">Guide</a><a href="education.html">For Education</a><a href="support.html">Support</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Feedback</h1>
+<p>Found a bug, or have an idea for Maestro Pro? Tell me here. It goes on a public board where other people can see it and add their vote.</p>
+<form id="f" class="pay pay--wide" novalidate>
+  <div class="field"><label for="type">Type</label>
+    <select id="type"><option value="bug">Bug Report</option><option value="feature">Feature Suggestion</option><option value="other">Something Else</option></select></div>
+  <div class="field"><label for="title">Title</label>
+    <input type="text" id="title" maxlength="100" autocomplete="off">
+    <span class="hint">Title must be 10 to 100 characters. Your feedback is posted publicly at <a href="https://thecaffeinemediacompany.fider.io/?tags=maestro-pro">thecaffeinemediacompany.fider.io</a>, so please leave out personal details.</span></div>
+  <div class="field"><label for="desc">Description</label>
+    <textarea id="desc" maxlength="5000"></textarea>
+    <span class="hint">Which iPhone, iPad or Mac, which version of iOS, iPadOS or macOS, and what you were doing, help with bugs.</span></div>
+  <input class="hp" type="text" id="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+  <button class="pay__btn" id="send" type="submit" disabled>Send feedback</button>
+  <p id="msg" class="pay__msg" role="status"></p>
+</form>
+<p><a href="https://thecaffeinemediacompany.fider.io/?tags=maestro-pro">See other users&rsquo; feedback</a></p>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="index.html">Maestro Pro</a><a href="guide/index.html">Guide</a><a href="education.html">For Education</a><a href="support.html">Support</a><a href="feedback.html">Feedback</a><a href="privacy.html">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
+  <p>&copy; <span id="yr">2026</span> Toby Jones T/A The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="assets/cookie-consent.js" defer></script><script src="assets/nav.js" defer></script>
+<script>
+// The Fider key never reaches the browser: this posts to a small relay that holds it.
+var API = "https://fider-feedback-api.vercel.app/api/feedback";
+function $(id) { return document.getElementById(id); }
+function ok() { var n = $("title").value.trim().length; return n >= 10 && n <= 100; }
+$("title").addEventListener("input", function () { $("send").disabled = !ok(); });
+$("f").addEventListener("submit", function (e) {
+  e.preventDefault();
+  if (!ok()) return;
+  var msg = $("msg"), btn = $("send");
+  btn.disabled = true; msg.className = "pay__msg"; msg.textContent = "Sending...";
+  fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: $("type").value, title: $("title").value, description: $("desc").value, website: $("website").value })
+  }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+  .then(function (x) {
+    if (!x.ok) throw new Error(x.j.error || "Couldn't send feedback.");
+    $("f").reset(); msg.textContent = "Thanks for your feedback!";
+  }).catch(function (err) {
+    msg.className = "pay__msg err"; msg.textContent = err.message || "Couldn't send feedback."; btn.disabled = !ok();
+  });
+});
+</script>
+</body>
+</html>
