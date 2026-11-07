@@ -46,7 +46,7 @@ document.getElementById("m").addEventListener("submit", function (e) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: v })
   }).then(function (r) { return r.json(); }).then(function (d) {
-    msg.textContent = d.ok ? "Sent. Check your inbox." : (d.error || "Couldn't send.");
+    msg.textContent = d.ok ? (d.keys > 1 ? "Sent. We found " + d.keys + " active keys, each listed with its plan. Check your inbox." : "Sent. Check your inbox.") : (d.error || "Couldn't send.");
   }).catch(function () { msg.textContent = "Couldn't send. Try again."; });
 });
 </script>
