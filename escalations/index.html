@@ -252,6 +252,7 @@ function renderThread(){
     var pend=m.scheduledAt&&!m.cancelled&&waiting(m.scheduledAt);
     var box=el("article","msg msg--"+m.by+(pend?" msg--pending":"")+(m.cancelled?" msg--cancelled":"")),h=el("div","msg__h");
     h.append(el("b",null,(LABEL[m.by]||m.by)+(pend?" - not sent yet":m.cancelled?" - deleted, never sent":m.closed?" - case closed, "+m.closed:m.reopen?" - asked to re-open case "+m.reopen:"")+(m.from&&m.from!==t.customer?" ("+m.from+")":"")),el("span",null,pend?"due "+when(m.scheduledAt):when(m.at)));
+    if(m.delivery){var bad=/bounce|fail|complain|suppress|reject/.test(m.delivery),dp=el("span","pill"+(bad?" pill--open":m.delivery==="delivered"||m.delivery==="opened"||m.delivery==="clicked"?" pill--answered":""),m.delivery.replace(/_/g," "));dp.title="What the email service reports for this email";h.firstChild.append(" ",dp)}
     box.append(h,el("div","msg__b",m.text));
     if(m.guides&&m.guides.length)box.append(el("div","msg__g","Guides sent: "+m.guides.join(", ")));
     v.append(box);
