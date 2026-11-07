@@ -82,6 +82,20 @@ button,input,select,textarea{font:inherit;color:inherit}
 .chip button{background:none;border:0;cursor:pointer;color:var(--brass);padding:0 6px;font-size:15px}
 .send{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .note{padding:12px 16px;border:1px solid var(--rule);border-radius:10px;background:var(--walnut-2);margin:16px;color:var(--brass)}
+.gsearch{position:relative}
+.gresults{position:absolute;left:0;right:0;top:100%;z-index:5;margin-top:4px;background:var(--walnut-2);border:1px solid var(--rule);border-radius:10px;max-height:320px;overflow:auto;box-shadow:0 12px 30px #0008}
+.gres{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--rule);padding:9px 12px;cursor:pointer}
+.gres:last-child{border-bottom:0}.gres:hover,.gres[aria-selected=true]{background:var(--walnut-3)}
+.gres b{display:block}.gres small{display:block;color:var(--brass-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gres mark{background:var(--amber);color:var(--ink);border-radius:2px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}.tools select{flex:1;min-width:200px}
+.send .btn--done{background:var(--ok);color:var(--ink)}
+.set{max-width:860px;display:grid;gap:14px}
+.set h2{font:700 20px var(--serif);margin:12px 0 0}
+.set textarea{min-height:420px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
+.set .num{width:90px}.set label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.set .row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.app[data-tab=settings] .panes{grid-template-columns:1fr}.app[data-tab=settings] .list{display:none}
 @media(max-width:820px){
  .panes{grid-template-columns:1fr}
  .list{border-right:0}
@@ -89,6 +103,7 @@ button,input,select,textarea{font:inherit;color:inherit}
  .app:not([data-open=true]) .view{display:none}
  .back{display:inline-flex}
 }
+.app[data-tab=settings] .view{display:block}
 </style>
 </head>
 <body>
@@ -108,6 +123,7 @@ button,input,select,textarea{font:inherit;color:inherit}
     <div class="tabs" role="tablist" aria-label="Desk">
       <button class="tab" role="tab" id="tab-esc" aria-selected="true" data-tab="esc">Escalations<span class="badge" id="openCount" hidden>0</span></button>
       <button class="tab" role="tab" id="tab-all" aria-selected="false" data-tab="all">Support chains</button>
+      <button class="tab" role="tab" id="tab-set" aria-selected="false" data-tab="settings">Bot settings</button>
     </div>
     <span class="sp"></span>
     <button class="btn btn--ghost btn--sm" id="refresh" type="button">Refresh</button>
@@ -131,7 +147,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 (function(){
 var API="https://fider-feedback-api.vercel.app/api/support-admin", KEY="mp-desk";
 var $=function(id){return document.getElementById(id)};
-var state={pw:"",tab:"esc",threads:[],cur:null,thread:null,guides:[],picked:[],storage:true,timer:0};
+var state={pw:"",tab:"esc",threads:[],cur:null,thread:null,flat:[],picked:[],storage:true,timer:0};
 try{state.pw=sessionStorage.getItem(KEY)||""}catch(e){}
 
 function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n}
@@ -155,8 +171,9 @@ document.querySelectorAll(".tab").forEach(function(b){b.addEventListener("click"
 
 function setTab(t){
   state.tab=t;document.querySelectorAll(".tab").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.tab===t))});
-  $("statusFilter").hidden=t!=="esc";
+  $("statusFilter").hidden=t!=="esc";$("app").dataset.tab=t;
   $("app").removeAttribute("data-open");state.cur=null;state.thread=null;$("view").replaceChildren(el("p","empty","Choose a chain."));
+  if(t==="settings"){renderSettings();return}
   renderList();
 }
 function showErr(err){var v=$("view");var n=el("p","err",err.message);v.prepend(n)}
@@ -214,6 +231,7 @@ function renderThread(){
   var head=el("div","view__head"),l=el("div");
   l.append(el("h2",null,t.subject));
   var meta=el("div","meta");meta.append((t.name?t.name+" ":"")+"<"+t.customer+">");
+  if(t.caseNumber)meta.append(el("span","pill",t.caseNumber));
   if(t.escalated){meta.append(el("span","pill pill--"+(t.status==="open"?"open":t.status==="answered"?"answered":""),t.status));if(t.reason)meta.append(el("span",null,t.reason+" · "+when(t.escalatedAt)))}
   else meta.append(el("span","pill","handled by the bot"));
   l.append(meta);head.append(l);
@@ -233,7 +251,7 @@ function renderThread(){
   t.messages.forEach(function(m){
     var pend=m.scheduledAt&&!m.cancelled&&waiting(m.scheduledAt);
     var box=el("article","msg msg--"+m.by+(pend?" msg--pending":"")+(m.cancelled?" msg--cancelled":"")),h=el("div","msg__h");
-    h.append(el("b",null,(LABEL[m.by]||m.by)+(pend?" - not sent yet":m.cancelled?" - deleted, never sent":"")),el("span",null,pend?"due "+when(m.scheduledAt):when(m.at)));
+    h.append(el("b",null,(LABEL[m.by]||m.by)+(pend?" - not sent yet":m.cancelled?" - deleted, never sent":m.closed?" - case closed, "+m.closed:m.reopen?" - asked to re-open case "+m.reopen:"")+(m.from&&m.from!==t.customer?" ("+m.from+")":"")),el("span",null,pend?"due "+when(m.scheduledAt):when(m.at)));
     box.append(h,el("div","msg__b",m.text));
     if(m.guides&&m.guides.length)box.append(el("div","msg__g","Guides sent: "+m.guides.join(", ")));
     v.append(box);
@@ -241,25 +259,94 @@ function renderThread(){
   if(t.escalated)v.append(composer(draft));
   else v.append(el("p","hint","This chain was answered by the bot and has not been escalated. Use Escalate to me to take it over."));
 }
+var TEMPLATES=[
+ ["Refund request (usual reply)","I'm so sorry, I know that's frustrating, but I'm not able to process refunds or cancellations by email. You can request one yourself on the [cancellation page](refund), and it only takes a moment."],
+ ["Refund has not arrived","I'm so sorry your refund hasn't come through. I'm looking into it now and will update you as soon as I know more. Could you reply with the email address you paid with and the date you asked for the refund?"],
+ ["Licence key","No problem, you can have your licence key emailed to you again on the [licence key page](key). It is sent to the address that paid. In the app, enter it under **Already have a licence key?** on the paywall."],
+ ["TestFlight link","You can install Maestro Pro with [TestFlight](testflight). Open the link on your iPhone, iPad or Mac, install TestFlight if you are asked to, then tap **Install** or **Accept**."],
+ ["Ask for more details","Thank you for getting in touch, and I'm sorry you're having trouble. To help me look into it, could you tell me:\n1. Which device you are using (iPhone, iPad or Mac)\n2. Which version of iOS, iPadOS or macOS it runs\n3. What you were doing when it went wrong, and what you saw on screen"],
+ ["Apology for a complaint","I'm sorry about your experience, and thank you for telling me. I have read your message carefully and I'm looking into this personally. I'll come back to you as soon as I can."],
+ ["Looking into a bug","Thank you for reporting this, I can see why it is frustrating. I'm investigating it now and will let you know what I find."],
+ ["Data or privacy request","Thank you for your request. I'll deal with it personally and come back to you shortly."],
+ ["Fixed, anything else?","I'm glad that's sorted. If anything else comes up, just reply or email support and I'll help."],
+ ["Thanks for the feedback","Thank you for taking the time to write, it really helps. I've noted your feedback and I'll keep it in mind."]
+];
+function hl(text,tokens){
+  var f=document.createDocumentFragment(),low=text.toLowerCase(),i=0;
+  while(i<text.length){
+    var best=-1,bl=0;
+    tokens.forEach(function(k){var j=low.indexOf(k,i);if(j>-1&&(best<0||j<best||(j===best&&k.length>bl))){best=j;bl=k.length}});
+    if(best<0){f.append(text.slice(i));break}
+    if(best>i)f.append(text.slice(i,best));
+    var m=document.createElement("mark");m.textContent=text.slice(best,best+bl);f.append(m);i=best+bl;
+  }
+  return f;
+}
+function searchGuides(q){
+  var tokens=q.toLowerCase().split(/\s+/).filter(Boolean);if(!tokens.length)return [];
+  return state.flat.map(function(g){
+    var sc=0,ok=true;
+    tokens.forEach(function(k){
+      var a=g.title.toLowerCase(),n=0;
+      if(a.indexOf(k)>-1)n+=a.indexOf(k)===0?6:4;
+      if(g.keywords.join(" ").indexOf(k)>-1)n+=3;
+      if(g.summary.toLowerCase().indexOf(k)>-1)n+=1;
+      if(g.slug.indexOf(k)>-1)n+=1;
+      if(!n)ok=false;sc+=n;
+    });
+    return {g:g,sc:ok?sc:0};
+  }).filter(function(x){return x.sc>0}).sort(function(a,b){return b.sc-a.sc}).slice(0,8).map(function(x){return x.g});
+}
 function composer(draft){
   var c=el("form","composer");c.append(el("h3",null,"Reply from escalations@maestro-pro.app"));
+  var tools=el("div","tools"),tsel=el("select","field");tsel.setAttribute("aria-label","Insert a template");
+  var o0=el("option",null,"Insert a template...");o0.value="";tsel.append(o0);
+  TEMPLATES.forEach(function(t,i){var o=el("option",null,t[0]);o.value=i;tsel.append(o)});
+  tools.append(tsel);c.append(tools);
   var ta=el("textarea","field");ta.id="reply";ta.value=draft||"";ta.setAttribute("aria-label","Your reply");ta.placeholder="Write your reply. A greeting and sign-off are added for you.";
-  c.append(ta,el("p","hint","Use **bold** for button names, start lines with 1. 2. 3. for steps, and [words](https://...) for a link."));
-  var gr=el("div","guiderow"),sel=el("select","field");sel.setAttribute("aria-label","Add a guide");
-  var o0=el("option",null,"Add a guide to the email...");o0.value="";sel.append(o0);
-  state.guides.forEach(function(g){var og=el("optgroup");og.label=g.title;g.items.forEach(function(it){var o=el("option",null,(it.child?"- ":"")+it.title);o.value=it.slug;og.append(o)});sel.append(og)});
-  sel.addEventListener("change",function(){var s=sel.value;sel.value="";if(!s||state.picked.some(function(p){return p.slug===s})||state.picked.length>=6)return;var it=state.allGuides[s];if(it){state.picked.push(it);renderChips()}});
-  gr.append(sel);c.append(gr);
-  var chips=el("div","chips");chips.id="chips";c.append(chips);
-  var row=el("div","send"),send=el("button","btn","Send reply");send.type="submit";var msg=el("span","err");msg.id="sendMsg";msg.setAttribute("role","status");row.append(send,msg);c.append(row);
-  c.addEventListener("submit",function(e){
-    e.preventDefault();var text=ta.value.trim();if(!text){msg.textContent="Write a reply first.";return}
-    send.disabled=true;msg.style.color="";msg.textContent="Sending...";
-    call("POST","",{action:"reply",id:state.cur,text:text,guides:state.picked.map(function(p){return p.slug})}).then(function(j){
-      state.picked=[];ta.value="";state.thread=j.thread;renderThread();loadList();
-      var m=document.getElementById("sendMsg");if(m){m.style.color="var(--ok)";m.textContent="Sent."}
-    }).catch(function(err){send.disabled=false;msg.style.color="";msg.textContent=err.message});
+  tsel.addEventListener("change",function(){
+    if(tsel.value==="")return;var txt=TEMPLATES[+tsel.value][1];tsel.value="";
+    ta.value=ta.value.trim()?ta.value.replace(/\s+$/,"")+"\n\n"+txt:txt;ta.focus();
   });
+  c.append(ta,el("p","hint","Use **bold** for button names, start lines with 1. 2. 3. for steps, and [words](https://...) for a link. Templates are a starting point: edit them freely."));
+  var gs=el("div","gsearch"),gi=el("input","field");gi.type="search";gi.placeholder="Search the guides to attach one...";gi.setAttribute("aria-label","Search guides");gi.setAttribute("autocomplete","off");
+  var box=el("div","gresults");box.hidden=true;box.setAttribute("role","listbox");gs.append(gi,box);c.append(gs);
+  var shown=[],sel=0;
+  function pick(g){if(!g)return;if(!state.picked.some(function(p){return p.slug===g.slug})&&state.picked.length<6){state.picked.push(g);renderChips()}gi.value="";box.hidden=true;shown=[]}
+  function draw(){
+    var q=gi.value.trim();shown=searchGuides(q);box.replaceChildren();
+    if(!q){box.hidden=true;return}
+    box.hidden=false;
+    if(!shown.length){box.append(el("p","empty","No guides match."));return}
+    var tokens=q.toLowerCase().split(/\s+/).filter(Boolean);
+    shown.forEach(function(g,i){
+      var b=el("button","gres");b.type="button";b.setAttribute("role","option");b.setAttribute("aria-selected",String(i===sel));
+      var t=el("b");t.append(hl(g.title,tokens));var sm=el("small");sm.append(g.group+" - ");sm.append(hl(g.summary,tokens));b.append(t,sm);
+      b.addEventListener("mousedown",function(e){e.preventDefault()});b.addEventListener("click",function(){pick(g)});box.append(b);
+    });
+  }
+  gi.addEventListener("input",function(){sel=0;draw()});
+  gi.addEventListener("keydown",function(e){
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!shown.length)return;sel=(sel+(e.key==="ArrowDown"?1:shown.length-1))%shown.length;draw()}
+    else if(e.key==="Enter"){e.preventDefault();pick(shown[sel])}
+    else if(e.key==="Escape"){box.hidden=true}
+  });
+  gi.addEventListener("blur",function(){setTimeout(function(){box.hidden=true},120)});
+  var chips=el("div","chips");chips.id="chips";c.append(chips);
+  var row=el("div","send"),send=el("button","btn","Send reply"),done=el("button","btn btn--done","Send & mark as done"),msg=el("span","err");
+  send.type="submit";done.type="button";msg.id="sendMsg";msg.setAttribute("role","status");row.append(send,done,msg);c.append(row);
+  c.append(el("p","hint","Send & mark as done closes the case: it gets a case number, replies to that email will not be received, and the email says to contact support to re-open it."));
+  function go(close){
+    var text=ta.value.trim();if(!text){msg.textContent="Write a reply first.";return}
+    if(close&&!confirm("Send this reply and close the case? The customer will be given a case number, and replies to the email will not be received."))return;
+    send.disabled=done.disabled=true;msg.style.color="";msg.textContent="Sending...";
+    call("POST","",{action:"reply",id:state.cur,text:text,close:close,guides:state.picked.map(function(p){return p.slug})}).then(function(j){
+      state.picked=[];ta.value="";state.thread=j.thread;renderThread();loadList();
+      var m=document.getElementById("sendMsg");if(m){m.style.color="var(--ok)";m.textContent=close?"Sent and closed, case "+j.thread.caseNumber+".":"Sent."}
+    }).catch(function(err){send.disabled=done.disabled=false;msg.style.color="";msg.textContent=err.message});
+  }
+  c.addEventListener("submit",function(e){e.preventDefault();go(false)});
+  done.addEventListener("click",function(){go(true)});
   setTimeout(renderChips,0);
   return c;
 }
@@ -270,21 +357,49 @@ function renderChips(){
     x.addEventListener("click",function(){state.picked.splice(i,1);renderChips()});c.append(x);box.append(c);
   });
 }
+function renderSettings(){
+  var v=$("view");v.replaceChildren(el("p","empty","Loading..."));
+  call("GET","?view=settings").then(function(j){
+    var S=j.settings,w=el("div","set");v.replaceChildren(w);
+    w.append(el("h2",null,"Reply delay (support@ replies only)"));
+    var d=el("div","row2"),lab=el("label"),cb=document.createElement("input");cb.type="checkbox";cb.checked=!!S.delay.enabled;lab.append(cb,"Wait before the bot replies");
+    var mn=el("input","field num"),mx=el("input","field num");mn.type=mx.type="number";mn.min=mx.min=0;mx.max=720;mn.value=S.delay.minMinutes;mx.value=S.delay.maxMinutes;mn.setAttribute("aria-label","Shortest wait in minutes");mx.setAttribute("aria-label","Longest wait in minutes");
+    var dl=el("label");dl.append("between",mn,"and",mx,"minutes");
+    var ds=el("button","btn btn--sm","Save delay");ds.type="button";var dm=el("span","err");dm.setAttribute("role","status");
+    d.append(lab,dl,ds,dm);w.append(d);
+    w.append(el("p","hint",S.delayFromPage?"Each reply waits a random time in that range. While it waits you can see it on the chain, and Escalate to me deletes it.":"Nothing has been saved here yet, so the server's REPLY_DELAY setting applies (on = 10 to 45 minutes). Saving here takes over."));
+    ds.addEventListener("click",function(){
+      dm.style.color="";dm.textContent="Saving...";
+      call("POST","",{action:"settings",delay:{enabled:cb.checked,minMinutes:mn.value,maxMinutes:mx.value}}).then(function(){dm.style.color="var(--ok)";dm.textContent="Saved."}).catch(function(e){dm.textContent=e.message});
+    });
+    w.append(el("h2",null,"Support bot prompt"));
+    w.append(el("p","hint","This is the full instruction the bot follows for every support@ email. Keep {{LINKS}} (filled in with the allowed link names) and the final line that asks for a JSON reply with its fields, or the bot will stop working. Changes apply to the next email."));
+    var st=el("p","meta",S.custom?"Using your edited prompt.":"Using the built-in prompt."),ta=el("textarea","field");ta.value=S.prompt;ta.spellcheck=false;ta.setAttribute("aria-label","Bot prompt");
+    var cnt=el("span","hint");function upd(){cnt.textContent=ta.value.length+" characters (up to 14,000)"}upd();ta.addEventListener("input",upd);
+    var row=el("div","row2"),sv=el("button","btn","Save prompt"),rs=el("button","btn btn--ghost","Reset to the built-in prompt"),pm=el("span","err");sv.type=rs.type="button";pm.setAttribute("role","status");
+    row.append(sv,rs,cnt,pm);w.append(st,ta,row);
+    sv.addEventListener("click",function(){
+      pm.style.color="";pm.textContent="Saving...";
+      call("POST","",{action:"settings",prompt:ta.value}).then(function(r){pm.style.color="var(--ok)";pm.textContent="Saved. The next email uses it.";st.textContent=r.settings.custom?"Using your edited prompt.":"Using the built-in prompt."}).catch(function(e){pm.textContent=e.message});
+    });
+    rs.addEventListener("click",function(){
+      if(!confirm("Replace your prompt with the built-in one?"))return;
+      call("POST","",{action:"settings",prompt:null}).then(function(r){ta.value=r.settings.prompt;upd();st.textContent="Using the built-in prompt.";pm.style.color="var(--ok)";pm.textContent="Reset."}).catch(function(e){pm.textContent=e.message});
+    });
+  }).catch(showErr);
+}
 function setStatus(s){
   call("POST","",{action:"status",id:state.cur,status:s}).then(function(j){state.thread=j.thread;renderThread();loadList()}).catch(showErr);
 }
 function loadGuides(){
   return fetch("/guide/tree.json").then(function(r){return r.json()}).then(function(t){
-    state.allGuides={};
-    state.guides=t.groups.map(function(g){
-      var items=[];
+    state.flat=[];
+    t.groups.forEach(function(g){
       g.topics.forEach(function(top){
-        var a={slug:top.slug,title:top.title};items.push(a);state.allGuides[a.slug]=a;
-        (top.children||[]).forEach(function(c){var b={slug:c.slug,title:c.title,child:true};items.push(b);state.allGuides[b.slug]=b});
+        [top].concat(top.children||[]).forEach(function(x){state.flat.push({slug:x.slug,title:x.title,summary:x.summary||"",keywords:(x.keywords||[]).map(function(k){return k.toLowerCase()}),group:g.title})});
       });
-      return {title:g.title,items:items};
     });
-  }).catch(function(){state.guides=[];state.allGuides={}});
+  }).catch(function(){state.flat=[]});
 }
 function start(){
   $("login").hidden=true;$("app").hidden=false;
