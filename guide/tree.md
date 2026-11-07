@@ -1,0 +1,200 @@
+# Maestro Pro guide: full tree
+
+Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ and Markdown versions at https://maestro-pro.app/guide/<slug>.md. The machine-readable version is https://maestro-pro.app/guide/tree.json.
+
+## Start here
+- [Getting Started](https://maestro-pro.app/guide/getting-started/): Maestro Pro is a working tool for musicians: it reads your scores and follows them to the note, turns pages hands-free, rehearses with a backing track, a song from Apple Music, the built-in instrument or a metronome, and lets you write and revise the music itself.
+  - [What Maestro Pro is](https://maestro-pro.app/guide/what-is-maestro-pro/): Maestro Pro is an app for musicians that reads your scores, follows them to the note and plays along.
+  - [Your first minute](https://maestro-pro.app/guide/your-first-minute/): Import a score, press Play and tap the music to start from any point.
+  - [Open the sample score](https://maestro-pro.app/guide/open-the-sample-score/): Try the app straight away with the built-in sample, no files needed.
+  - [Find free scores with Search Scores](https://maestro-pro.app/guide/find-free-scores/): Search Scores downloads classical pieces and jazz tunes, and searches the web for free scores.
+  - [What the Free plan includes](https://maestro-pro.app/guide/free-plan-limits/): The Free plan keeps up to three scores and lets you view and play them, with some tools left for paid plans.
+- [Your Library](https://maestro-pro.app/guide/your-library/): Everything you import lives in the library and stays on the device. It is also kept in iCloud when iCloud Drive is on.
+  - [Supported file types](https://maestro-pro.app/guide/supported-file-types/): PDF, MusicXML, MIDI, karaoke, lyrics, CD+Graphics and Maestro Pro files can all be imported.
+  - [Import a score](https://maestro-pro.app/guide/import-a-score/): Tap Import Score, choose your files, and they appear in the library.
+  - [Import a PDF score](https://maestro-pro.app/guide/import-a-pdf/): PDFs are read by the app, which only reads printed notation, and scans need to be straight and clear.
+  - [Import MusicXML files](https://maestro-pro.app/guide/import-musicxml-files/): MusicXML files (.musicxml, .xml, .mxl) import like any other score and can be edited.
+  - [Import MIDI and karaoke files](https://maestro-pro.app/guide/import-midi-and-karaoke-files/): MIDI and karaoke (.mid, .kar) files import with Import Score; karaoke files carry their own words.
+  - [Import several files at once](https://maestro-pro.app/guide/import-several-files/): Choose more than one file in the import dialog and they all arrive together.
+  - [Drag files onto the window](https://maestro-pro.app/guide/drag-files-onto-the-window/): Drag files from the Files app straight onto the Maestro Pro window to import them.
+  - [Import from another app's share sheet](https://maestro-pro.app/guide/import-from-another-app/): Choose Maestro Pro in the share sheet of Files, Mail, Safari, Messages and other apps.
+  - [Import a whole folder](https://maestro-pro.app/guide/import-a-folder/): Import Folder reads every supported file in a folder.
+  - [Link a folder to the library](https://maestro-pro.app/guide/link-a-folder/): In Settings, Link a Folder keeps a folder in step with the library so new files appear by themselves.
+  - [Start a blank score](https://maestro-pro.app/guide/start-a-blank-score/): New Blank Score creates an empty score with the name, time signature, key, bars, staves and tempo you choose.
+  - [Lyrics with Backing](https://maestro-pro.app/guide/add-lyrics-with-backing/): Choose a backing track and the app finds its timed lyrics online for a karaoke-style screen.
+  - [Keep your library in iCloud](https://maestro-pro.app/guide/icloud-library/): Your library is stored on the device and is also kept in iCloud when iCloud Drive is on.
+  - [Set-lists for rehearsals and gigs](https://maestro-pro.app/guide/set-lists/): Build set-lists for a lesson, a rehearsal or a concert.
+  - [Scanning paper music](https://maestro-pro.app/guide/scan-paper-music/): Scanning printed music with the camera is planned for a future update and is not in the app today.
+  - [Band-in-a-Box files](https://maestro-pro.app/guide/import-band-in-a-box-files/): Band-in-a-Box files cannot be read; export MusicXML and audio from Band-in-a-Box instead.
+- [Playing a Score](https://maestro-pro.app/guide/playing-a-score/): The bar at the bottom controls playback; the toolbar and the Inspector change how it looks and sounds.
+  - [Play, pause and skip](https://maestro-pro.app/guide/play-and-pause/): The bar at the bottom has Play and Pause, skip by bar and a progress bar you can drag.
+  - [Start from any bar](https://maestro-pro.app/guide/jump-to-a-bar/): Tap the music to jump to that point, or drag the progress bar.
+  - [Playback keys on a Mac](https://maestro-pro.app/guide/mac-playback-keys/): Space plays and pauses, arrows skip bars, Return goes to the start and K toggles the metronome.
+  - [Slow down or speed up without changing pitch](https://maestro-pro.app/guide/change-practice-speed/): Practice Speed runs from 10 to 400 percent and keeps the pitch the same.
+  - [Tempo and Custom Tempo](https://maestro-pro.app/guide/tempo-and-custom-tempo/): The tempo is the score's own unless you set one; Custom Tempo goes back to the score's.
+  - [Tap the tempo](https://maestro-pro.app/guide/tap-the-tempo/): Tap the tempo, then tap the Tap key in time with the beat and the tempo follows you.
+  - [Loop a hard passage](https://maestro-pro.app/guide/loop-a-passage/): In the Inspector, Loop plays the bars you choose over and over.
+  - [Count In and Lead-in Bars](https://maestro-pro.app/guide/count-in-and-lead-in-bars/): Count In plays a bar of clicks first; Lead-in Bars sets how many bars of introduction come before bar 1.
+  - [Use the metronome](https://maestro-pro.app/guide/use-the-metronome/): The metronome clicks on every beat and can be turned on and off, with K on a Mac.
+  - [Transpose for your instrument](https://maestro-pro.app/guide/transpose-for-your-instrument/): Transposing typesets the score again in the new key, rather than just labelling it.
+  - [Set your instrument](https://maestro-pro.app/guide/set-your-instrument/): Setting your instrument to B flat or E flat in the Inspector shows the written note in the tuner.
+  - [Automatic page turning](https://maestro-pro.app/guide/page-turning/): The page scrolls or curls over like a real book exactly when you need it.
+  - [Notes and bars that light up](https://maestro-pro.app/guide/note-and-bar-highlighting/): Notes glow as they sound and a soft wash marks the bar; this needs the Performer plan or above.
+  - [The Inspector](https://maestro-pro.app/guide/use-the-inspector/): The Inspector holds tempo, practice speed, loop, key, instrument and backing tracks.
+
+## Plans and licences
+- [Plans and pricing](https://maestro-pro.app/guide/plans-and-pricing/): Free, Performer and Professional: what each plan includes, and how to buy.
+  - [The Free plan](https://maestro-pro.app/guide/free-plan/): What you get for nothing: up to three scores, viewing, lyrics files, your own audio, GitHub and scales.
+  - [The Performer plan](https://maestro-pro.app/guide/performer-plan/): Everything except the score editor, with a library of any size.
+  - [The Professional plan](https://maestro-pro.app/guide/professional-plan/): Everything, including the score editor, medleys and version history with GitHub sync.
+  - [Which plan do I need?](https://maestro-pro.app/guide/compare-plans/): A quick way to choose between Free, Performer and Professional.
+  - [Buy Professional on this website](https://maestro-pro.app/guide/buy-on-the-website/): Pay monthly or yearly on the website, then recover your licence key and install the app.
+  - [Website or in-app: which is cheaper?](https://maestro-pro.app/guide/website-or-in-app/): Professional bought on the website costs less than Performer bought in the app, and includes the editor.
+  - [Prices and currencies](https://maestro-pro.app/guide/prices-and-currency/): Website prices are in pounds sterling or the local equivalent, and app prices show in your own currency.
+  - [Manage a subscription bought in the app](https://maestro-pro.app/guide/manage-an-apple-subscription/): Performer and Professional bought in the app are managed in your Apple Account settings.
+- [Licences and keys](https://maestro-pro.app/guide/licences-and-keys/): How your licence key works, how to enter it and what to do if you lose it.
+  - [Enter your licence key in the app](https://maestro-pro.app/guide/enter-your-licence-key/): On the paywall, tap Already have a licence key? and type your key.
+  - [Recover a lost licence key](https://maestro-pro.app/guide/recover-your-licence-key/): Enter the email address you paid with and the key is emailed to you.
+  - [If you have more than one licence key](https://maestro-pro.app/guide/several-licence-keys/): If you have subscribed more than once, the email lists every active key with its plan.
+  - [My licence key is not working](https://maestro-pro.app/guide/licence-key-not-working/): Check the key, check it is still active, and recover it again if needed.
+- [Install with TestFlight](https://maestro-pro.app/guide/install-and-testflight/): Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store.
+  - [Install Maestro Pro step by step](https://maestro-pro.app/guide/install-with-testflight/): Install TestFlight, accept the invitation, install Maestro Pro, then enter your key.
+  - [I lost the TestFlight link](https://maestro-pro.app/guide/lost-the-testflight-link/): The key email includes the TestFlight link, and the install page has it too.
+- [Refunds and cancellation](https://maestro-pro.app/guide/refunds-and-cancellation/): The 14-day money-back guarantee, and how to cancel a licence bought on the website.
+  - [The 14-day money-back guarantee](https://maestro-pro.app/guide/money-back-guarantee/): Ask for a full refund within 14 days of your first payment, once the payment has cleared.
+  - [How to request a refund or cancel](https://maestro-pro.app/guide/how-to-request-a-refund/): Use the cancellation page with your licence key and follow the steps.
+  - [When can I get a refund?](https://maestro-pro.app/guide/refund-timing/): Refunds are made from day 8 to day 14 after the first payment, once it has cleared.
+  - [Cancelling after the 14 days](https://maestro-pro.app/guide/after-the-14-days/): No refund, but you can cancel going forward, and how that works differs for yearly and monthly plans.
+  - [Cancel a yearly licence](https://maestro-pro.app/guide/cancel-a-yearly-licence/): Your yearly subscription is cancelled and the key works until the end of the year you paid for.
+  - [Cancel a monthly licence](https://maestro-pro.app/guide/cancel-a-monthly-licence/): Monthly licences are on a 12-month contract, so cancelling early costs one month plus half of the remaining term.
+- [Education and schools](https://maestro-pro.app/guide/education-and-schools/): How schools, colleges and tutors can get Maestro Pro, including volume licensing outside the App Store.
+  - [Apple volume purchasing](https://maestro-pro.app/guide/apple-volume-purchasing/): Schools can roll the free version out through Apple School Manager or Apple Business Manager.
+  - [Buy for a whole organisation](https://maestro-pro.app/guide/buy-for-your-organisation/): One licence for unlimited students and teachers, £499 a year, bought direct and outside the App Store.
+  - [The student licence](https://maestro-pro.app/guide/student-licence/): Students can buy Professional for £48 a year or £6 a month on a 12-month contract.
+
+## Practise
+- [Tuner & Wait for Me](https://maestro-pro.app/guide/tuner-wait-for-me/): Maestro Pro can listen through the microphone: to tune your instrument, to train a steady note, and to wait for you to play a score note by note. Sound is analysed on the device and is never recorded or sent anywhere.
+  - [Open the tuner](https://maestro-pro.app/guide/open-the-tuner/): The Tuner is on the home screen, the + menu, Settings under Listening, and the tuning fork in a score's toolbar.
+  - [Read the tuner display](https://maestro-pro.app/guide/read-the-tuner-display/): It shows the note name, how many cents sharp or flat you are, and the frequency, with a needle and an eight-second trace.
+  - [Play a reference note](https://maestro-pro.app/guide/play-a-reference-note/): Play Reference Note sounds the note you are aiming for.
+  - [Change the tuning pitch (A = 440 Hz)](https://maestro-pro.app/guide/change-concert-pitch/): A = 440 Hz can be changed between 415 and 466 for baroque or orchestral tuning.
+  - [Tune a B flat or E flat instrument](https://maestro-pro.app/guide/tune-a-b-flat-or-e-flat-instrument/): With your instrument set to B flat or E flat in the Inspector, the tuner shows the written note too.
+  - [What is Wait for Me?](https://maestro-pro.app/guide/what-is-wait-for-me/): Wait for Me holds the score until the right note is played in tune.
+  - [The steady-note trainer](https://maestro-pro.app/guide/steady-note-trainer/): A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.
+- [Record & Review](https://maestro-pro.app/guide/record-review/): Record yourself playing a score, then review the take with the notes lit: green where you should have been, red where you actually were. It listens through the microphone, so it works with any instrument or your voice.
+  - [Record yourself](https://maestro-pro.app/guide/record-yourself/): Press Record, play along after the count-in, then press Stop.
+  - [Record when the score has a backing track](https://maestro-pro.app/guide/record-with-a-backing-track/): The app asks first, because the microphone would hear the backing: Mute It and Record, or Record Anyway.
+  - [Review your take](https://maestro-pro.app/guide/review-your-recording/): The take is shown with the notes lit: green where you should have been, red where you actually were.
+  - [Where recordings are kept](https://maestro-pro.app/guide/where-recordings-are-kept/): Recordings are kept with the score, copied when you duplicate it, and compressed to well under a megabyte a minute.
+- [Scales & Arpeggios](https://maestro-pro.app/guide/scales-arpeggios/): Practice material made on demand.
+  - [Make a scale or arpeggio](https://maestro-pro.app/guide/make-a-scale/): Choose Scales & Arpeggios on the home screen, pick the kind and a key, and a score is created for you.
+  - [Scale types and keys](https://maestro-pro.app/guide/scale-types-and-keys/): Major, minor, blues, arpeggios and more, in any key.
+  - [Scales are free on every plan](https://maestro-pro.app/guide/scales-are-free/): Making scales and arpeggios in any key is included on the Free plan too.
+- [Annotating](https://maestro-pro.app/guide/annotating/): Mark up the page like a paper part.
+  - [Draw on a score](https://maestro-pro.app/guide/draw-on-a-score/): Turn on Annotate in the toolbar and draw; the ink is saved with the score and shows while you play.
+  - [Annotation tools](https://maestro-pro.app/guide/annotation-tools/): Pens, markers, pencil, colours and an eraser.
+  - [Annotations and zoom](https://maestro-pro.app/guide/annotation-zoom-sizes/): Each zoom size keeps its own drawing so it stays lined up with the music.
+  - [Annotate on a Mac](https://maestro-pro.app/guide/annotate-on-a-mac/): On a Mac you draw with the trackpad or mouse instead of Apple Pencil.
+  - [Export and print with your ink](https://maestro-pro.app/guide/export-with-your-ink/): Export as PDF and Print include your ink for the key and zoom you are viewing.
+
+## Sound and words
+- [Backing Tracks & Sound](https://maestro-pro.app/guide/backing-tracks-sound/): A backing track is a recording that plays with the score. The built-in instrument can play the notes on the page too.
+  - [Add a backing track](https://maestro-pro.app/guide/add-a-backing-track/): Add the first backing track with Add Backing Track, and it plays in time with the score.
+  - [Add more than one backing track](https://maestro-pro.app/guide/add-another-backing-track/): A score can have several tracks, for example a rhythm section and a separate guide vocal.
+  - [Track switches and levels](https://maestro-pro.app/guide/backing-track-levels-and-switches/): Each track has its own switch and its own level from minus 24 to plus 12 decibels.
+  - [The first track keeps time](https://maestro-pro.app/guide/the-first-backing-track/): The first backing track is the one the score keeps time with; later tracks follow its speed and key.
+  - [Match Key and Tempo to a track](https://maestro-pro.app/guide/match-key-and-tempo/): Match Key & Tempo works on the first backing track; use it again if the track starts late or early.
+  - [Reduce vocals on a track](https://maestro-pro.app/guide/reduce-vocals/): Reduce Vocals cuts the singer down in a stereo recording; it cannot remove a voice from a mono recording.
+  - [Play along with Apple Music](https://maestro-pro.app/guide/play-along-with-apple-music/): Play a song from your Apple Music subscription alongside a score and see its lyrics.
+  - [The built-in instrument](https://maestro-pro.app/guide/built-in-instrument/): The built-in instrument can play the notes on the page, as can a metronome.
+  - [Equaliser and key changes](https://maestro-pro.app/guide/equaliser-and-key-changes/): Key changes and the equaliser are part of the Performer and Professional plans.
+- [Lyrics & Karaoke](https://maestro-pro.app/guide/lyrics-karaoke/): Lyrics scroll in time with the music like in Apple Music, and CD+Graphics karaoke files show their built-in pictures.
+  - [Add a lyrics file](https://maestro-pro.app/guide/add-a-lyrics-file/): Add a .lrc file (timed lines) or a .txt file to a score from the Lyrics menu.
+  - [Show lyrics instead of music](https://maestro-pro.app/guide/show-lyrics-instead-of-music/): Show Lyrics Instead of Music swaps the page for the words, which scroll in time like Apple Music.
+  - [Animate syllables](https://maestro-pro.app/guide/animate-syllables/): Animate Syllables swells each syllable as it is sung, and Show Syllable Progress fills it.
+  - [Lyrics typeface, size and blur](https://maestro-pro.app/guide/lyrics-appearance-settings/): Typeface, size, alignment and blur for lines not being sung are set in Settings.
+  - [Lyrics-only items](https://maestro-pro.app/guide/lyrics-only-items/): A lyrics-only item has its own screen with a transport bar and an optional backing track.
+  - [Lyrics in seconds or in bars](https://maestro-pro.app/guide/lyrics-timing/): When a lyrics file has no timing, you can choose whether lyrics are timed in seconds or in bars.
+  - [Karaoke MIDI (.kar) files](https://maestro-pro.app/guide/karaoke-midi-files/): Karaoke MIDI files contain their own words.
+  - [CD+Graphics karaoke (.cdg)](https://maestro-pro.app/guide/cdg-karaoke/): CD+Graphics karaoke files show their built-in pictures.
+  - [Find lyrics and singers online](https://maestro-pro.app/guide/find-lyrics-online/): Lyrics and singers can be found online; this needs the internet and sends the song title and artist to lyric services.
+  - [Duets and singers](https://maestro-pro.app/guide/duets-and-singers/): Duets get a singer each, in their own colour.
+
+## Write and keep
+- [Writing & Editing Music](https://maestro-pro.app/guide/writing-editing-music/): The score editor changes the notes in a MusicXML score. A PDF is first read by the app, and the editor works on a copy of what it read. Open it with Edit Score (the music-note-list button; in Simple mode it appears for scores you created).
+  - [Open the score editor](https://maestro-pro.app/guide/open-the-score-editor/): Edit Score opens the editor, which works on MusicXML scores and on a copy of what the app read from a PDF.
+  - [The nine editor modes](https://maestro-pro.app/guide/the-nine-editor-modes/): One strip of nine modes at the bottom of the editor: Notes, Rests, Marks, Dynamics, Bars, Form, Medley, Erase and Draw.
+  - [Notes mode: add and move notes](https://maestro-pro.app/guide/editor-notes-mode/): Slide on a rest to choose a pitch, lift to place a note, drag to move one, scribble to rub it out.
+  - [Rests mode](https://maestro-pro.app/guide/editor-rests-mode/): Turn a note into a rest, change a rest's length, or take a rest off the page.
+  - [Marks mode: accidentals, ties and articulations](https://maestro-pro.app/guide/editor-marks-mode/): Add a sharp, flat or natural, tie notes, or give a note staccato, accent, tenuto, marcato or a fermata.
+  - [Dynamics mode](https://maestro-pro.app/guide/editor-dynamics-mode/): Put dynamics from ppp to fff on a note or bar, and crescendo or diminuendo hairpins over bars.
+  - [Bars mode: repeats, adding and deleting bars](https://maestro-pro.app/guide/editor-bars-mode/): Repeat signs, adding or deleting a bar, and Expand Repeats to write a piece out as it is played.
+  - [Form mode: endings, jumps and tempo marks](https://maestro-pro.app/guide/editor-form-mode/): First and second time bars, Segno, Coda, To Coda, D.C., D.S., Fine and tempo marks.
+  - [Medley mode: copy, cut and paste bars](https://maestro-pro.app/guide/editor-medley-mode/): Drag across bars to choose them, then Copy, Cut, Paste, Duplicate or Delete, or Insert from Score.
+  - [Erase mode](https://maestro-pro.app/guide/editor-erase-mode/): Touch or drag over notes and rests to erase them; double-tap Apple Pencil to switch to the eraser.
+  - [Draw mode](https://maestro-pro.app/guide/editor-draw-mode/): Write over the music with Apple Pencil using pen, marker, pencil and colour tools; the ink stays on the page.
+  - [Edit a score that came from a PDF](https://maestro-pro.app/guide/edit-a-pdf-score/): The app first reads a PDF, and the editor works on a copy of what it read.
+  - [Stop a resting hand changing notes](https://maestro-pro.app/guide/edit-with-apple-pencil-only/): The setting Edit with Apple Pencil Only stops a resting hand changing notes.
+- [Version History & GitHub](https://maestro-pro.app/guide/version-history-github/): Save versions of a score, try ideas on branches, merge them back, and keep it all on GitHub.
+  - [Save a version](https://maestro-pro.app/guide/save-a-version/): In the score editor, History and Save Version keep a snapshot you can return to.
+  - [Start a branch to try an idea](https://maestro-pro.app/guide/start-a-branch/): New Branch starts a separate line of edits from now or from any earlier version.
+  - [Roll back to an earlier version](https://maestro-pro.app/guide/roll-back-a-version/): Roll Back to This Version restores an earlier snapshot as a new version, so nothing is lost.
+  - [Merge a branch](https://maestro-pro.app/guide/merge-branches/): Merge brings another branch into the current one, bar by bar.
+  - [Resolve merge clashes](https://maestro-pro.app/guide/resolve-merge-clashes/): A bar changed on both branches clashes, and you choose to keep yours or take theirs.
+  - [Connect a score to GitHub](https://maestro-pro.app/guide/connect-github/): Connect a score to your own GitHub repository and push its version history there.
+  - [Where your GitHub token is kept](https://maestro-pro.app/guide/github-token-safety/): The token is kept in your device's Keychain and sent only to GitHub.
+- [Share, Export & Print](https://maestro-pro.app/guide/share-export-print/): Get a score, or a video of it, out of the app.
+  - [Export as MusicXML](https://maestro-pro.app/guide/export-as-musicxml/): MusicXML opens in MuseScore, Finale, Sibelius, Dorico, Notion and most other notation apps.
+  - [Export as PDF](https://maestro-pro.app/guide/export-as-pdf/): A PDF score is passed on as it is; any other score is typeset in the key currently shown.
+  - [Print a score](https://maestro-pro.app/guide/print-a-score/): Print opens the system print dialog.
+  - [The Share menu](https://maestro-pro.app/guide/share-menu/): Press and hold a score in the library and choose Share for Export as MusicXML, Export as PDF and Print.
+  - [Save to Files, AirDrop, email or message](https://maestro-pro.app/guide/share-with-airdrop-or-files/): In the share sheet you can save to Files, AirDrop, email or message the file.
+  - [Get a video of a score](https://maestro-pro.app/guide/export-a-video/): A video of the music following along can be taken out of the app.
+
+## Together
+- [Play Together](https://maestro-pro.app/guide/play-together/): Up to eight devices running Maestro Pro can play in time with each other (Advanced mode).
+  - [Start a Play Together session](https://maestro-pro.app/guide/start-a-session/): Open your parts, choose Play Together, then Start a Session, and allow each player in.
+  - [Join a session](https://maestro-pro.app/guide/join-a-session/): Choose Join a Session and pick the host's device.
+  - [Local Network permission](https://maestro-pro.app/guide/play-together-permissions/): Allow the Local Network permission if asked; devices find each other over Wi-Fi and Bluetooth, with no account.
+  - [Nudge for wireless speakers and headphones](https://maestro-pro.app/guide/nudge-wireless-audio/): The Nudge slider moves your sound earlier or later if you use wireless speakers or headphones.
+  - [Using Play Together in lessons and rehearsals](https://maestro-pro.app/guide/play-together-in-lessons/): Play, pause, seek and tempo changes on any device are mirrored on all of them.
+
+## Settings and help
+- [Keyboard Shortcuts](https://maestro-pro.app/guide/keyboard-shortcuts/): On a Mac nearly everything has a keyboard shortcut, shown in the Playback, Score and View menus. On an iPad with a keyboard, hold the Command key to see them. Every shortcut can be changed.
+  - [See the keyboard shortcuts](https://maestro-pro.app/guide/see-the-shortcuts/): On a Mac shortcuts are shown in the Playback, Score and View menus; on an iPad hold the Command key.
+  - [Change a shortcut](https://maestro-pro.app/guide/change-a-shortcut/): In Settings under Keyboard Shortcuts, click a shortcut and press the keys you want instead.
+  - [Put shortcuts back](https://maestro-pro.app/guide/reset-shortcuts/): The arrow beside a shortcut resets it, and Reset All to Defaults resets them all.
+- [Settings & Accessibility](https://maestro-pro.app/guide/settings-accessibility/): Settings has the choices that apply everywhere.
+  - [Light, dark or system appearance](https://maestro-pro.app/guide/appearance-light-dark/): Appearance is light, dark, or follows the system.
+  - [Highlight colour](https://maestro-pro.app/guide/highlight-colour/): Highlight Colour chooses the colour that lights up playing notes; the toolbar uses your accent colour.
+  - [Customise every colour](https://maestro-pro.app/guide/customise-every-colour/): Advanced mode has Customise Every Colour.
+  - [Defaults that any score can override](https://maestro-pro.app/guide/score-defaults/): Zoom, dark sheet music, follow playback and the three highlights have defaults in Settings.
+  - [Provide feedback from the app](https://maestro-pro.app/guide/provide-feedback/): Provide Feedback in Settings posts your title and description to the public feedback board.
+- [Troubleshooting](https://maestro-pro.app/guide/troubleshooting/): If something is not right, check here first.
+  - [A PDF plays the wrong number of beats](https://maestro-pro.app/guide/pdf-plays-wrong-number-of-beats/): Set Crotchet Beats per Bar in the Inspector, or answer the metre question the first time the score opens.
+  - [Wait for Me or the tuner cannot hear me](https://maestro-pro.app/guide/microphone-cannot-hear-me/): Allow the microphone in Settings, raise Microphone Sensitivity, play one note at a time and keep other sound down.
+  - [It hears the wrong octave](https://maestro-pro.app/guide/wrong-octave-detected/): Try Accept Any Octave if the tuner or Wait for Me still hears the wrong octave.
+  - [Notes in a PDF look wrongly read](https://maestro-pro.app/guide/pdf-notes-read-wrongly/): Only printed notation can be read and scans need to be straight and clear; try a MusicXML file instead.
+  - [A backing track starts late or early](https://maestro-pro.app/guide/backing-track-starts-late-or-early/): Drag the track marker, or use Delay Start, then use Match Key and Tempo to Track to listen again.
+  - [Band-in-a-Box files will not open](https://maestro-pro.app/guide/band-in-a-box-files/): They cannot be read; save as MusicXML for the notation and as audio for the backing.
+  - [Import does nothing or a file is greyed out](https://maestro-pro.app/guide/import-does-nothing-or-greyed-out/): Choose All Files in the Files browser, or drag the file onto the window.
+  - [Jazz tunes need the internet](https://maestro-pro.app/guide/jazz-tunes-need-internet/): Jazz tunes need an internet connection the first time you add them.
+  - [An overfull bar in the editor](https://maestro-pro.app/guide/overfull-bar-in-editor/): Turn Free Editing off, or delete a note and the editor will tidy the bar.
+
+## Your devices and privacy
+- [Devices and compatibility](https://maestro-pro.app/guide/devices-and-compatibility/): Which iPhones, iPads and Macs run Maestro Pro, and what is optional.
+  - [iPhone requirements](https://maestro-pro.app/guide/iphone-requirements/): iOS 17 or later, which covers iPhone XS and later, including iPhone XR and iPhone SE (2nd generation) and later.
+  - [iPhone Duo](https://maestro-pro.app/guide/iphone-duo/): On iPhone Duo the music and controls use both screens, and the playback bar folds away for lyrics.
+  - [iPad requirements](https://maestro-pro.app/guide/ipad-requirements/): iPadOS 17 or later, covering iPad Pro, iPad Air, iPad and iPad mini generations listed here.
+  - [Mac requirements](https://maestro-pro.app/guide/mac-requirements/): macOS 14 Sonoma or later, with keyboard shortcuts, multiple windows and trackpad or mouse drawing.
+  - [Apple Pencil](https://maestro-pro.app/guide/apple-pencil/): Optional: any Apple Pencil that works with your iPad will do, and you do not need one to read, play, transpose or edit.
+  - [Optional extras the app can use](https://maestro-pro.app/guide/optional-extras/): Microphone, camera (planned), Apple Music, iCloud Drive, local network and the internet are all optional.
+- [Privacy and permissions](https://maestro-pro.app/guide/privacy-and-permissions/): What stays on your device, what permissions the app asks for, and what is ever sent anywhere.
+  - [What stays on your device](https://maestro-pro.app/guide/what-stays-on-your-device/): Your library is stored in the app's folder on your device, or in your own iCloud if you turn it on.
+  - [Microphone permission](https://maestro-pro.app/guide/microphone-permission/): The microphone hears whether you are playing the right note, tunes, and records you, all on the device.
+  - [Camera permission](https://maestro-pro.app/guide/camera-permission/): Scanning paper music with the camera is planned for a future update; the app does not use the camera today.
+  - [Apple Music permission](https://maestro-pro.app/guide/apple-music-permission/): Apple Music is used to play a song alongside a score and show its lyrics, under your own account.
+  - [Local network permission](https://maestro-pro.app/guide/local-network-permission/): Needed so devices can find each other for Play Together; messages go directly between them and are encrypted.
+  - [When the app uses the internet](https://maestro-pro.app/guide/when-the-app-uses-the-internet/): Only when you ask it to: searching for scores, lyrics or singers, downloading a score, and GitHub.
+  - [Anonymous usage statistics](https://maestro-pro.app/guide/usage-statistics/): Maestro Pro counts which features are used with Aptabase, with no account, name, email or fixed device identifier.
+  - [Feedback is public](https://maestro-pro.app/guide/privacy-feedback-board/): Feedback you send is posted to a public board, so leave out personal details.
