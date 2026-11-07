@@ -337,3 +337,4 @@ a.get:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(246,168,40,.3
 .lost .actions{justify-content:center}
 [hidden]{display:none!important}
 .lost h1{text-wrap:balance}
+.plain .fine{margin-top:4em;color:var(--fg2)}
