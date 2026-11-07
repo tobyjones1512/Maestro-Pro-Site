@@ -42,7 +42,7 @@
 <script src="/assets/nav.js" defer></script>
 <script>
 (function () {
-  var API = "https://fider-feedback-api.vercel.app/api/licence-devices", key = "";
+  var API = "https://fider-feedback-api.vercel.app/api/student-check", key = "";
   var $ = function (id) { return document.getElementById(id); };
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
   function when(ms) { var d = new Date(ms); return isNaN(d) ? "" : d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
