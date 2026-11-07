@@ -8,6 +8,8 @@ Go to the [buy page](https://maestro-pro.app/buy/), enter your name and email, c
 
 After you pay, [recover your licence key](https://maestro-pro.app/key.html) using the email address you paid with. We email you the key and the TestFlight install link. In the app, tap "Already have a licence key?" on the paywall and enter it.
 
+A licence bought on the website works on up to 3 devices. You can [remove a device](https://maestro-pro.app/guide/remove-a-device/) at any time to free its place.
+
 If you already have an active licence for your email address, the buy page tells you and links to key recovery instead of letting you pay twice.
 
 ## Related

@@ -103,7 +103,7 @@ see: compare-plans, buy-on-the-website, open-the-score-editor
 
 Professional includes everything, including the score editor. You can write and change music, build medleys, and keep version history with branches, merges and GitHub sync.
 
-You can buy Professional on this website for £10 per month on a 12-month contract or £89 per year. It can also be bought in the app as a subscription.
+You can buy Professional on this website for £10 per month on a 12-month contract or £89 per year. A licence bought on the website works on up to 3 devices. It can also be bought in the app as a subscription.
 
 ## compare-plans | plans-and-pricing | Which plan do I need?
 summary: A quick way to choose between Free, Performer and Professional.
@@ -124,6 +124,8 @@ see: licences-and-keys, install-and-testflight, money-back-guarantee
 Go to the [buy page](/buy/), enter your name and email, choose £89 per year or £10 per month (a 12-month contract), and continue to the secure payment page.
 
 After you pay, [recover your licence key](/key.html) using the email address you paid with. We email you the key and the TestFlight install link. In the app, tap "Already have a licence key?" on the paywall and enter it.
+
+A licence bought on the website works on up to 3 devices. You can [remove a device](remove-a-device) at any time to free its place.
 
 If you already have an active licence for your email address, the buy page tells you and links to key recovery instead of letting you pay twice.
 
@@ -153,9 +155,9 @@ The paid plans bought inside the app are subscriptions, managed in your Apple Ac
 ## licences-and-keys | group:Plans and licences | Licences and keys
 summary: How your licence key works, how to enter it and what to do if you lose it.
 keywords: licence, license, key, licence key, activate, paywall, already have a licence key
-see: enter-your-licence-key, recover-your-licence-key, install-and-testflight
+see: enter-your-licence-key, recover-your-licence-key, devices-per-licence
 
-A licence bought on the website comes with a licence key. You enter the key in the app to unlock it. Maestro Pro needs a licence to be used.
+A licence bought on the website comes with a licence key. You enter the key in the app to unlock it. Maestro Pro needs a licence to be used. A licence works on up to 3 devices.
 
 The key is emailed to the address you paid with, together with the TestFlight link to install the app. If you lose it, you can have it sent again from the [key page](/key.html).
 
@@ -168,6 +170,8 @@ see: recover-your-licence-key, licence-key-not-working
 2. On the paywall, tap **Already have a licence key?**
 3. Enter your licence key.
 
+The key works on up to 3 devices. If you are told the limit has been reached, [remove a device](remove-a-device) you no longer use and enter the key again.
+
 If you do not have your key to hand, [recover your licence key](/key.html) first.
 
 ## recover-your-licence-key | licences-and-keys | Recover a lost licence key
@@ -178,6 +182,33 @@ see: enter-your-licence-key, several-licence-keys
 Open the [key page](/key.html), enter the email address you paid with, and press **Email me my key**. If we find your payment, we email you your licence key along with the TestFlight link to install the app.
 
 The key is only ever sent to your inbox, never shown on the page. Use the email address you paid with. If nothing arrives, check your spam folder.
+
+## devices-per-licence | licences-and-keys | Use your licence on up to 3 devices
+summary: A licence bought on the website works on up to 3 devices. Education licences have no limit.
+keywords: devices, three devices, 3 devices, device limit, how many devices, another device, new iphone, new ipad, share licence, limit reached
+see: remove-a-device, enter-your-licence-key, buy-for-your-organisation
+
+A licence bought on the website works on up to **3 devices**: for example an iPhone, an iPad and a Mac. Enter the same key on each one. A device is counted the first time it is used with the key, and the key is checked each time the app is opened.
+
+If you try a fourth device, Maestro Pro says the licence is already in use on 3 devices. [Remove a device](remove-a-device) you no longer use to free its place, then enter your key again.
+
+A device that has not been used for 60 days stops counting automatically. If you delete the app and install it again, that counts as a new device until the old one is removed or ages out, so remove the old one if you reach the limit.
+
+Education licences, bought for a whole organisation, have no device limit. See [Buy for a whole organisation](buy-for-your-organisation).
+
+## remove-a-device | licences-and-keys | Remove a device from your licence
+summary: Use the devices page on the key page to see where your licence is used and remove a device.
+keywords: remove device, revoke device, sign out device, free a place, device limit reached, old iphone, sold device, lost device, devices page
+see: devices-per-licence, recover-your-licence-key, licence-key-not-working
+
+1. Open the [devices page](/key/devices/).
+2. Enter your licence key and choose **Show my devices**.
+3. Find the device you no longer use. If you are not sure which it is, open Maestro Pro on it and choose **Refresh**: the device you just used moves to the top with a new last used time.
+4. Choose **Remove** next to the device you want to take off.
+
+The place is free straight away, so you can enter your key on another device. A removed device is signed out the next time Maestro Pro checks the licence, which is each time the app is opened. You can use **Remove all devices** to start again.
+
+If you do not have your key, [recover your licence key](/key.html) first.
 
 ## several-licence-keys | licences-and-keys | If you have more than one licence key
 summary: If you have subscribed more than once, the email lists every active key with its plan.
@@ -194,6 +225,7 @@ see: recover-your-licence-key, enter-your-licence-key, several-licence-keys
 - Check the key was typed exactly as sent. Copying it from the email is the safest way.
 - If the key was cancelled, it stops working after the date given in the cancellation email.
 - If you have more than one key, try the one for your current plan. See [more than one licence key](several-licence-keys).
+- If it says the licence is already in use on 3 devices, [remove a device](remove-a-device) and try again.
 - [Recover your licence key](/key.html) to get a fresh email with every active key.
 
 ## install-and-testflight | group:Plans and licences | Install with TestFlight
@@ -307,14 +339,14 @@ see: apple-volume-purchasing, recover-your-licence-key
 
 You can buy one licence that covers a whole school, college, music service or tuition business, straight from us and outside the App Store. It is **£499 a year for unlimited students and teachers**, with every Maestro Pro feature, including the score editor, medleys and version history with GitHub sync.
 
-There is no per-seat counting and no Apple School Manager or Apple Business Manager set-up. You pay through our secure payment page, then [recover your licence key](/key.html) with the email address you paid with. The details are on the [education page](/education/).
+There is no per-seat counting and no Apple School Manager or Apple Business Manager set-up. An organisation licence has no device limit, unlike a single licence, which works on up to 3 devices (see [Use your licence on up to 3 devices](devices-per-licence)). You pay through our secure payment page, then [recover your licence key](/key.html) with the email address you paid with. The details are on the [education page](/education/).
 
 ## student-licence | education-and-schools | The student licence
 summary: Students can buy Professional for £48 a year or £6 a month on a 12-month contract.
 keywords: student, student price, student licence, students discount, 48, 6 pounds
 see: buy-for-your-organisation, how-to-request-a-refund
 
-The [students page](/students/) sells Professional to students at £48 per year, or £6 per month on a 12-month contract. After you pay, use the [students key page](/students/key.html) to have your licence key emailed to you.
+The [students page](/students/) sells Professional to students at £48 per year, or £6 per month on a 12-month contract. A student licence works on up to 3 devices. After you pay, use the [students key page](/students/key.html) to have your licence key emailed to you.
 
 ## supported-file-types | your-library | Supported file types
 summary: PDF, MusicXML, MIDI, karaoke, lyrics, CD+Graphics and Maestro Pro files can all be imported.
