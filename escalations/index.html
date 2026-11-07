@@ -81,6 +81,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .act li .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .act li time{color:var(--brass-dim);font-variant-numeric:tabular-nums}
 .act li small{display:block;color:var(--brass-dim);margin-top:2px}
+.pay table{width:100%;border-collapse:collapse;font-size:13px}
+.pay th,.pay td{text-align:left;padding:6px 8px;border-top:1px solid var(--rule);vertical-align:middle}
+.pay form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 14px 12px}
+.pay .tbl{padding:0 14px 10px;overflow-x:auto}
 .hint{font-size:12px;color:var(--brass-dim);margin:0}
 .guiderow{display:flex;gap:8px;flex-wrap:wrap}
 .guiderow select{flex:1;min-width:200px}
@@ -246,6 +250,53 @@ function activityPanel(t){
   });
   d.append(ul);return d;
 }
+function gbp(p){return "\u00a3"+(p/100).toFixed(2)}
+function refundPanel(t){
+  var d=document.createElement("details");d.className="act pay";
+  d.append(el("summary",null,"Refund a payment"));
+  var body=el("div");d.append(body);
+  var msg=el("p","err");msg.setAttribute("role","status");msg.style.padding="0 14px";
+  function load(){
+    body.replaceChildren(el("p","hint","Loading their payments..."));body.firstChild.style.padding="0 14px 10px";
+    call("GET","?id="+encodeURIComponent(t.id)+"&view=payments").then(function(j){draw(j.payments)}).catch(function(e){body.replaceChildren(el("p","err",e.message))});
+  }
+  function draw(list){
+    body.replaceChildren();
+    var h=el("p","hint","Payments GoCardless holds under "+t.customer+". This forces a refund whatever the 14-day rules say, straight to their bank, and is logged above. Only cleared payments can be refunded.");h.style.padding="0 14px 8px";body.append(h);
+    if(!list.length){var n=el("p","hint","No payments found under this email address.");n.style.padding="0 14px 10px";body.append(n);return}
+    var wrap=el("div","tbl"),tb=document.createElement("table"),th=document.createElement("tr");
+    ["Date","Payment","Amount","Refunded","Status",""].forEach(function(x){th.append(el("th",null,x))});tb.append(th);
+    list.forEach(function(p){
+      var tr=document.createElement("tr"),act=el("td");
+      [p.date,p.description||"(no description)",gbp(p.amount),p.refunded?gbp(p.refunded):"-",p.status.replace(/_/g," ")].forEach(function(x){tr.append(el("td",null,x))});
+      if(p.refundable){var b=el("button","btn btn--sm","Refund...");b.type="button";b.addEventListener("click",function(){form(p)});act.append(b)}
+      tr.append(act);tb.append(tr);
+    });
+    wrap.append(tb);body.append(wrap);
+    var fbox=el("div");fbox.id="refundForm";body.append(fbox,msg);
+    if(state.refundMsg){msg.style.color="var(--ok)";msg.textContent=state.refundMsg;state.refundMsg=""}
+  }
+  function form(p){
+    var left=p.amount-p.refunded,f=el("form"),box=document.getElementById("refundForm");
+    var amt=el("input","field num");amt.type="number";amt.step="0.01";amt.min="0.01";amt.max=(left/100).toFixed(2);amt.value=(left/100).toFixed(2);amt.setAttribute("aria-label","Amount to refund in pounds");amt.style.maxWidth="110px";
+    var note=el("input","field");note.placeholder="Note for the log (optional)";note.maxLength=300;note.setAttribute("aria-label","Note");note.style.maxWidth="260px";
+    var lab=el("label"),cb=document.createElement("input");cb.type="checkbox";lab.append(cb," Also end their licence now");
+    var go=el("button","btn btn--sm","Refund now");go.type="submit";
+    f.append("\u00a3",amt,note,lab,go);box.replaceChildren(f);
+    f.addEventListener("submit",function(e){
+      e.preventDefault();var pence=Math.round(parseFloat(amt.value)*100);
+      if(!(pence>=1&&pence<=left)){msg.textContent="Enter an amount up to "+gbp(left)+".";return}
+      if(!confirm("Refund "+gbp(pence)+" of the "+gbp(p.amount)+" payment from "+p.date+" to "+t.customer+(cb.checked?" and end their licence":"")+"? This can't be undone."))return;
+      go.disabled=true;msg.style.color="";msg.textContent="Refunding...";
+      call("POST","",{action:"force-refund",id:t.id,paymentId:p.id,amount:pence,endLicence:cb.checked,note:note.value}).then(function(j){
+        state.activity=j.activity||state.activity;state.refundMsg="Refunded "+gbp(j.amount)+(j.ended?" and ended the licence.":".")+(j.note||"");renderThread();
+        var d2=document.querySelector(".pay");if(d2)d2.open=true;
+      }).catch(function(err){go.disabled=false;msg.style.color="";msg.textContent=err.message});
+    });
+  }
+  d.addEventListener("toggle",function(){if(d.open&&!body.children.length)load()});
+  return d;
+}
 var LABEL={customer:"Customer",bot:"Support bot",toby:"You"};
 function renderThread(){
   var t=state.thread,v=$("view");if(!t)return;
@@ -271,7 +322,7 @@ function renderThread(){
     });
     acts.append(e);
   }
-  head.append(acts);v.append(head);v.append(activityPanel(t));
+  head.append(acts);v.append(head);v.append(activityPanel(t));v.append(refundPanel(t));
   t.messages.forEach(function(m){
     var pend=m.scheduledAt&&!m.cancelled&&waiting(m.scheduledAt);
     var box=el("article","msg msg--"+m.by+(pend?" msg--pending":"")+(m.cancelled?" msg--cancelled":"")),h=el("div","msg__h");
