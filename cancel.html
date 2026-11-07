@@ -25,7 +25,6 @@
   <li><b>Within the first 7 days:</b> a payment has to clear before it can be refunded, so you will be told the date to come back.</li>
   <li><b>After day 14:</b> no refund, but you can cancel going forward. Paying yearly: your subscription and mandate are cancelled and your key works to the end of the year. Paying monthly: one month plus half of the remaining 12-month term is collected, then your payments stop.</li>
 </ul>
-<p>On the <b>rolling &pound;5 a month</b> plan? It has no refund window, no waiting period and no cancellation fee: check your key below and it is cancelled straight away.</p>
 <form id="f" class="pay pay--wide" novalidate>
   <label class="field">Licence key<input id="key" name="key" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MPS-CU000...-XXXXXXXXXX" required></label>
   <button class="pay__btn" id="check" type="submit">Check my licence</button>
@@ -36,10 +35,7 @@
   </div>
   <p id="msg" class="pay__msg" role="status"></p>
 </form>
-<div id="offer" class="notice" hidden>
-  <p><strong>Before you go: Professional for &pound;5 a month.</strong> Keep every Professional feature, including the score editor and version history, for half the usual monthly price. It rolls month to month, and you can cancel any time with no fee and no waiting period.</p>
-  <p><a class="buy" href="https://pay.gocardless.com/BRT01M6STVRK3EGKX9FKBBSXD912J" rel="noopener">Keep Professional for &pound;5 a month</a></p>
-</div>
+<div id="offer" class="notice" hidden></div>
 <p>Don&rsquo;t have your key? <a href="key.html">Recover your licence key</a> first. Questions? <a href="support.html">Contact support</a>.</p>
 </main>
 <footer class="foot">
@@ -82,7 +78,12 @@ $("confirm").addEventListener("click", function () {
   call({ key: state.key, action: "confirm", refund: state.refund, fee: state.fee }).then(function (d) {
     $("text").textContent = d.message; $("msg").textContent = "Done. We have emailed you a confirmation.";
     b.hidden = true;
-    if (d.outcome === "refund") $("offer").hidden = false;
+    if (d.offer) {
+      var o = $("offer"), t = document.createElement("p"), b = document.createElement("strong"), c = document.createElement("p"), a = document.createElement("a");
+      b.textContent = d.offer.title; t.appendChild(b); t.appendChild(document.createTextNode(" " + d.offer.text));
+      a.className = "buy"; a.href = d.offer.url; a.rel = "noopener"; a.textContent = d.offer.cta; c.appendChild(a);
+      o.textContent = ""; o.appendChild(t); o.appendChild(c); o.hidden = false;
+    }
     state = null;
   }).catch(function (x) { err(x.message); b.disabled = false; $("keep").hidden = false; });
 });
