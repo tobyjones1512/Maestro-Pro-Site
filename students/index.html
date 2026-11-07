@@ -24,6 +24,7 @@
     <label class="opt"><input type="radio" name="plan" value="yearly" required><span><b>&pound;48 per year</b><small>Best value, one payment a year</small></span></label>
     <label class="opt"><input type="radio" name="plan" value="monthly"><span><b>&pound;6 per month</b><small>12-month contract</small></span></label>
   </fieldset>
+  <div id="owned" class="notice" role="alert" hidden><p><strong>You already have a Maestro Pro licence.</strong> There is an active licence for this email address, so you don&rsquo;t need to buy another. <a href="key.html">Recover your licence key</a> and we will email it to you.</p></div>
   <button class="pay__btn" type="submit">Continue to payment</button>
   <p class="pay__fine"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span>You will be taken to a secure payment page.</span></p>
 </form>
@@ -42,8 +43,20 @@ var URLS = {
 };
 document.getElementById("f").addEventListener("submit", function (e) {
   e.preventDefault();
-  var url = URLS[this.plan.value];
-  if (url) location.href = url;
+  var form = this, url = URLS[form.plan.value], btn = form.querySelector(".pay__btn"), owned = document.getElementById("owned");
+  if (!url) return;
+  owned.hidden = true;
+  btn.disabled = true;
+  // Ask whether this email already has an active licence. If the check itself fails, don't block the sale.
+  var go = function () { location.href = url; };
+  fetch("https://fider-feedback-api.vercel.app/api/student-owns", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: form.email.value })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.owned) { owned.hidden = false; btn.disabled = false; owned.scrollIntoView({ block: "nearest" }); }
+    else go();
+  }).catch(go);
 });
 </script>
 </body>
