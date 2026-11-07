@@ -7,6 +7,7 @@ Summary: Check the key, check it is still active, and recover it again if needed
 - Check the key was typed exactly as sent. Copying it from the email is the safest way.
 - If the key was cancelled, it stops working after the date given in the cancellation email.
 - If you have more than one key, try the one for your current plan. See [more than one licence key](https://maestro-pro.app/guide/several-licence-keys/).
+- If it says the licence is already in use on 3 devices, [remove a device](https://maestro-pro.app/guide/remove-a-device/) and try again.
 - [Recover your licence key](https://maestro-pro.app/key.html) to get a fresh email with every active key.
 
 ## Related

@@ -991,7 +991,7 @@
      "see": [
       "enter-your-licence-key",
       "recover-your-licence-key",
-      "install-and-testflight"
+      "devices-per-licence"
      ],
      "children": [
       {
@@ -1031,6 +1031,55 @@
        "see": [
         "enter-your-licence-key",
         "several-licence-keys"
+       ],
+       "children": []
+      },
+      {
+       "slug": "devices-per-licence",
+       "title": "Use your licence on up to 3 devices",
+       "summary": "A licence bought on the website works on up to 3 devices. Education licences have no limit.",
+       "url": "https://maestro-pro.app/guide/devices-per-licence/",
+       "md": "https://maestro-pro.app/guide/devices-per-licence.md",
+       "keywords": [
+        "devices",
+        "three devices",
+        "3 devices",
+        "device limit",
+        "how many devices",
+        "another device",
+        "new iphone",
+        "new ipad",
+        "share licence",
+        "limit reached"
+       ],
+       "see": [
+        "remove-a-device",
+        "enter-your-licence-key",
+        "buy-for-your-organisation"
+       ],
+       "children": []
+      },
+      {
+       "slug": "remove-a-device",
+       "title": "Remove a device from your licence",
+       "summary": "Use the devices page on the key page to see where your licence is used and remove a device.",
+       "url": "https://maestro-pro.app/guide/remove-a-device/",
+       "md": "https://maestro-pro.app/guide/remove-a-device.md",
+       "keywords": [
+        "remove device",
+        "revoke device",
+        "sign out device",
+        "free a place",
+        "device limit reached",
+        "old iphone",
+        "sold device",
+        "lost device",
+        "devices page"
+       ],
+       "see": [
+        "devices-per-licence",
+        "recover-your-licence-key",
+        "licence-key-not-working"
        ],
        "children": []
       },

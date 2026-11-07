@@ -6,7 +6,7 @@ Summary: Everything, including the score editor, medleys and version history wit
 
 Professional includes everything, including the score editor. You can write and change music, build medleys, and keep version history with branches, merges and GitHub sync.
 
-You can buy Professional on this website for £10 per month on a 12-month contract or £89 per year. It can also be bought in the app as a subscription.
+You can buy Professional on this website for £10 per month on a 12-month contract or £89 per year. A licence bought on the website works on up to 3 devices. It can also be bought in the app as a subscription.
 
 ## Related
 - [Which plan do I need?](https://maestro-pro.app/guide/compare-plans/)

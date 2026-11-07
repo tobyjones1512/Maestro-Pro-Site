@@ -6,7 +6,7 @@ Summary: One licence for unlimited students and teachers, £499 a year, bought d
 
 You can buy one licence that covers a whole school, college, music service or tuition business, straight from us and outside the App Store. It is **£499 a year for unlimited students and teachers**, with every Maestro Pro feature, including the score editor, medleys and version history with GitHub sync.
 
-There is no per-seat counting and no Apple School Manager or Apple Business Manager set-up. You pay through our secure payment page, then [recover your licence key](https://maestro-pro.app/key.html) with the email address you paid with. The details are on the [education page](https://maestro-pro.app/education/).
+There is no per-seat counting and no Apple School Manager or Apple Business Manager set-up. An organisation licence has no device limit, unlike a single licence, which works on up to 3 devices (see [Use your licence on up to 3 devices](https://maestro-pro.app/guide/devices-per-licence/)). You pay through our secure payment page, then [recover your licence key](https://maestro-pro.app/key.html) with the email address you paid with. The details are on the [education page](https://maestro-pro.app/education/).
 
 ## Related
 - [Apple volume purchasing](https://maestro-pro.app/guide/apple-volume-purchasing/)

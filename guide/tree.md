@@ -54,6 +54,8 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
 - [Licences and keys](https://maestro-pro.app/guide/licences-and-keys/): How your licence key works, how to enter it and what to do if you lose it.
   - [Enter your licence key in the app](https://maestro-pro.app/guide/enter-your-licence-key/): On the paywall, tap Already have a licence key? and type your key.
   - [Recover a lost licence key](https://maestro-pro.app/guide/recover-your-licence-key/): Enter the email address you paid with and the key is emailed to you.
+  - [Use your licence on up to 3 devices](https://maestro-pro.app/guide/devices-per-licence/): A licence bought on the website works on up to 3 devices. Education licences have no limit.
+  - [Remove a device from your licence](https://maestro-pro.app/guide/remove-a-device/): Use the devices page on the key page to see where your licence is used and remove a device.
   - [If you have more than one licence key](https://maestro-pro.app/guide/several-licence-keys/): If you have subscribed more than once, the email lists every active key with its plan.
   - [My licence key is not working](https://maestro-pro.app/guide/licence-key-not-working/): Check the key, check it is still active, and recover it again if needed.
 - [Install with TestFlight](https://maestro-pro.app/guide/install-and-testflight/): Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store.
