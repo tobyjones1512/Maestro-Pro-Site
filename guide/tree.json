@@ -1205,7 +1205,8 @@
      "see": [
       "money-back-guarantee",
       "how-to-request-a-refund",
-      "after-the-14-days"
+      "after-the-14-days",
+      "refund-for-app-store-subscriptions"
      ],
      "children": [
       {
@@ -1245,7 +1246,30 @@
        "see": [
         "refund-timing",
         "money-back-guarantee",
-        "recover-your-licence-key"
+        "recover-your-licence-key",
+        "refund-for-app-store-subscriptions"
+       ],
+       "children": []
+      },
+      {
+       "slug": "refund-for-app-store-subscriptions",
+       "title": "Refunds for subscriptions bought in the app",
+       "summary": "If you subscribed inside the app through the App Store, Apple handles the refund, not us.",
+       "url": "https://maestro-pro.app/guide/refund-for-app-store-subscriptions/",
+       "md": "https://maestro-pro.app/guide/refund-for-app-store-subscriptions.md",
+       "keywords": [
+        "app store refund",
+        "apple refund",
+        "in-app refund",
+        "performer refund",
+        "subscribed in app",
+        "report a problem",
+        "apple account refund"
+       ],
+       "see": [
+        "manage-an-apple-subscription",
+        "how-to-request-a-refund",
+        "website-or-in-app"
        ],
        "children": []
       },

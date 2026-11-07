@@ -136,7 +136,7 @@ see: buy-on-the-website, performer-plan
 
 Buying Professional on this website is cheaper than buying the Performer plan in the app, and it includes the score editor. Performer is not sold on the website.
 
-Plans bought inside the app are subscriptions managed in your Apple Account settings. A licence bought on the website is managed with us: your key arrives by email and cancellation is requested on the [cancellation page](/cancel/).
+Plans bought inside the app are subscriptions managed in your Apple Account settings, and refunds for them are requested from [Apple](https://support.apple.com/en-us/118223). A licence bought on the website is managed with us: your key arrives by email and cancellation is requested on the [cancellation page](/cancel/).
 
 ## prices-and-currency | plans-and-pricing | Prices and currencies
 summary: Website prices are in pounds sterling or the local equivalent, and app prices show in your own currency.
@@ -150,7 +150,7 @@ summary: Performer and Professional bought in the app are managed in your Apple 
 keywords: apple subscription, manage subscription, cancel app subscription, apple account, in-app
 see: performer-plan, website-or-in-app
 
-The paid plans bought inside the app are subscriptions, managed in your Apple Account settings. That is where you change or stop them. Licences bought on the website are different: see [Refunds and cancellation](refunds-and-cancellation).
+The paid plans bought inside the app are subscriptions, managed in your Apple Account settings. That is where you change or stop them. To ask for a refund on a subscription bought in the app, see [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions). Licences bought on the website are different: see [Refunds and cancellation](refunds-and-cancellation).
 
 ## licences-and-keys | group:Plans and licences | Licences and keys
 summary: How your licence key works, how to enter it and what to do if you lose it.
@@ -256,9 +256,11 @@ The email that carries your licence key also includes the TestFlight install lin
 ## refunds-and-cancellation | group:Plans and licences | Refunds and cancellation
 summary: The 14-day money-back guarantee, and how to cancel a licence bought on the website.
 keywords: refund, cancel, cancellation, money back, guarantee, cancel licence, stop paying
-see: money-back-guarantee, how-to-request-a-refund, after-the-14-days
+see: money-back-guarantee, how-to-request-a-refund, after-the-14-days, refund-for-app-store-subscriptions
 
 Licences bought on the website have a 14-day money-back guarantee. Refunds and cancellations cannot be done by email: they are requested on the [cancellation page](/cancel/), which checks your licence key and shows exactly what will happen before anything is cancelled or charged.
+
+**Subscribed inside the app through the App Store?** Apple handles those payments, so ask Apple for the refund: [Request a refund for apps or content you bought from Apple](https://support.apple.com/en-us/118223). See [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions).
 
 ## money-back-guarantee | refunds-and-cancellation | The 14-day money-back guarantee
 summary: Ask for a full refund within 14 days of your first payment, once the payment has cleared.
@@ -272,7 +274,9 @@ When the refund is made, your licence, subscription and any future payments are 
 ## how-to-request-a-refund | refunds-and-cancellation | How to request a refund or cancel
 summary: Use the cancellation page with your licence key and follow the steps.
 keywords: request refund, how to cancel, cancel licence, cancellation page, refund request
-see: refund-timing, money-back-guarantee, recover-your-licence-key
+see: refund-timing, money-back-guarantee, recover-your-licence-key, refund-for-app-store-subscriptions
+
+This is for licences bought on this website. If you subscribed inside the app through the App Store, ask Apple instead: [request a refund from Apple](https://support.apple.com/en-us/118223).
 
 1. Have your licence key ready. If you have lost it, [recover your licence key](/key.html) first.
 2. Open the [cancellation page](/cancel/) and enter your key.
@@ -280,6 +284,19 @@ see: refund-timing, money-back-guarantee, recover-your-licence-key
 4. You may be asked why you are cancelling, then confirm.
 
 You receive a confirmation email saying the licence has been cancelled, any refund or fee, and the last day you can use the licence.
+
+## refund-for-app-store-subscriptions | refunds-and-cancellation | Refunds for subscriptions bought in the app
+summary: If you subscribed inside the app through the App Store, Apple handles the refund, not us.
+keywords: app store refund, apple refund, in-app refund, performer refund, subscribed in app, report a problem, apple account refund
+see: manage-an-apple-subscription, how-to-request-a-refund, website-or-in-app
+
+If you subscribed inside the app, Apple took the payment and Apple decides refunds, so we cannot refund it and our cancellation page will not find it. Ask Apple directly: [request a refund for apps or content you bought from Apple](https://support.apple.com/en-us/118223).
+
+Apple's page walks you through it. In short, you sign in with the Apple Account that bought the subscription, choose the purchase and say why you want a refund. Apple replies by email with its decision.
+
+To stop the subscription renewing, cancel it in your Apple Account settings. See [manage a subscription bought in the app](manage-an-apple-subscription).
+
+Not sure where you bought it? A licence key that arrived by email means you bought on this website, so use the [cancellation page](/cancel/). No key, and you subscribed on the paywall inside the app, means Apple.
 
 ## refund-timing | refunds-and-cancellation | When can I get a refund?
 summary: Refunds are made from day 8 to day 14 after the first payment, once it has cleared.
