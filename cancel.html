@@ -32,6 +32,7 @@
     <div class="notice"><p id="text"></p></div>
     <label class="field" id="why" hidden>Why are you cancelling?<textarea id="reason" maxlength="3000" aria-describedby="count"></textarea>
       <span class="hint" id="count">Please tell us in at least 20 words. It helps make Maestro Pro better. 0 of 20 words.</span></label>
+    <p class="skip-reason" id="skipwrap" hidden><button type="button" class="linkbtn" id="skip">I don&rsquo;t want to</button></p>
     <button class="pay__btn" id="confirm" type="button" hidden disabled>Confirm cancellation</button>
     <button class="pay__btn pay__btn--ghost" id="keep" type="button" hidden>Keep my licence</button>
   </div>
@@ -57,7 +58,7 @@ function call(body) {
 function words() { return ($("reason").value.match(/[\p{L}\p{N}]+/gu) || []).length; }
 function sync() { var n = words(); $("count").textContent = "Please tell us in at least 20 words. It helps make Maestro Pro better. " + Math.min(n, 20) + " of 20 words."; $("confirm").disabled = n < 20; }
 $("reason").addEventListener("input", sync);
-function reset() { $("why").hidden = true; $("reason").value = ""; sync(); state = null; $("result").hidden = true; $("confirm").hidden = true; $("keep").hidden = true; $("check").hidden = false; $("key").readOnly = false; }
+function reset() { $("why").hidden = true; $("skipwrap").hidden = true; $("reason").value = ""; sync(); state = null; $("result").hidden = true; $("confirm").hidden = true; $("keep").hidden = true; $("check").hidden = false; $("key").readOnly = false; }
 function err(m) { $("msg").className = "pay__msg err"; $("msg").textContent = m; }
 $("f").addEventListener("submit", function (e) {
   e.preventDefault();
@@ -70,20 +71,23 @@ $("f").addEventListener("submit", function (e) {
     $("result").hidden = false;
     if (d.canConfirm) {
       state = { key: key, refund: d.refund, fee: d.fee };
+      $("skipwrap").hidden = !d.canSkipReason;
       $("why").hidden = false; sync(); $("confirm").hidden = false; $("keep").hidden = false; $("check").hidden = true; $("key").readOnly = true;
     } else { state = null; $("confirm").hidden = true; $("keep").hidden = true; }
   }).catch(function (x) { $("result").hidden = true; err(x.message); })
   .then(function () { $("check").disabled = false; });
 });
 $("keep").addEventListener("click", function () { reset(); $("msg").textContent = "Nothing has been changed."; });
-$("confirm").addEventListener("click", function () {
+function finish(skip) {
   if (!state) return;
-  if (words() < 20) return;
-  var b = $("confirm"); b.disabled = true; $("keep").hidden = true;
+  if (!skip && words() < 20) return;
+  var b = $("confirm"); b.disabled = true; $("skip").disabled = true; $("keep").hidden = true;
   $("msg").className = "pay__msg"; $("msg").textContent = "Cancelling. Please don't close this page...";
-  call({ key: state.key, action: "confirm", refund: state.refund, fee: state.fee, reason: $("reason").value }).then(function (d) {
+  var body = { key: state.key, action: "confirm", refund: state.refund, fee: state.fee };
+  if (skip) body.skipReason = true; else body.reason = $("reason").value;
+  call(body).then(function (d) {
     $("text").textContent = d.message; $("msg").textContent = "Done. We have emailed you a confirmation.";
-    b.hidden = true; $("why").hidden = true;
+    b.hidden = true; $("why").hidden = true; $("skipwrap").hidden = true;
     if (d.offer) {
       var o = $("offer"), t = document.createElement("p"), st = document.createElement("strong"), c = document.createElement("p"), a = document.createElement("a");
       st.textContent = d.offer.title; t.appendChild(st); t.appendChild(document.createTextNode(" " + d.offer.text));
@@ -91,8 +95,10 @@ $("confirm").addEventListener("click", function () {
       o.textContent = ""; o.appendChild(t); o.appendChild(c); o.hidden = false;
     }
     state = null;
-  }).catch(function (x) { err(x.message); b.disabled = words() < 20; $("keep").hidden = false; });
-});
+  }).catch(function (x) { err(x.message); b.disabled = words() < 20; $("skip").disabled = false; $("keep").hidden = false; });
+}
+$("confirm").addEventListener("click", function () { finish(false); });
+$("skip").addEventListener("click", function () { finish(true); });
 </script>
 </body>
 </html>
