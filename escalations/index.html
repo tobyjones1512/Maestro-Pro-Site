@@ -302,11 +302,23 @@ function composer(draft){
   var tools=el("div","tools"),tsel=el("select","field");tsel.setAttribute("aria-label","Insert a template");
   var o0=el("option",null,"Insert a template...");o0.value="";tsel.append(o0);
   TEMPLATES.forEach(function(t,i){var o=el("option",null,t[0]);o.value=i;tsel.append(o)});
+  var og=el("optgroup");og.label="Retention offers (the AI writes it, you check it)";
+  [["ai:auto","Retention offer: AI picks (\u00a35, then the \u00a32.50 final offer)"],["ai:5","Retention offer: \u00a35 a month"],["ai:2.50","Final offer: \u00a32.50 a month"]].forEach(function(x){var o=el("option",null,x[1]);o.value=x[0];og.append(o)});
+  tsel.append(og);
   tools.append(tsel);c.append(tools);
   var ta=el("textarea","field");ta.id="reply";ta.value=draft||"";ta.setAttribute("aria-label","Your reply");ta.placeholder="Write your reply. A greeting and sign-off are added for you.";
   tsel.addEventListener("change",function(){
-    if(tsel.value==="")return;var txt=TEMPLATES[+tsel.value][1];tsel.value="";
-    ta.value=ta.value.trim()?ta.value.replace(/\s+$/,"")+"\n\n"+txt:txt;ta.focus();
+    if(tsel.value==="")return;
+    function put(txt){ta.value=ta.value.trim()?ta.value.replace(/\s+$/,"")+"\n\n"+txt:txt;ta.focus()}
+    if(tsel.value.indexOf("ai:")===0){
+      var which=tsel.value.slice(3);tsel.value="";tsel.disabled=true;var m=document.getElementById("sendMsg");m.style.color="";m.textContent="Writing the offer...";
+      call("POST","",{action:"suggest",kind:"retention",id:state.cur,offer:which}).then(function(j){
+        put(j.text);m.style.color="var(--ok)";
+        m.textContent=(j.ai?"Drafted by AI":"The AI was unavailable, so this is the standard wording")+": the \u00a3"+j.offer+" offer."+(j.alreadyOffered?" This offer was already sent in this chain.":"")+" Read it before sending.";
+      }).catch(function(e){m.style.color="";m.textContent=e.message}).then(function(){tsel.disabled=false});
+      return;
+    }
+    var txt=TEMPLATES[+tsel.value][1];tsel.value="";put(txt);
   });
   c.append(ta,el("p","hint","Use **bold** for button names, start lines with 1. 2. 3. for steps, and [words](https://...) for a link. Templates are a starting point: edit them freely."));
   var gs=el("div","gsearch"),gi=el("input","field");gi.type="search";gi.placeholder="Search the guides to attach one...";gi.setAttribute("aria-label","Search guides");gi.setAttribute("autocomplete","off");
