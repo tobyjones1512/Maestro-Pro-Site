@@ -74,6 +74,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .composer{max-width:760px;margin-top:22px;border-top:1px solid var(--rule);padding-top:18px;display:grid;gap:12px}
 .composer h3{margin:0;font:700 17px var(--serif)}
 .composer textarea{min-height:170px;resize:vertical}
+.act{margin:0 0 14px;border:1px solid var(--rule);border-radius:10px}
+.act summary{cursor:pointer;padding:10px 14px;font-weight:700;font-size:14px}
+.act ul{list-style:none;margin:0;padding:0 14px 10px}
+.act li{padding:8px 0;border-top:1px solid var(--rule);font-size:13px}
+.act li .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.act li time{color:var(--brass-dim);font-variant-numeric:tabular-nums}
+.act li small{display:block;color:var(--brass-dim);margin-top:2px}
 .hint{font-size:12px;color:var(--brass-dim);margin:0}
 .guiderow{display:flex;gap:8px;flex-wrap:wrap}
 .guiderow select{flex:1;min-width:200px}
@@ -147,7 +154,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 (function(){
 var API="https://fider-feedback-api.vercel.app/api/support-admin", KEY="mp-desk";
 var $=function(id){return document.getElementById(id)};
-var state={pw:"",tab:"esc",threads:[],cur:null,thread:null,flat:[],picked:[],storage:true,timer:0};
+var state={pw:"",tab:"esc",activity:[],threads:[],cur:null,thread:null,flat:[],picked:[],storage:true,timer:0};
 try{state.pw=sessionStorage.getItem(KEY)||""}catch(e){}
 
 function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n}
@@ -220,7 +227,24 @@ function renderList(){
 function waiting(iso){return !!iso&&Date.parse(iso)>Date.now()}
 function openThread(id,quiet){
   state.cur=id;if(!quiet)$("app").setAttribute("data-open","true");
-  return call("GET","?id="+encodeURIComponent(id)).then(function(j){state.thread=j.thread;renderThread();renderList()}).catch(showErr);
+  return call("GET","?id="+encodeURIComponent(id)).then(function(j){state.thread=j.thread;state.activity=j.activity||[];renderThread();renderList()}).catch(showErr);
+}
+var ACT={refund_request:"Refund request",refund:"Refund",cancellation:"Cancellation",device_removed:"Device removed",key_resent:"Licence key email"};
+function whenFull(iso){var d=new Date(iso);return isNaN(d)?"":d.toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",second:"2-digit"})}
+function activityPanel(t){
+  var list=state.activity||[],d=document.createElement("details");d.className="act";d.open=true;
+  d.append(el("summary",null,"Account activity for "+t.customer+" ("+list.length+")"));
+  var ul=el("ul");
+  if(!list.length){var e=el("li",null,"Nothing recorded for this email address (refund requests, cancellations, device removals, licence key emails). If they wrote from a different address to the one they paid with, there will be none.");ul.append(e)}
+  list.forEach(function(a){
+    var li=el("li"),top=el("div","top"),bad=/fail|not completed/.test(a.status);
+    top.append(el("time",null,whenFull(a.at)),el("b",null,ACT[a.type]||a.type),el("span","pill"+(bad?" pill--open":a.status==="completed"?" pill--answered":""),a.status),el("span",null,a.summary));
+    li.append(top);
+    var extra=[a.detail,a.key?"Key "+a.key:""].filter(Boolean).join(" - ");
+    if(extra)li.append(el("small",null,extra));
+    ul.append(li);
+  });
+  d.append(ul);return d;
 }
 var LABEL={customer:"Customer",bot:"Support bot",toby:"You"};
 function renderThread(){
@@ -247,7 +271,7 @@ function renderThread(){
     });
     acts.append(e);
   }
-  head.append(acts);v.append(head);
+  head.append(acts);v.append(head);v.append(activityPanel(t));
   t.messages.forEach(function(m){
     var pend=m.scheduledAt&&!m.cancelled&&waiting(m.scheduledAt);
     var box=el("article","msg msg--"+m.by+(pend?" msg--pending":"")+(m.cancelled?" msg--cancelled":"")),h=el("div","msg__h");
@@ -392,6 +416,13 @@ function renderSettings(){
     tb.addEventListener("click",function(){
       tm.style.color="";tm.textContent="Sending...";tb.disabled=true;
       call("POST","",{action:"test-key-email",to:te.value}).then(function(){tm.style.color="var(--ok)";tm.textContent="Sent. Check that inbox (and its spam folder)."}).catch(function(e){tm.textContent=e.message}).then(function(){tb.disabled=false});
+    });
+    w.append(el("h2",null,"Test data"));
+    w.append(el("p","hint","Creates a made-up customer (test.customer@example.com) with an escalated refund chain and a spread of account activity, then opens it, so you can see the activity log without a real customer. Pressing it again resets that customer's log. Real test-key cancellations (MPS-TEST-...) also log here."));
+    var sr=el("div","row2"),sb=el("button","btn btn--sm","Create test data"),sm2=el("span","err");sb.type="button";sm2.setAttribute("role","status");sr.append(sb,sm2);w.append(sr);
+    sb.addEventListener("click",function(){
+      sm2.style.color="";sm2.textContent="Creating...";sb.disabled=true;
+      call("POST","",{action:"seed-test-data"}).then(function(j){return loadList().then(function(){setTab("esc");$("statusFilter").value="all";renderList();return openThread(j.id)})}).catch(function(e){sm2.textContent=e.message;sb.disabled=false});
     });
     w.append(el("h2",null,"Support bot prompt"));
     w.append(el("p","hint","This is the full instruction the bot follows for every support@ email. Keep {{LINKS}} (filled in with the allowed link names) and the final line that asks for a JSON reply with its fields, or the bot will stop working. Changes apply to the next email."));
