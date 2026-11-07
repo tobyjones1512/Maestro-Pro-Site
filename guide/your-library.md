@@ -31,5 +31,4 @@ Lyrics with Backing: choose a backing track and the app finds its timed lyrics o
 - [Lyrics with Backing](https://maestro-pro.app/guide/add-lyrics-with-backing/): Choose a backing track and the app finds its timed lyrics online for a karaoke-style screen.
 - [Keep your library in iCloud](https://maestro-pro.app/guide/icloud-library/): Your library is stored on the device and is also kept in iCloud when iCloud Drive is on.
 - [Set-lists for rehearsals and gigs](https://maestro-pro.app/guide/set-lists/): Build set-lists for a lesson, a rehearsal or a concert.
-- [Scanning paper music](https://maestro-pro.app/guide/scan-paper-music/): Scanning printed music with the camera is planned for a future update and is not in the app today.
 - [Band-in-a-Box files](https://maestro-pro.app/guide/import-band-in-a-box-files/): Band-in-a-Box files cannot be read; export MusicXML and audio from Band-in-a-Box instead.

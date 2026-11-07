@@ -24,7 +24,6 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Lyrics with Backing](https://maestro-pro.app/guide/add-lyrics-with-backing/): Choose a backing track and the app finds its timed lyrics online for a karaoke-style screen.
   - [Keep your library in iCloud](https://maestro-pro.app/guide/icloud-library/): Your library is stored on the device and is also kept in iCloud when iCloud Drive is on.
   - [Set-lists for rehearsals and gigs](https://maestro-pro.app/guide/set-lists/): Build set-lists for a lesson, a rehearsal or a concert.
-  - [Scanning paper music](https://maestro-pro.app/guide/scan-paper-music/): Scanning printed music with the camera is planned for a future update and is not in the app today.
   - [Band-in-a-Box files](https://maestro-pro.app/guide/import-band-in-a-box-files/): Band-in-a-Box files cannot be read; export MusicXML and audio from Band-in-a-Box instead.
 - [Playing a Score](https://maestro-pro.app/guide/playing-a-score/): The bar at the bottom controls playback; the toolbar and the Inspector change how it looks and sounds.
   - [Play, pause and skip](https://maestro-pro.app/guide/play-and-pause/): The bar at the bottom has Play and Pause, skip by bar and a progress bar you can drag.
@@ -188,11 +187,10 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [iPad requirements](https://maestro-pro.app/guide/ipad-requirements/): iPadOS 17 or later, covering iPad Pro, iPad Air, iPad and iPad mini generations listed here.
   - [Mac requirements](https://maestro-pro.app/guide/mac-requirements/): macOS 14 Sonoma or later, with keyboard shortcuts, multiple windows and trackpad or mouse drawing.
   - [Apple Pencil](https://maestro-pro.app/guide/apple-pencil/): Optional: any Apple Pencil that works with your iPad will do, and you do not need one to read, play, transpose or edit.
-  - [Optional extras the app can use](https://maestro-pro.app/guide/optional-extras/): Microphone, camera (planned), Apple Music, iCloud Drive, local network and the internet are all optional.
+  - [Optional extras the app can use](https://maestro-pro.app/guide/optional-extras/): Microphone, Apple Music, iCloud Drive, local network and the internet are all optional.
 - [Privacy and permissions](https://maestro-pro.app/guide/privacy-and-permissions/): What stays on your device, what permissions the app asks for, and what is ever sent anywhere.
   - [What stays on your device](https://maestro-pro.app/guide/what-stays-on-your-device/): Your library is stored in the app's folder on your device, or in your own iCloud if you turn it on.
   - [Microphone permission](https://maestro-pro.app/guide/microphone-permission/): The microphone hears whether you are playing the right note, tunes, and records you, all on the device.
-  - [Camera permission](https://maestro-pro.app/guide/camera-permission/): Scanning paper music with the camera is planned for a future update; the app does not use the camera today.
   - [Apple Music permission](https://maestro-pro.app/guide/apple-music-permission/): Apple Music is used to play a song alongside a score and show its lyrics, under your own account.
   - [Local network permission](https://maestro-pro.app/guide/local-network-permission/): Needed so devices can find each other for Play Together; messages go directly between them and are encrypted.
   - [When the app uses the internet](https://maestro-pro.app/guide/when-the-app-uses-the-internet/): Only when you ask it to: searching for scores, lyrics or singers, downloading a score, and GitHub.

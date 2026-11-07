@@ -351,11 +351,6 @@
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://maestro-pro.app/guide/scan-paper-music/</loc>
-    <lastmod>2026-11-07</lastmod>
-    <priority>0.4</priority>
-  </url>
-  <url>
     <loc>https://maestro-pro.app/guide/import-band-in-a-box-files/</loc>
     <lastmod>2026-11-07</lastmod>
     <priority>0.4</priority>
@@ -907,11 +902,6 @@
   </url>
   <url>
     <loc>https://maestro-pro.app/guide/microphone-permission/</loc>
-    <lastmod>2026-11-07</lastmod>
-    <priority>0.4</priority>
-  </url>
-  <url>
-    <loc>https://maestro-pro.app/guide/camera-permission/</loc>
     <lastmod>2026-11-07</lastmod>
     <priority>0.4</priority>
   </url>

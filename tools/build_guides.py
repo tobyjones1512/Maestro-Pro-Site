@@ -182,6 +182,10 @@ def pager(p):
     i = sibs.index(p["slug"]); a = allp[sibs[i-1]] if i > 0 else None; b = allp[sibs[i+1]] if i < len(sibs)-1 else None
     return '<div class="pager">' + (f'<a href="{path(a["slug"])}">← {esc(a["title"])}</a>' if a else "<span></span>") + (f'<a href="{path(b["slug"])}">{esc(b["title"])} →</a>' if b else "") + "</div>"
 
+# ---------- plain text of every guide, for the support assistant's search ----------
+search = {}
+def plain_text(md): return re.sub(r"\s+", " ", re.sub(r"\*\*|[#>`]", "", re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", md))).strip()
+
 # ---------- write the new pages ----------
 for slug in order:
     p = pages[slug]; top = topic_of(p)
@@ -197,6 +201,7 @@ for slug in order:
     rel = [allp[s] for s in p["see"]] + ([allp[p["parent"]]] if p["parent"] else [])
     if rel: md += "\n## Related\n" + "\n".join(f"- [{r['title']}]({url(r['slug'])})" for r in rel) + "\n"
     open(f"guide/{slug}.md", "w").write(md)
+    search[slug] = plain_text(p["title"] + ". " + p["summary"] + " " + p["body"])[:2200]
 
 # ---------- refresh the hand-written overview pages ----------
 for slug, p in overview.items():
@@ -210,6 +215,7 @@ for slug, p in overview.items():
     md = f"# {p['title']}\n\nPath: Guide > {p['group']} > {p['title']}\nURL: {url(slug)}\nSummary: {p['summary']}\n\n{md_body}\n"
     if children(slug): md += "\n## More on this topic\n" + "\n".join(f"- [{c['title']}]({url(c['slug'])}): {c['summary']}" for c in children(slug)) + "\n"
     open(f"guide/{slug}.md", "w").write(md)
+    search[slug] = plain_text(p["title"] + ". " + p["summary"] + " " + md_body)[:2200]
 
 # ---------- guide home and the all-guides page ----------
 def topic_li(t): return f'<li><a href="{path(t["slug"])}"><b>{esc(t["title"])}</b><span>{esc(t["summary"])}</span></a></li>'
@@ -244,6 +250,16 @@ for g in tree["groups"]:
         for c in t["children"]: tm.append(f"  - [{c['title']}]({c['url']}): {c['summary']}")
     tm.append("")
 open("guide/tree.md", "w").write("\n".join(tm))
+
+# ---------- remove pages that are no longer in the source ----------
+import shutil
+valid = set(OVERVIEW_GROUP) | set(order)
+for d in os.listdir("guide"):
+    full = os.path.join("guide", d)
+    if os.path.isdir(full) and d not in valid and d != "all": shutil.rmtree(full); print("removed stale page:", d)
+    if d.endswith(".md") and d[:-3] not in valid and d != "tree.md": os.remove(full); print("removed stale markdown:", d)
+
+open("guide/search.json", "w").write(json.dumps(search, ensure_ascii=False, separators=(",", ":")) + "\n")
 
 # ---------- sitemap ----------
 today = datetime.date.today().isoformat()
