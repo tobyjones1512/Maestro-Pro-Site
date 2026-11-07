@@ -13,7 +13,7 @@
 @meta backing-tracks-sound | backing track, audio, track, level, reduce vocals, built-in instrument, sound, match key
 @meta lyrics-karaoke | lyrics, karaoke, lrc, kar, cdg, syllables, words, singer
 @meta writing-editing-music | editor, edit, write, notes, rests, marks, dynamics, bars, form, medley, erase, draw, musicxml
-@meta version-history-github | version, history, branch, merge, roll back, github, save, clash
+@meta version-history-github | version, history, branch, merge, roll back, github, git, repo, repository, connect github, commit, push, save, clash
 @meta share-export-print | share, export, print, pdf, musicxml, airdrop, files, video
 @meta play-together | play together, session, join, devices, ensemble, nudge, local network, teacher
 @meta keyboard-shortcuts | keyboard, shortcut, keys, mac, command, change shortcut
@@ -98,7 +98,7 @@ Performer is a subscription you start inside the app, managed in your Apple Acco
 
 ## professional-plan | plans-and-pricing | The Professional plan
 summary: Everything, including the score editor, medleys and version history with GitHub sync.
-keywords: professional, professional plan, editor, write music, medley, version history, github sync
+keywords: professional, professional plan, editor, write music, medley, version history, github sync, github, git, repo
 see: compare-plans, buy-on-the-website, open-the-score-editor
 
 Professional includes everything, including the score editor. You can write and change music, build medleys, and keep version history with branches, merges and GitHub sync.
@@ -426,13 +426,6 @@ keywords: set list, setlist, gig, concert, rehearsal, lesson plan, playlist
 see: your-library, import-a-score
 
 Maestro Pro supports set-lists for a lesson, a rehearsal or a concert, so the pieces you need are together in the library.
-
-## scan-paper-music | your-library | Scanning paper music
-summary: Scanning printed music with the camera is planned for a future update and is not in the app today.
-keywords: scan, camera, paper music, photograph music, scan sheet music
-see: import-a-pdf, camera-permission
-
-Scanning paper music with the camera is coming in a future update. The app does not use the camera today. To use paper music now, scan it to a PDF with another app and import the PDF, and make sure the scan is straight and clear.
 
 ## import-band-in-a-box-files | your-library | Band-in-a-Box files
 summary: Band-in-a-Box files cannot be read; export MusicXML and audio from Band-in-a-Box instead.
@@ -914,14 +907,14 @@ Editing works with a finger or a Pencil. A setting, **Edit with Apple Pencil Onl
 
 ## save-a-version | version-history-github | Save a version
 summary: In the score editor, History and Save Version keep a snapshot you can return to.
-keywords: save version, snapshot, history, version, backup, save
+keywords: save version, snapshot, history, version, backup, save, git, commit, repo, repository
 see: start-a-branch, roll-back-a-version
 
 In the score editor, tap **History**. **Save Version** keeps a snapshot you can go back to. Saving in the editor also records one.
 
 ## start-a-branch | version-history-github | Start a branch to try an idea
 summary: New Branch starts a separate line of edits from now or from any earlier version.
-keywords: branch, new branch, try an idea, experiment, version branch
+keywords: branch, new branch, try an idea, experiment, version branch, git, repo, repository, branching
 see: merge-branches, save-a-version
 
 **New Branch** starts a separate line of edits, from now or from any earlier version, so you can try something without touching the main score. Switching branches first saves your unsaved edits.
@@ -935,28 +928,28 @@ see: save-a-version, start-a-branch
 
 ## merge-branches | version-history-github | Merge a branch
 summary: Merge brings another branch into the current one, bar by bar.
-keywords: merge, merge branch, combine branches, bring in changes
+keywords: merge, merge branch, combine branches, bring in changes, git, pull request, repo
 see: resolve-merge-clashes, start-a-branch
 
 **Merge** brings another branch into the current one, bar by bar. A bar changed on only one branch comes across.
 
 ## resolve-merge-clashes | version-history-github | Resolve merge clashes
 summary: A bar changed on both branches clashes, and you choose to keep yours or take theirs.
-keywords: clash, conflict, merge conflict, keep mine, take theirs, bars matched by number
+keywords: clash, conflict, merge conflict, keep mine, take theirs, bars matched by number, git, merge conflict, conflicts
 see: merge-branches
 
 A bar changed on both branches clashes, and you choose to keep yours or take theirs. Bars are matched by number, so a bar added or removed early on one branch can make the rest show as clashes.
 
 ## connect-github | version-history-github | Connect a score to GitHub
 summary: Connect a score to your own GitHub repository and push its version history there.
-keywords: github, connect github, push, repository, sync, personal access token
+keywords: github, connect github, push, repository, sync, personal access token, repo, repository, git, connect to github, link github, github repo, push to github, commit, sync
 see: github-token-safety, save-a-version
 
 You can connect a score to a GitHub repository of your own and push its whole version history there. The app talks to GitHub using a personal access token that you provide. Connecting your own GitHub repositories and adding tracks from them is included even on the Free plan; version history with GitHub sync is part of Professional. GitHub needs the internet.
 
 ## github-token-safety | version-history-github | Where your GitHub token is kept
 summary: The token is kept in your device's Keychain and sent only to GitHub.
-keywords: github token, keychain, privacy github, token safe, personal access token
+keywords: github token, keychain, privacy github, token safe, personal access token, repo, repository, git, access token, pat, credentials, login to github
 see: connect-github, privacy-and-permissions
 
 If you connect a score to a GitHub repository, the app talks to GitHub using a personal access token you provide. The token is kept in your device's Keychain and is sent only to GitHub. Pushing sends your score's versions to the repository you chose, and nothing else.
@@ -1208,12 +1201,11 @@ see: annotate-on-a-mac, edit-with-apple-pencil-only
 Apple Pencil is optional. You do not need a Pencil to read, play, transpose or edit. Any Apple Pencil that works with your iPad will do: Apple Pencil (1st generation), (2nd generation), (USB-C) or Pro. Which one your iPad takes is listed on Apple's Pencil compatibility page. Annotating on iPad uses Apple Pencil, so your finger still scrolls and taps.
 
 ## optional-extras | devices-and-compatibility | Optional extras the app can use
-summary: Microphone, camera (planned), Apple Music, iCloud Drive, local network and the internet are all optional.
-keywords: microphone, camera, apple music, icloud, local network, internet, optional, permissions list
+summary: Microphone, Apple Music, iCloud Drive, local network and the internet are all optional.
+keywords: microphone, apple music, icloud, local network, internet, optional, permissions list
 see: privacy-and-permissions, what-stays-on-your-device
 
 - Microphone for the tuner, Wait for Me and recording.
-- Camera for scanning printed music, which is coming in a future update.
 - Apple Music subscription to play along with a song and see its lyrics.
 - iCloud Drive to keep your library on all your devices.
 - Local network permission for Play Together.
@@ -1239,13 +1231,6 @@ keywords: microphone permission, mic access, allow microphone, audio privacy
 see: microphone-cannot-hear-me, record-yourself
 
 The microphone is used to hear whether you are playing the right note, to tune, and to record you. Audio is processed on the device. Recordings are saved only in your library. If the app cannot hear you, allow the microphone in the device's Settings ▸ Privacy ▸ Microphone.
-
-## camera-permission | privacy-and-permissions | Camera permission
-summary: Scanning paper music with the camera is planned for a future update; the app does not use the camera today.
-keywords: camera, camera permission, scan, camera access
-see: scan-paper-music
-
-Scanning printed music with the camera is planned for a future update. The app does not use the camera today.
 
 ## apple-music-permission | privacy-and-permissions | Apple Music permission
 summary: Apple Music is used to play a song alongside a score and show its lyrics, under your own account.

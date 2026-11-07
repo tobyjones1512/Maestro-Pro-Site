@@ -12,7 +12,7 @@ Maestro Pro runs on iPhone, iPad or Mac. iPhone Duo is supported too. Any iPhone
 - [iPad requirements](https://maestro-pro.app/guide/ipad-requirements/): iPadOS 17 or later, covering iPad Pro, iPad Air, iPad and iPad mini generations listed here.
 - [Mac requirements](https://maestro-pro.app/guide/mac-requirements/): macOS 14 Sonoma or later, with keyboard shortcuts, multiple windows and trackpad or mouse drawing.
 - [Apple Pencil](https://maestro-pro.app/guide/apple-pencil/): Optional: any Apple Pencil that works with your iPad will do, and you do not need one to read, play, transpose or edit.
-- [Optional extras the app can use](https://maestro-pro.app/guide/optional-extras/): Microphone, camera (planned), Apple Music, iCloud Drive, local network and the internet are all optional.
+- [Optional extras the app can use](https://maestro-pro.app/guide/optional-extras/): Microphone, Apple Music, iCloud Drive, local network and the internet are all optional.
 
 ## Related
 - [iPhone requirements](https://maestro-pro.app/guide/iphone-requirements/)

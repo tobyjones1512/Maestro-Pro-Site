@@ -444,25 +444,6 @@
        "children": []
       },
       {
-       "slug": "scan-paper-music",
-       "title": "Scanning paper music",
-       "summary": "Scanning printed music with the camera is planned for a future update and is not in the app today.",
-       "url": "https://maestro-pro.app/guide/scan-paper-music/",
-       "md": "https://maestro-pro.app/guide/scan-paper-music.md",
-       "keywords": [
-        "scan",
-        "camera",
-        "paper music",
-        "photograph music",
-        "scan sheet music"
-       ],
-       "see": [
-        "import-a-pdf",
-        "camera-permission"
-       ],
-       "children": []
-      },
-      {
        "slug": "import-band-in-a-box-files",
        "title": "Band-in-a-Box files",
        "summary": "Band-in-a-Box files cannot be read; export MusicXML and audio from Band-in-a-Box instead.",
@@ -872,7 +853,10 @@
         "write music",
         "medley",
         "version history",
-        "github sync"
+        "github sync",
+        "github",
+        "git",
+        "repo"
        ],
        "see": [
         "compare-plans",
@@ -2562,6 +2546,12 @@
       "merge",
       "roll back",
       "github",
+      "git",
+      "repo",
+      "repository",
+      "connect github",
+      "commit",
+      "push",
       "save",
       "clash"
      ],
@@ -2579,7 +2569,11 @@
         "history",
         "version",
         "backup",
-        "save"
+        "save",
+        "git",
+        "commit",
+        "repo",
+        "repository"
        ],
        "see": [
         "start-a-branch",
@@ -2598,7 +2592,11 @@
         "new branch",
         "try an idea",
         "experiment",
-        "version branch"
+        "version branch",
+        "git",
+        "repo",
+        "repository",
+        "branching"
        ],
        "see": [
         "merge-branches",
@@ -2635,7 +2633,10 @@
         "merge",
         "merge branch",
         "combine branches",
-        "bring in changes"
+        "bring in changes",
+        "git",
+        "pull request",
+        "repo"
        ],
        "see": [
         "resolve-merge-clashes",
@@ -2655,7 +2656,10 @@
         "merge conflict",
         "keep mine",
         "take theirs",
-        "bars matched by number"
+        "bars matched by number",
+        "git",
+        "merge conflict",
+        "conflicts"
        ],
        "see": [
         "merge-branches"
@@ -2674,7 +2678,16 @@
         "push",
         "repository",
         "sync",
-        "personal access token"
+        "personal access token",
+        "repo",
+        "repository",
+        "git",
+        "connect to github",
+        "link github",
+        "github repo",
+        "push to github",
+        "commit",
+        "sync"
        ],
        "see": [
         "github-token-safety",
@@ -2693,7 +2706,14 @@
         "keychain",
         "privacy github",
         "token safe",
-        "personal access token"
+        "personal access token",
+        "repo",
+        "repository",
+        "git",
+        "access token",
+        "pat",
+        "credentials",
+        "login to github"
        ],
        "see": [
         "connect-github",
@@ -3477,12 +3497,11 @@
       {
        "slug": "optional-extras",
        "title": "Optional extras the app can use",
-       "summary": "Microphone, camera (planned), Apple Music, iCloud Drive, local network and the internet are all optional.",
+       "summary": "Microphone, Apple Music, iCloud Drive, local network and the internet are all optional.",
        "url": "https://maestro-pro.app/guide/optional-extras/",
        "md": "https://maestro-pro.app/guide/optional-extras.md",
        "keywords": [
         "microphone",
-        "camera",
         "apple music",
         "icloud",
         "local network",
@@ -3552,23 +3571,6 @@
        "see": [
         "microphone-cannot-hear-me",
         "record-yourself"
-       ],
-       "children": []
-      },
-      {
-       "slug": "camera-permission",
-       "title": "Camera permission",
-       "summary": "Scanning paper music with the camera is planned for a future update; the app does not use the camera today.",
-       "url": "https://maestro-pro.app/guide/camera-permission/",
-       "md": "https://maestro-pro.app/guide/camera-permission.md",
-       "keywords": [
-        "camera",
-        "camera permission",
-        "scan",
-        "camera access"
-       ],
-       "see": [
-        "scan-paper-music"
        ],
        "children": []
       },

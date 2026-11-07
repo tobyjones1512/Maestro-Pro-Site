@@ -9,7 +9,6 @@ Maestro Pro has no accounts and no adverts, and it does not collect personal dat
 ## More on this topic
 - [What stays on your device](https://maestro-pro.app/guide/what-stays-on-your-device/): Your library is stored in the app's folder on your device, or in your own iCloud if you turn it on.
 - [Microphone permission](https://maestro-pro.app/guide/microphone-permission/): The microphone hears whether you are playing the right note, tunes, and records you, all on the device.
-- [Camera permission](https://maestro-pro.app/guide/camera-permission/): Scanning paper music with the camera is planned for a future update; the app does not use the camera today.
 - [Apple Music permission](https://maestro-pro.app/guide/apple-music-permission/): Apple Music is used to play a song alongside a score and show its lyrics, under your own account.
 - [Local network permission](https://maestro-pro.app/guide/local-network-permission/): Needed so devices can find each other for Play Together; messages go directly between them and are encrypted.
 - [When the app uses the internet](https://maestro-pro.app/guide/when-the-app-uses-the-internet/): Only when you ask it to: searching for scores, lyrics or singers, downloading a score, and GitHub.
