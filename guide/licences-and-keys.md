@@ -11,6 +11,7 @@ The key is emailed to the address you paid with, together with the TestFlight li
 ## More on this topic
 - [Enter your licence key in the app](https://maestro-pro.app/guide/enter-your-licence-key/): On the paywall, tap Already have a licence key? and type your key.
 - [Recover a lost licence key](https://maestro-pro.app/guide/recover-your-licence-key/): Enter the email address you paid with and the key is emailed to you.
+- [Manage your licence in the app](https://maestro-pro.app/guide/manage-your-licence-in-the-app/): With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.
 - [Use your licence on up to 3 devices](https://maestro-pro.app/guide/devices-per-licence/): A licence bought on the website works on up to 3 devices. Education licences have no limit.
 - [Remove a device from your licence](https://maestro-pro.app/guide/remove-a-device/): Use the devices page on the key page to see where your licence is used and remove a device.
 - [If you have more than one licence key](https://maestro-pro.app/guide/several-licence-keys/): If you have subscribed more than once, the email lists every active key with its plan.
@@ -20,3 +21,4 @@ The key is emailed to the address you paid with, together with the TestFlight li
 - [Enter your licence key in the app](https://maestro-pro.app/guide/enter-your-licence-key/)
 - [Recover a lost licence key](https://maestro-pro.app/guide/recover-your-licence-key/)
 - [Use your licence on up to 3 devices](https://maestro-pro.app/guide/devices-per-licence/)
+- [Manage your licence in the app](https://maestro-pro.app/guide/manage-your-licence-in-the-app/)

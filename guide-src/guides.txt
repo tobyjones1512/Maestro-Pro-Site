@@ -150,12 +150,12 @@ summary: Performer and Professional bought in the app are managed in your Apple 
 keywords: apple subscription, manage subscription, cancel app subscription, apple account, in-app
 see: performer-plan, website-or-in-app
 
-The paid plans bought inside the app are subscriptions, managed in your Apple Account settings. That is where you change or stop them. To ask for a refund on a subscription bought in the app, see [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions). Licences bought on the website are different: see [Refunds and cancellation](refunds-and-cancellation).
+The paid plans bought inside the app are subscriptions, managed in your Apple Account settings. (If your plan comes from a licence key instead, Settings shows Manage Licence: see [Manage your licence in the app](manage-your-licence-in-the-app).) That is where you change or stop them. To ask for a refund on a subscription bought in the app, see [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions). Licences bought on the website are different: see [Refunds and cancellation](refunds-and-cancellation).
 
 ## licences-and-keys | group:Plans and licences | Licences and keys
 summary: How your licence key works, how to enter it and what to do if you lose it.
 keywords: licence, license, key, licence key, activate, paywall, already have a licence key
-see: enter-your-licence-key, recover-your-licence-key, devices-per-licence
+see: enter-your-licence-key, recover-your-licence-key, devices-per-licence, manage-your-licence-in-the-app
 
 A licence bought on the website comes with a licence key. You enter the key in the app to unlock it. Maestro Pro needs a licence to be used. A licence works on up to 3 devices.
 
@@ -182,6 +182,20 @@ see: enter-your-licence-key, several-licence-keys
 Open the [key page](/key.html), enter the email address you paid with, and press **Email me my key**. If we find your payment, we email you your licence key along with the TestFlight link to install the app.
 
 The key is only ever sent to your inbox, never shown on the page. Use the email address you paid with. If nothing arrives, check your spam folder.
+
+## manage-your-licence-in-the-app | licences-and-keys | Manage your licence in the app
+summary: With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.
+keywords: manage licence, settings, remove a device, request cancellation, cancel licence, licence key settings, manage subscription
+see: remove-a-device, how-to-request-a-refund, devices-per-licence
+
+When your plan comes from a licence key, **Settings** shows **Manage Licence** in place of Manage Subscription (which is for plans bought with the App Store).
+
+Tap **Manage Licence** and choose:
+
+- **Remove A Device** opens the [devices page](/key/devices/), where you enter your key to see the devices using it and remove one. See [Remove a device from your licence](remove-a-device).
+- **Request Cancellation** opens the [cancellation page](/cancel/), which checks your key and shows what will happen before anything is cancelled or charged. See [How to request a refund or cancel](how-to-request-a-refund).
+
+Both pages open inside the app.
 
 ## devices-per-licence | licences-and-keys | Use your licence on up to 3 devices
 summary: A licence bought on the website works on up to 3 devices. Education licences have no limit.
@@ -906,11 +920,30 @@ see: editor-marks-mode, editor-bars-mode
 Tap a note (the dynamic goes at that note) or a bar (at its start), then choose ppp to fff. **Crescendo** and **Diminuendo** put a hairpin over the bar; **Longer** and **Shorter** stretch it over more bars.
 
 ## editor-bars-mode | writing-editing-music | Bars mode: repeats, adding and deleting bars
-summary: Repeat signs, adding or deleting a bar, and Expand Repeats to write a piece out as it is played.
-keywords: bars, repeat signs, add bar, delete bar, expand repeats
-see: editor-form-mode, editor-medley-mode
+summary: Repeat signs, adding a bar before or after, deleting one or several bars, and Expand Repeats to write a piece out as it is played.
+keywords: bars, repeat signs, add bar, add bar before, add bar after, delete bar, delete several bars, expand repeats
+see: editor-form-mode, editor-medley-mode, editor-context-menu
 
-**Bars** has repeat signs, and adding and deleting a bar. **Expand Repeats** writes the piece out as it is played.
+Tap a bar to choose it. **Start** and **End** put repeat signs on it (End cycles through two, three and four times). **Add Bar Before** and **Add Bar After** put an empty bar, the same length and resting in every staff, next to it. Before the first bar, the new bar takes over the key, time signature, clefs and tempo, so the piece still opens the same way. **Delete Bar** takes the chosen bar out; the last bar of a piece always stays.
+
+To delete several bars at once, touch a bar and drag across the others to choose a run of bars. The button then reads **Delete 3 Bars** (or however many you chose). Tap a single bar again to go back to choosing one.
+
+**Expand Repeats** writes the piece out as it is played.
+
+You can also touch and hold a bar for a menu with all of this. See [The touch and hold menu](editor-context-menu).
+
+## editor-context-menu | writing-editing-music | The touch and hold menu
+summary: Touch and hold a note, rest or bar in the editor for a menu of what you can do to it.
+keywords: context menu, touch and hold, long press, right click, menu, quick menu, editor shortcuts
+see: editor-bars-mode, editor-marks-mode, editor-rests-mode
+
+In the editor, touch and hold a note, a rest or a bar (or right-click on a Mac) and a menu appears. It changes with what you pressed on.
+
+- **A note:** sharp, flat, natural or back to the key signature; tie to the next note; dotted; half or twice as long; articulation (staccato, accent, tenuto, marcato, fermata); a dynamic from ppp to fff; and turn it into a rest. A tick shows what the note already has.
+- **A rest:** half or twice as long, and remove the rest.
+- **A bar:** repeat start and end, a crescendo or diminuendo over the bar, add a bar before or after, copy, cut, paste after and duplicate, and delete the bar. A note or rest menu also has a **Bar** submenu with the same choices for its bar.
+
+If you dragged across several bars in Bars or Medley mode first, the bar choices apply to all of them. The menu does not appear in Draw or Erase mode, where holding is part of drawing and erasing. Everything in it can also be done from the mode strip; the menu is a shortcut.
 
 ## editor-form-mode | writing-editing-music | Form mode: endings, jumps and tempo marks
 summary: First and second time bars, Segno, Coda, To Coda, D.C., D.S., Fine and tempo marks.
@@ -1100,6 +1133,13 @@ keywords: reset shortcuts, defaults, undo shortcut change, restore keys
 see: change-a-shortcut
 
 The arrow next to a shortcut puts it back, and **Reset All to Defaults** puts them all back.
+
+## open-the-guide-and-support | settings-accessibility | Open the guide and support from the app
+summary: Settings has Guide and Support buttons that open this website inside the app.
+keywords: guide, support, help, open guide, contact support, settings, where is help
+see: troubleshooting, provide-feedback
+
+Settings has two buttons for help: **Guide** opens this guide and **Support** opens the [support page](/support/). Both open inside the app, so you do not leave it. On a Mac, the Help menu and the Add menu on the home screen still open the short built-in help.
 
 ## appearance-light-dark | settings-accessibility | Light, dark or system appearance
 summary: Appearance is light, dark, or follows the system.
