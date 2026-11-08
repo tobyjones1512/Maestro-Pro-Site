@@ -461,13 +461,16 @@ function renderSettings(){
       call("POST","",{action:"settings",delay:{enabled:cb.checked,minMinutes:mn.value,maxMinutes:mx.value}}).then(function(){dm.style.color="var(--ok)";dm.textContent="Saved."}).catch(function(e){dm.textContent=e.message});
     });
     w.append(el("h2",null,"Licence key email"));
-    w.append(el("p","hint","Licence key emails are sent from noreply@maestro-pro.app. Send yourself a sample to check how it looks in a real inbox. The sample key in it does not work."));
+    w.append(el("p","hint","Licence key emails are sent from noreply@maestro-pro.app. Send yourself a sample to check how it looks in a real inbox. The sample key in it does not work. "Send the testing key" sends the real Professional testing key instead, which unlocks Professional in the app, so only send it to people you trust."));
     var tr=el("div","row2"),te=el("input","field");te.type="email";te.placeholder="Send the sample to...";te.setAttribute("aria-label","Send the sample licence email to");te.style.maxWidth="320px";te.autocomplete="email";
-    var tb=el("button","btn btn--sm","Send a test");tb.type="button";var tm=el("span","err");tm.setAttribute("role","status");tr.append(te,tb,tm);w.append(tr);
-    tb.addEventListener("click",function(){
-      tm.style.color="";tm.textContent="Sending...";tb.disabled=true;
-      call("POST","",{action:"test-key-email",to:te.value}).then(function(){tm.style.color="var(--ok)";tm.textContent="Sent. Check that inbox (and its spam folder)."}).catch(function(e){tm.textContent=e.message}).then(function(){tb.disabled=false});
-    });
+    var tb=el("button","btn btn--sm","Send a test");tb.type="button";var rb=el("button","btn btn--sm btn--ghost","Send the testing key");rb.type="button";var tm=el("span","err");tm.setAttribute("role","status");tr.append(te,tb,rb,tm);w.append(tr);
+    function sendKey(real,btn){
+      if(real&&!confirm("Send the working Professional testing key to "+te.value+"?"))return;
+      tm.style.color="";tm.textContent="Sending...";tb.disabled=rb.disabled=true;
+      call("POST","",{action:"test-key-email",to:te.value,real:real}).then(function(){tm.style.color="var(--ok)";tm.textContent="Sent. Check that inbox (and its spam folder)."}).catch(function(e){tm.textContent=e.message}).then(function(){tb.disabled=rb.disabled=false});
+    }
+    tb.addEventListener("click",function(){sendKey(false)});
+    rb.addEventListener("click",function(){sendKey(true)});
     w.append(el("h2",null,"Test data"));
     w.append(el("p","hint","Creates a made-up customer (test.customer@example.com) with an escalated refund chain and a spread of account activity, then opens it, so you can see the activity log without a real customer. Pressing it again resets that customer's log. Real test-key cancellations (MPS-TEST-...) also log here."));
     var sr=el("div","row2"),sb=el("button","btn btn--sm","Create test data"),sm2=el("span","err");sb.type="button";sm2.setAttribute("role","status");sr.append(sb,sm2);w.append(sr);
