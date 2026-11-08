@@ -6,6 +6,8 @@ Summary: Touch and hold a note, rest or bar in the editor for a menu of what you
 
 In the editor, touch and hold a note, a rest or a bar (or right-click on a Mac) and a menu appears. It changes with what you pressed on.
 
+The most used choices are a row of buttons at the top of the menu: for a note, sharp, flat, natural, tie, dotted and turn into a rest; for a rest, half as long, twice as long and remove; for a bar, repeat start, repeat end, add a bar after and delete (with several bars chosen in Medley mode, copy, cut, paste and delete). The full list follows.
+
 - **A note:** sharp, flat, natural or back to the key signature; tie to the next note; dotted; half or twice as long; articulation (staccato, accent, tenuto, marcato, fermata); a dynamic from ppp to fff; and turn it into a rest. A tick shows what the note already has.
 - **A rest:** half or twice as long, and remove the rest.
 - **A bar:** repeat start and end, a crescendo or diminuendo over the bar, add a bar before or after, copy, cut, paste after and duplicate, and delete the bar. A note or rest menu also has a **Bar** submenu with the same choices for its bar.

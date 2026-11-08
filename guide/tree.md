@@ -137,6 +137,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Medley mode: copy, cut and paste bars](https://maestro-pro.app/guide/editor-medley-mode/): Drag across bars to choose them, then Copy, Cut, Paste, Duplicate or Delete, or Insert from Score.
   - [Erase mode](https://maestro-pro.app/guide/editor-erase-mode/): Touch or drag over notes and rests to erase them; double-tap Apple Pencil to switch to the eraser.
   - [Draw mode](https://maestro-pro.app/guide/editor-draw-mode/): Write over the music with Apple Pencil using pen, marker, pencil and colour tools; the ink stays on the page.
+  - [Beats per bar](https://maestro-pro.app/guide/editor-beats-per-bar/): Options has Beats per Bar: 4, 3 or a custom number, chosen to match the score when the editor opens.
   - [Edit a score that came from a PDF](https://maestro-pro.app/guide/edit-a-pdf-score/): The app first reads a PDF, and the editor works on a copy of what it read.
   - [Stop a resting hand changing notes](https://maestro-pro.app/guide/edit-with-apple-pencil-only/): The setting Edit with Apple Pencil Only stops a resting hand changing notes.
 - [Version History & GitHub](https://maestro-pro.app/guide/version-history-github/): Save versions of a score, try ideas on branches, merge them back, and keep it all on GitHub.

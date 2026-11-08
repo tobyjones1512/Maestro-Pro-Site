@@ -903,7 +903,7 @@ summary: Turn a note into a rest, change a rest's length, or take a rest off the
 keywords: rests, rest length, turn note into rest, delete rest, bin
 see: editor-notes-mode, editor-erase-mode
 
-Tap a note to turn it into a rest of the chosen length. Tap a rest to select it and change its length, or use the bin to take it off the page (the bar keeps its length).
+Tap a note to turn it into a rest of the chosen length. Tap a rest to select it and change its length, or use the bin to take it off the page (the bar keeps its length). The length buttons show the rest and, under it, how many beats it lasts (4, 2, 1, ½, ¼), which tells the whole rest from the half rest. In a new, empty bar you can touch anywhere along the bar to choose its rest.
 
 ## editor-marks-mode | writing-editing-music | Marks mode: accidentals, ties and articulations
 summary: Add a sharp, flat or natural, tie notes, or give a note staccato, accent, tenuto, marcato or a fermata.
@@ -939,6 +939,8 @@ see: editor-bars-mode, editor-marks-mode, editor-rests-mode
 
 In the editor, touch and hold a note, a rest or a bar (or right-click on a Mac) and a menu appears. It changes with what you pressed on.
 
+The most used choices are a row of buttons at the top of the menu: for a note, sharp, flat, natural, tie, dotted and turn into a rest; for a rest, half as long, twice as long and remove; for a bar, repeat start, repeat end, add a bar after and delete (with several bars chosen in Medley mode, copy, cut, paste and delete). The full list follows.
+
 - **A note:** sharp, flat, natural or back to the key signature; tie to the next note; dotted; half or twice as long; articulation (staccato, accent, tenuto, marcato, fermata); a dynamic from ppp to fff; and turn it into a rest. A tick shows what the note already has.
 - **A rest:** half or twice as long, and remove the rest.
 - **A bar:** repeat start and end, a crescendo or diminuendo over the bar, add a bar before or after, copy, cut, paste after and duplicate, and delete the bar. A note or rest menu also has a **Bar** submenu with the same choices for its bar.
@@ -972,6 +974,13 @@ keywords: draw in editor, pencil drawing, ink, handwriting
 see: draw-on-a-score, editor-erase-mode
 
 Write over the music with Apple Pencil, with pen, marker, pencil and colour tools. The ink stays on the page.
+
+## editor-beats-per-bar | writing-editing-music | Beats per bar
+summary: Options has Beats per Bar: 4, 3 or a custom number, chosen to match the score when the editor opens.
+keywords: beats per bar, time signature, 4 beats, 3 beats, custom beats, bar length, metre, 3/4, 4/4
+see: editor-bars-mode, open-the-score-editor
+
+Open **Options** in the editor and choose **Beats per Bar**. The editor ticks 4, 3 or Custom to match the opening time signature of the score. Choose another and every bar in the score takes that many beats, using the same kind of beat as before (so 3 in a 4/4 score gives 3/4). Notes that run past the end of a bar are shortened, notes that start after it are cut, and short bars are filled out with rests. **Custom** asks for a number from 1 to 16. You can undo the change like any other edit.
 
 ## edit-a-pdf-score | writing-editing-music | Edit a score that came from a PDF
 summary: The app first reads a PDF, and the editor works on a copy of what it read.

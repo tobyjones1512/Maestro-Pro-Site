@@ -2616,6 +2616,29 @@
        "children": []
       },
       {
+       "slug": "editor-beats-per-bar",
+       "title": "Beats per bar",
+       "summary": "Options has Beats per Bar: 4, 3 or a custom number, chosen to match the score when the editor opens.",
+       "url": "https://maestro-pro.app/guide/editor-beats-per-bar/",
+       "md": "https://maestro-pro.app/guide/editor-beats-per-bar.md",
+       "keywords": [
+        "beats per bar",
+        "time signature",
+        "4 beats",
+        "3 beats",
+        "custom beats",
+        "bar length",
+        "metre",
+        "3/4",
+        "4/4"
+       ],
+       "see": [
+        "editor-bars-mode",
+        "open-the-score-editor"
+       ],
+       "children": []
+      },
+      {
        "slug": "edit-a-pdf-score",
        "title": "Edit a score that came from a PDF",
        "summary": "The app first reads a PDF, and the editor works on a copy of what it read.",
