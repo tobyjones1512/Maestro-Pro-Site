@@ -1,7 +1,7 @@
 {
  "site": "https://maestro-pro.app",
  "about": "Every Maestro Pro guide, grouped. Each page has an HTML url and a Markdown url.",
- "generated": "2026-11-07",
+ "generated": "2026-11-08",
  "groups": [
   {
    "title": "Start here",
@@ -991,7 +991,8 @@
      "see": [
       "enter-your-licence-key",
       "recover-your-licence-key",
-      "devices-per-licence"
+      "devices-per-licence",
+      "manage-your-licence-in-the-app"
      ],
      "children": [
       {
@@ -1031,6 +1032,28 @@
        "see": [
         "enter-your-licence-key",
         "several-licence-keys"
+       ],
+       "children": []
+      },
+      {
+       "slug": "manage-your-licence-in-the-app",
+       "title": "Manage your licence in the app",
+       "summary": "With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.",
+       "url": "https://maestro-pro.app/guide/manage-your-licence-in-the-app/",
+       "md": "https://maestro-pro.app/guide/manage-your-licence-in-the-app.md",
+       "keywords": [
+        "manage licence",
+        "settings",
+        "remove a device",
+        "request cancellation",
+        "cancel licence",
+        "licence key settings",
+        "manage subscription"
+       ],
+       "see": [
+        "remove-a-device",
+        "how-to-request-a-refund",
+        "devices-per-licence"
        ],
        "children": []
       },
@@ -2469,19 +2492,45 @@
       {
        "slug": "editor-bars-mode",
        "title": "Bars mode: repeats, adding and deleting bars",
-       "summary": "Repeat signs, adding or deleting a bar, and Expand Repeats to write a piece out as it is played.",
+       "summary": "Repeat signs, adding a bar before or after, deleting one or several bars, and Expand Repeats to write a piece out as it is played.",
        "url": "https://maestro-pro.app/guide/editor-bars-mode/",
        "md": "https://maestro-pro.app/guide/editor-bars-mode.md",
        "keywords": [
         "bars",
         "repeat signs",
         "add bar",
+        "add bar before",
+        "add bar after",
         "delete bar",
+        "delete several bars",
         "expand repeats"
        ],
        "see": [
         "editor-form-mode",
-        "editor-medley-mode"
+        "editor-medley-mode",
+        "editor-context-menu"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-context-menu",
+       "title": "The touch and hold menu",
+       "summary": "Touch and hold a note, rest or bar in the editor for a menu of what you can do to it.",
+       "url": "https://maestro-pro.app/guide/editor-context-menu/",
+       "md": "https://maestro-pro.app/guide/editor-context-menu.md",
+       "keywords": [
+        "context menu",
+        "touch and hold",
+        "long press",
+        "right click",
+        "menu",
+        "quick menu",
+        "editor shortcuts"
+       ],
+       "see": [
+        "editor-bars-mode",
+        "editor-marks-mode",
+        "editor-rests-mode"
        ],
        "children": []
       },
@@ -3150,6 +3199,27 @@
      ],
      "see": [],
      "children": [
+      {
+       "slug": "open-the-guide-and-support",
+       "title": "Open the guide and support from the app",
+       "summary": "Settings has Guide and Support buttons that open this website inside the app.",
+       "url": "https://maestro-pro.app/guide/open-the-guide-and-support/",
+       "md": "https://maestro-pro.app/guide/open-the-guide-and-support.md",
+       "keywords": [
+        "guide",
+        "support",
+        "help",
+        "open guide",
+        "contact support",
+        "settings",
+        "where is help"
+       ],
+       "see": [
+        "troubleshooting",
+        "provide-feedback"
+       ],
+       "children": []
+      },
       {
        "slug": "appearance-light-dark",
        "title": "Light, dark or system appearance",

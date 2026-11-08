@@ -22,6 +22,8 @@ OVERVIEW_GROUP = {  # the hand-written overview pages and where they sit
  "writing-editing-music": "Write and keep", "version-history-github": "Write and keep", "share-export-print": "Write and keep",
  "play-together": "Together", "keyboard-shortcuts": "Settings and help", "settings-accessibility": "Settings and help", "troubleshooting": "Settings and help"}
 esc = lambda s: html.escape(s, quote=False)
+CURP = ' aria-current="page"'
+unnum = lambda l: re.sub(r"^\d+\. ", "", l)   # outside the f-strings so this also runs on Python before 3.12
 def die(m): print("ERROR:", m); sys.exit(1)
 
 # ---------- parse the source ----------
@@ -107,7 +109,7 @@ def body_html(b):
             out.append(f"<h2>{inline_html(lines[0][4:])}</h2>"); lines = lines[1:]
             if not lines: continue
         if all(re.match(r"^- ", l) for l in lines): out.append("<ul>" + "".join(f"<li>{inline_html(l[2:])}</li>" for l in lines) + "</ul>")
-        elif all(re.match(r"^\d+\. ", l) for l in lines): out.append("<ol>" + "".join(f"<li>{inline_html(re.sub(r'^\d+\. ','',l))}</li>" for l in lines) + "</ol>")
+        elif all(re.match(r"^\d+\. ", l) for l in lines): out.append("<ol>" + "".join(f"<li>{inline_html(unnum(l))}</li>" for l in lines) + "</ol>")
         else: out.append("<p>" + "<br>".join(inline_html(l) for l in lines) + "</p>")
     return "\n".join(out)
 def body_md(b):
@@ -148,8 +150,9 @@ def head(title, desc, slug):
     return h
 def nav(current):
     cur = allp.get(current); top = topic_of(cur) if cur else None
+    CUR0 = CURP if current is None else ''
     out = ['<details class="guide__nav" open><summary>Guide topics</summary><nav aria-label="Guide">',
-           f'<a href="/guide/"{" aria-current=\"page\"" if current is None else ""}>Guide home</a>', '<a href="/guide/all/">Every guide, A to Z</a>' if current != "__all" else '<a href="/guide/all/" aria-current="page">Every guide, A to Z</a>']
+           f'<a href="/guide/"{CUR0}>Guide home</a>', '<a href="/guide/all/">Every guide, A to Z</a>' if current != "__all" else '<a href="/guide/all/" aria-current="page">Every guide, A to Z</a>']
     for g in GROUPS:
         out.append(f"<h2>{esc(g)}</h2>")
         for t in topics_in[g]:
@@ -158,7 +161,7 @@ def nav(current):
             if top and top["slug"] == t["slug"]:
                 kids = children(t["slug"])
                 if kids:
-                    out.append('<div class="sub">' + "".join(f'<a href="{path(k["slug"])}"{" aria-current=\"page\"" if current == k["slug"] else ""}>{esc(k["title"])}</a>' for k in kids) + "</div>")
+                    out.append('<div class="sub">' + "".join(f'<a href="{path(k["slug"])}"{CURP if current == k["slug"] else ""}>{esc(k["title"])}</a>' for k in kids) + "</div>")
     out.append("</nav></details>")
     return "\n".join(out)
 def breadcrumb(p):
