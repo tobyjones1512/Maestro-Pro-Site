@@ -54,6 +54,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
 - [Licences and keys](https://maestro-pro.app/guide/licences-and-keys/): How your licence key works, how to enter it and what to do if you lose it.
   - [Enter your licence key in the app](https://maestro-pro.app/guide/enter-your-licence-key/): On the paywall, tap Already have a licence key? and type your key.
   - [Recover a lost licence key](https://maestro-pro.app/guide/recover-your-licence-key/): Enter the email address you paid with and the key is emailed to you.
+  - [Manage your licence in the app](https://maestro-pro.app/guide/manage-your-licence-in-the-app/): With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.
   - [Use your licence on up to 3 devices](https://maestro-pro.app/guide/devices-per-licence/): A licence bought on the website works on up to 3 devices. Education licences have no limit.
   - [Remove a device from your licence](https://maestro-pro.app/guide/remove-a-device/): Use the devices page on the key page to see where your licence is used and remove a device.
   - [If you have more than one licence key](https://maestro-pro.app/guide/several-licence-keys/): If you have subscribed more than once, the email lists every active key with its plan.
@@ -130,7 +131,8 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Rests mode](https://maestro-pro.app/guide/editor-rests-mode/): Turn a note into a rest, change a rest's length, or take a rest off the page.
   - [Marks mode: accidentals, ties and articulations](https://maestro-pro.app/guide/editor-marks-mode/): Add a sharp, flat or natural, tie notes, or give a note staccato, accent, tenuto, marcato or a fermata.
   - [Dynamics mode](https://maestro-pro.app/guide/editor-dynamics-mode/): Put dynamics from ppp to fff on a note or bar, and crescendo or diminuendo hairpins over bars.
-  - [Bars mode: repeats, adding and deleting bars](https://maestro-pro.app/guide/editor-bars-mode/): Repeat signs, adding or deleting a bar, and Expand Repeats to write a piece out as it is played.
+  - [Bars mode: repeats, adding and deleting bars](https://maestro-pro.app/guide/editor-bars-mode/): Repeat signs, adding a bar before or after, deleting one or several bars, and Expand Repeats to write a piece out as it is played.
+  - [The touch and hold menu](https://maestro-pro.app/guide/editor-context-menu/): Touch and hold a note, rest or bar in the editor for a menu of what you can do to it.
   - [Form mode: endings, jumps and tempo marks](https://maestro-pro.app/guide/editor-form-mode/): First and second time bars, Segno, Coda, To Coda, D.C., D.S., Fine and tempo marks.
   - [Medley mode: copy, cut and paste bars](https://maestro-pro.app/guide/editor-medley-mode/): Drag across bars to choose them, then Copy, Cut, Paste, Duplicate or Delete, or Insert from Score.
   - [Erase mode](https://maestro-pro.app/guide/editor-erase-mode/): Touch or drag over notes and rests to erase them; double-tap Apple Pencil to switch to the eraser.
@@ -167,6 +169,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Change a shortcut](https://maestro-pro.app/guide/change-a-shortcut/): In Settings under Keyboard Shortcuts, click a shortcut and press the keys you want instead.
   - [Put shortcuts back](https://maestro-pro.app/guide/reset-shortcuts/): The arrow beside a shortcut resets it, and Reset All to Defaults resets them all.
 - [Settings & Accessibility](https://maestro-pro.app/guide/settings-accessibility/): Settings has the choices that apply everywhere.
+  - [Open the guide and support from the app](https://maestro-pro.app/guide/open-the-guide-and-support/): Settings has Guide and Support buttons that open this website inside the app.
   - [Light, dark or system appearance](https://maestro-pro.app/guide/appearance-light-dark/): Appearance is light, dark, or follows the system.
   - [Highlight colour](https://maestro-pro.app/guide/highlight-colour/): Highlight Colour chooses the colour that lights up playing notes; the toolbar uses your accent colour.
   - [Customise every colour](https://maestro-pro.app/guide/customise-every-colour/): Advanced mode has Customise Every Colour.

@@ -16,7 +16,7 @@ Marks: tap a note, then add a sharp, flat or natural, tie it to the next note, o
 
 Dynamics: tap a note (the dynamic goes at that note) or a bar (at its start), then choose ppp to fff. Crescendo and Diminuendo put a hairpin over the bar; Longer and Shorter stretch it over more bars.
 
-Bars: repeat signs, and adding or deleting a bar. Expand Repeats writes the piece out as it is played.
+Bars: repeat signs, adding a bar before or after, and deleting one bar or several (drag across them to choose a run). Expand Repeats writes the piece out as it is played. Touch and hold a note, rest or bar for a menu of what you can do to it.
 
 Form: first and second time bars, jumps (Segno, Coda, To Coda, D.C., D.S., Fine) and tempo marks.
 
@@ -33,7 +33,8 @@ Draw: write over the music with Apple Pencil, with pen, marker, pencil and colou
 - [Rests mode](https://maestro-pro.app/guide/editor-rests-mode/): Turn a note into a rest, change a rest's length, or take a rest off the page.
 - [Marks mode: accidentals, ties and articulations](https://maestro-pro.app/guide/editor-marks-mode/): Add a sharp, flat or natural, tie notes, or give a note staccato, accent, tenuto, marcato or a fermata.
 - [Dynamics mode](https://maestro-pro.app/guide/editor-dynamics-mode/): Put dynamics from ppp to fff on a note or bar, and crescendo or diminuendo hairpins over bars.
-- [Bars mode: repeats, adding and deleting bars](https://maestro-pro.app/guide/editor-bars-mode/): Repeat signs, adding or deleting a bar, and Expand Repeats to write a piece out as it is played.
+- [Bars mode: repeats, adding and deleting bars](https://maestro-pro.app/guide/editor-bars-mode/): Repeat signs, adding a bar before or after, deleting one or several bars, and Expand Repeats to write a piece out as it is played.
+- [The touch and hold menu](https://maestro-pro.app/guide/editor-context-menu/): Touch and hold a note, rest or bar in the editor for a menu of what you can do to it.
 - [Form mode: endings, jumps and tempo marks](https://maestro-pro.app/guide/editor-form-mode/): First and second time bars, Segno, Coda, To Coda, D.C., D.S., Fine and tempo marks.
 - [Medley mode: copy, cut and paste bars](https://maestro-pro.app/guide/editor-medley-mode/): Drag across bars to choose them, then Copy, Cut, Paste, Duplicate or Delete, or Insert from Score.
 - [Erase mode](https://maestro-pro.app/guide/editor-erase-mode/): Touch or drag over notes and rests to erase them; double-tap Apple Pencil to switch to the eraser.
