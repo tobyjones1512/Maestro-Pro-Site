@@ -241,6 +241,13 @@ export default async function handler(req, res) {
 
     if (b.action === "status") {
       if (!["open", "answered", "done"].includes(b.status)) return res.status(400).json({ error: "Bad status." });
+      // Marking a customer's chain done tells them the case is closed, with its case number, exactly as "Send & mark as done" does (`silent` skips the email).
+      if (b.status === "done" && thread.status !== "done" && b.silent !== true && thread.messages.some((m) => m.dir === "in")) {
+        if (thread.heldReply) return res.status(409).json({ error: "A reply is waiting for its files to be scanned. Cancel it first." });
+        const caseNumber = await assignCase(thread);
+        try { return res.status(200).json({ ok: true, emailed: true, thread: await sendDeskReply(thread, { text: `We've now closed your case, number ${caseNumber}. Thank you for getting in touch, and for your patience.`, close: true }) }); }
+        catch (e) { if (e.status) return res.status(e.status).json({ error: e.message }); throw e; }
+      }
       thread.status = b.status; thread.updatedAt = new Date().toISOString();
       await saveThread(thread);
       return res.status(200).json({ ok: true, thread });
