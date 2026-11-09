@@ -16,8 +16,8 @@
 //   ADMIN_PASSWORD          the password for the desk page (api/support-admin.js). ESCALATIONS_FROM optional, default "Maestro Pro Escalations <escalations@maestro-pro.app>".
 import crypto from "node:crypto";
 import { gc, customersByEmail } from "./_gc.js";
-import { recordMessage, threadId, loadSettings, findCase } from "./_threads.js";
-import { ingestInbound, queueScans } from "./_attachments.js";
+import { recordMessage, threadId, loadSettings, findCase, loadThread, saveThread } from "./_threads.js";
+import { ingestInbound, queueScans, setNoticeSender, settleScans } from "./_attachments.js";
 
 export const config = { api: { bodyParser: false } }; // the signature is over the exact bytes Resend sent
 
@@ -497,6 +497,25 @@ export const send = (payload, idem) =>
     body: JSON.stringify(payload),
   });
 
+// ---- The email to the owner about an escalation. If the customer's message has attachments, it is held until every file has a virus-scan result
+// (see releaseNotice in _attachments.js) and then includes those results.
+const scanWord = (f) => ({ clean: "virus-free", flagged: `FLAGGED by ${(f.scan.malicious || 0) + (f.scan.suspicious || 0)} VirusTotal engine(s), do not open`, unscanned: "not scanned", error: "scan failed", toolarge: "too large to scan" }[f.scan?.status] || "unknown");
+setNoticeSender(async (n, files) => {
+  const list = files.length ? `\n\nAttachments (${files.length}), checked with VirusTotal:\n${files.map((f) => `- ${f.name} (${Math.max(1, Math.round((f.size || 0) / 1024))} KB): ${scanWord(f)}`).join("\n")}` : "";
+  const r = await send({ from: FROM(), to: [OWNER], ...n.payload, text: n.payload.text + list }, n.idem);
+  if (!r.ok) throw new Error("Resend " + r.status);
+});
+/** Emails the owner now, or holds the email (on the thread) if the message has files still to be scanned. payload: { reply_to, subject, text }. */
+async function noticeOwner({ tid, msgKey, payload, idem }) {
+  let t = null;
+  try { t = await loadThread(tid); } catch { /* no store: send straight away */ }
+  const files = t?.messages.find((m) => m.key === msgKey)?.attachments || [];
+  if (!files.length) return send({ from: FROM(), to: [OWNER], ...payload }, idem);
+  t.pendingNotice = { msgKey, payload, idem, at: new Date().toISOString() };
+  await saveThread(t);
+  await settleScans(tid, 6000);   // files VirusTotal already knows are done within seconds; the rest go out when their scans finish
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only." });
   const raw = await readRaw(req);
@@ -589,11 +608,11 @@ export default async function handler(req, res) {
     } catch (e) { console.error("thread store", e?.message); }
 
     if (escalate) {
-      await send({
-        from: FROM(), to: [OWNER], reply_to: addr(from),
+      await noticeOwner({ tid, msgKey: id, idem: `support-escalate-${id}`, payload: {
+        reply_to: addr(from),
         subject: `Escalation raised: ${subject}`,
         text: `An escalation has been raised (${verdict.reason.toLowerCase()}).\n\nOpen it and reply: ${deskLink(tid)}\n\nFrom: ${from}\nSubject: ${subject}\n\n${body}\n\n---\nThe assistant told the customer it was escalating, and said:\n${safe}`,
-      }, `support-escalate-${id}`).catch(() => {});
+      } }).catch(() => {});
     }
     res.status(200).json({ ok: true, escalated: escalate });
   } catch (err) {
@@ -619,7 +638,7 @@ async function reopenCase({ res, id, from, subject, body, msgId, hit }) {
     catch (e) { console.error("thread store", e?.message); }
     const mail = buildEmail({ name: firstName(from), reply: text, contact: ESCALATIONS, aiNotice: false });
     await send({ from: FROM(), to: [addr(from)], reply_to: ESCALATIONS, subject: /^re:/i.test(subject) ? subject : `Re: ${subject}`, text: mail.text, html: mail.html, ...(msgId && { headers: { "In-Reply-To": msgId, References: msgId } }) }, `support-reopen-${id}`);
-    await send({ from: FROM(), to: [OWNER], reply_to: addr(from), subject: `Escalation raised: case ${hit.caseNumber} re-opened`, text: `A customer has asked to re-open case ${hit.caseNumber}.\n\nOpen it and reply: ${deskLink(tid)}\n\nFrom: ${from}\nSubject: ${subject}\n\n${body}` }, `support-reopen-notice-${id}`).catch(() => {});
+    await noticeOwner({ tid, msgKey: id, idem: `support-reopen-notice-${id}`, payload: { reply_to: addr(from), subject: `Escalation raised: case ${hit.caseNumber} re-opened`, text: `A customer has asked to re-open case ${hit.caseNumber}.\n\nOpen it and reply: ${deskLink(tid)}\n\nFrom: ${from}\nSubject: ${subject}\n\n${body}` } }).catch(() => {});
     return res.status(200).json({ ok: true, escalated: true, reopened: hit.caseNumber });
   } catch (err) {
     console.error(err);
@@ -640,11 +659,11 @@ async function deskInbound(evt, res) {
     const tid = threadId(addr(from), subject);
     try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", text: body, msgId: evt.data.message_id || full.message_id, ...(attachments.length && { attachments }) }, escalate: { reason: "Customer wrote to the escalations address" } }); await queueScans(tid, attachments); }
     catch (e) { console.error("thread store", e?.message); }
-    await send({
-      from: FROM(), to: [OWNER], reply_to: addr(from),
+    await noticeOwner({ tid, msgKey: id, idem: `support-desk-${id}`, payload: {
+      reply_to: addr(from),
       subject: `Escalation raised: ${subject}`,
       text: `An escalation has been raised.\n\nOpen it and reply: ${deskLink(tid)}\n\nFrom: ${from}\nSubject: ${subject}\n\n${body}`,
-    }, `support-desk-${id}`);
+    } });
     res.status(200).json({ ok: true, escalated: true });
   } catch (err) {
     console.error(err);
