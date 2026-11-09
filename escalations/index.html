@@ -649,7 +649,11 @@ function renderSettings(){
   }).catch(showErr);
 }
 function setStatus(s){
-  call("POST","",{action:"status",id:state.cur,status:s}).then(function(j){state.thread=j.thread;renderThread();loadList()}).catch(showErr);
+  var silent=false;
+  if(s==="done"&&state.thread&&state.thread.status!=="done"&&(state.thread.messages||[]).some(function(m){return m.dir==="in"})){
+    if(!confirm("Mark this done? The customer will be emailed that their case is closed, with its case number."))return;
+  }
+  call("POST","",{action:"status",id:state.cur,status:s,silent:silent}).then(function(j){state.thread=j.thread;renderThread();loadList()}).catch(showErr);
 }
 function loadGuides(){
   return fetch("/guide/tree.json").then(function(r){return r.json()}).then(function(t){
