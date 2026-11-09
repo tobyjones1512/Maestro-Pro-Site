@@ -632,7 +632,7 @@ export async function answerEmail(job) {
   // A business enquiry is passed to toby@ (and so on to the owner) and gets no reply from the bot.
   const passOn = async (why) => {
     const { forwardInbound } = await import("./_toby.js");
-    await forwardInbound({ data: { email_id: id, from, subject, message_id: msgId } });
+    await forwardInbound({ data: { email_id: id, from, subject, message_id: msgId } }, { forceForward: true });   // forceForward: never sent back to the bot
     console.log(JSON.stringify({ evt: "support-business", id, why }));
     return { escalated: false, forwarded: true };
   };
@@ -766,15 +766,22 @@ export default async function handler(req, res) {
   }
   if (to.includes("toby@maestro-pro.app")) {
     let out = { ok: false };
-    try { out = await (await import("./_toby.js")).forwardInbound(evt); }
+    try { out = await (await import("./_toby.js")).forwardInbound(evt, { forceForward: to.includes(SUPPORT) }); }
     catch (e) { console.error("toby forward", e); await send({ from: FROM(), to: [OWNER], subject: `Email to toby@ could not be forwarded`, text: `An email to toby@maestro-pro.app could not be forwarded (${String(e?.message).slice(0, 100)}). Open it in the Resend dashboard: email ${id}.\n\nFrom: ${evt.data.from || ""}\nSubject: ${evt.data.subject || ""}` }, `toby-fwd-fail-${id}`).catch(() => {}); }
     if (!to.includes(SUPPORT)) return res.status(200).json(out);
   }
   if (!to.includes(SUPPORT)) return res.status(200).json({ ok: true, ignored: "recipient" });
 
+  return supportMail(evt, res);
+}
+
+/** The support@ pipeline for one received email: ignore robots, re-open a closed case, or have the bot answer (after any files are virus-scanned).
+ *  `full` is the email as Resend returns it, when the caller already has it; `res` only needs status(n).json(x). */
+export async function supportMail(evt, res, full0 = null) {
+  const id = evt.data.email_id;
   const ctx = { from: evt.data.from || "", subject: evt.data.subject || "(no subject)", body: "" }; // what we can forward if anything fails
   try {
-    const full = await (await fetch(`https://api.resend.com/emails/receiving/${id}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } })).json();
+    const full = full0 || await (await fetch(`https://api.resend.com/emails/receiving/${id}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } })).json();
     const from = evt.data.from || full.from || "";
     if (shouldIgnore(from, full.headers)) return res.status(200).json({ ok: true, ignored: "automated" });
 
@@ -797,10 +804,10 @@ export default async function handler(req, res) {
     // Either way the customer gets exactly one reply, built after the files have been read.
     if ((Array.isArray(full.attachments) ? full.attachments.length > 0 : true) && await holdForScans({ id, tid, from, subject, body, msgId, job })) return res.status(200).json({ ok: true, held: true });
     const out = await answerEmail(job);
-    res.status(200).json({ ok: true, escalated: out.escalated });
+    return res.status(200).json({ ok: true, escalated: out.escalated });
   } catch (err) {
     await forwardFailure({ id, ...ctx }, err);
-    res.status(200).json({ ok: false });
+    return res.status(200).json({ ok: false });
   }
 }
 
