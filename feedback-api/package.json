@@ -1,1 +1,1 @@
-{ "name": "wwq-feedback-api", "private": true, "dependencies": { "@vercel/blob": "2.8.2" } }
+{"name":"wwq-feedback-api","private":true,"dependencies":{"@vercel/blob":"2.8.2","unpdf":"1.9.1"}}

@@ -62,10 +62,10 @@ export async function startScan(buf, name) {
 }
 
 /** Asks VirusTotal for the result of a pending scan. Returns the new scan record (the same one if it is still running). */
-export async function refreshScan(meta) {
+export async function refreshScan(meta, gapMs = POLL_EVERY_MS) {
   let scan = meta.scan || {};
   if (scan.status !== "pending") return scan;
-  if (scan.polledAt && Date.now() - Date.parse(scan.polledAt) < POLL_EVERY_MS) return scan;
+  if (scan.polledAt && Date.now() - Date.parse(scan.polledAt) < gapMs) return scan;
   scan = { ...scan, polledAt: new Date().toISOString() };
   if (!scan.analysisId) { const buf = await readBuffer(meta.path); return buf ? startScan(buf, meta.name) : { ...scan, status: "error", note: "The stored file is missing." }; }
   try {
@@ -81,16 +81,17 @@ export async function refreshScan(meta) {
 
 /** Refreshes every running scan in a thread (messages and drafts), and puts back in the queue any file that has waited too long. Returns true if anything changed.
  *  At most `max` lookups per call, and a scan is only checked every POLL_EVERY_MS, to respect VirusTotal's rate limit. */
-export async function refreshThreadScans(thread, max = 4) {
+export async function refreshThreadScans(thread, max = 4, gapMs = POLL_EVERY_MS) {
   const all = [...(thread.messages || []).flatMap((m) => m.attachments || []), ...(thread.drafts || [])];
   let changed = false;
   const stale = all.filter((m) => m.scan?.status === "queued" && Date.now() - Date.parse(m.scan.queuedAt || 0) > STALE_QUEUED_MS);
   if (stale.length) { await enqueueScans(thread.id, stale); for (const m of stale) m.scan = { ...m.scan, queuedAt: new Date().toISOString() }; changed = true; }
   for (const m of all.filter((x) => x.scan?.status === "pending").slice(0, max)) {
-    const next = await refreshScan(m);
+    const next = await refreshScan(m, gapMs);
     if (JSON.stringify(next) !== JSON.stringify(m.scan)) { m.scan = next; changed = true; }
   }
   if (await releaseNotice(thread)) changed = true;
+  if (await releaseHeldReply(thread)) changed = true;
   return changed;
 }
 
@@ -187,6 +188,7 @@ export async function processQueue() {
       m.scan = buf ? await startScan(buf, m.name) : { ...m.scan, status: "error", note: "The stored file is missing." };
       await releaseNotice(thread);
       await saveThread(thread);
+      await releaseHeldReply(thread);   // saves the thread itself if it sends
     } catch (e) { console.error("scan queue", e?.message); }
   }
   return { started: taken.take.length, waiting: taken.waiting };
@@ -215,15 +217,56 @@ export async function releaseNotice(thread) {
   return true;
 }
 
-/** Runs the queue and checks the thread's scans, a few times over `waitMs`, until its held email has gone out. Always returns; the email may still be held. */
+/** Runs the queue and checks the thread's scans, a few times over `waitMs`, until its held email and held reply have gone out. Always returns; they may still be held. */
 export async function settleScans(threadId, waitMs = 0) {
   const end = Date.now() + waitMs;
   for (;;) {
     await processQueue().catch(() => {});
     const t = await loadThread(threadId);
-    if (!t || !t.pendingNotice) return;
+    if (!t || (!t.pendingNotice && !t.heldReply)) return;
     if (await refreshThreadScans(t)) await saveThread(t);
-    if (!t.pendingNotice || Date.now() + 5000 > end) return;
+    if ((!t.pendingNotice && !t.heldReply) || Date.now() + 5000 > end) return;
     await new Promise((r) => setTimeout(r, 4000));
   }
+}
+
+/** Waits (up to `ms`) for the scans of the given files to finish, moving the queue and checking VirusTotal as it goes. Returns the thread as last saved.
+ *  Used by the support bot, which wants to read a customer's files before it replies. */
+export async function waitForScans(threadId, fileIds, ms) {
+  const end = Date.now() + ms;
+  for (;;) {
+    await processQueue().catch(() => {});
+    const t = await loadThread(threadId);
+    if (!t) return null;
+    if (await refreshThreadScans(t, 4, 6000).catch(() => false)) await saveThread(t);
+    const mine = [...(t.messages || []).flatMap((m) => m.attachments || [])].filter((m) => fileIds.includes(m.id));
+    if (mine.every((m) => SETTLED.has(m.scan?.status)) || Date.now() + 4000 > end) return t;
+    await new Promise((r) => setTimeout(r, 3000));
+  }
+}
+
+// ---- Held replies. A reply you write with files attached is accepted straight away, but if any of its files is still being scanned it is kept on the thread
+// (thread.heldReply) and sent automatically once every file is clean. If a file is flagged or its scan fails, the reply is NOT sent: it stays held
+// with a note ("blocked") until you cancel it or fix the files.
+let replySender = null;
+/** support-admin.js registers the function that sends a reply: (thread, { id, text, close, guides, attachments }) => the updated thread. */
+export const setReplySender = (fn) => { replySender = fn; };
+/** Sends the held reply if all its files are clean. Saves the thread itself when it sends. Returns true if the thread changed. */
+export async function releaseHeldReply(thread) {
+  const h = thread.heldReply;
+  if (!h || !replySender) return false;
+  const files = (h.attachments || []).map((id) => (thread.drafts || []).find((d) => d.id === id));
+  const badAt = files.findIndex((f) => !f || ["flagged", "error", "unscanned", "toolarge"].includes(f.scan?.status));
+  if (badAt >= 0) {
+    const f = files[badAt];
+    const why = !f ? "One of the attached files is no longer there." : f.scan.status === "flagged" ? `${f.name} was flagged by VirusTotal.` : `${f.name} could not be scanned (${f.scan.status === "toolarge" ? "too large" : f.scan.status}).`;
+    if (h.blocked === why) return false;
+    h.blocked = why;
+    return true;
+  }
+  const unblocked = Boolean(h.blocked); h.blocked = null;   // a failed file was rescanned: no longer blocked
+  if (files.some((f) => f.scan?.status !== "clean")) return unblocked;   // still queued or scanning
+  await saveThread(thread);   // keep the scan results, then send (which reloads the thread)
+  try { Object.assign(thread, await replySender(thread, h)); } catch (e) { console.error("held reply", e?.message); return false; }
+  return true;
 }
