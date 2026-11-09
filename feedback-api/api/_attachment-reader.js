@@ -15,7 +15,7 @@ async function describeImage(buf, type, name) {
   const r = await fetch(LLM(), {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.LLM_API_KEY}`, "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(20000),
+    signal: AbortSignal.timeout(15000),
     body: JSON.stringify({
       model: VISION_MODEL(), max_tokens: 700, temperature: 0.2,
       messages: [{ role: "user", content: [
@@ -35,21 +35,20 @@ async function pdfText(buf) {
   return String(text || "").trim();
 }
 
-/** metas: clean attachment records. Returns { read: [{ name, kind, text }], unread: [{ name, why }] }. */
+/** metas: clean attachment records. Returns { read: [{ name, kind, text }], unread: [{ name, why }] }. Images are described in parallel. */
 export async function readAttachments(metas) {
-  const read = [], unread = [];
   let images = 0;
-  for (const m of metas) {
+  const results = await Promise.all(metas.map(async (m) => {
     try {
       const type = m.type || "";
-      if (!canRead(m)) { unread.push({ name: m.name, why: IMAGE.test(type) ? "too large to read" : "this kind of file can't be read" }); continue; }
-      if (IMAGE.test(type) && images >= MAX_IMAGES) { unread.push({ name: m.name, why: "only the first few images are read" }); continue; }
+      if (!canRead(m)) return { unread: { name: m.name, why: IMAGE.test(type) ? "too large to read" : "this kind of file can't be read" } };
+      if (IMAGE.test(type) && ++images > MAX_IMAGES) return { unread: { name: m.name, why: "only the first few images are read" } };
       const buf = await readBuffer(m.path);
-      if (!buf) { unread.push({ name: m.name, why: "the stored file is missing" }); continue; }
-      if (IMAGE.test(type)) { images++; const d = await describeImage(buf, type, m.name); if (d) read.push({ name: m.name, kind: "image, described by a vision model", text: d }); else unread.push({ name: m.name, why: "the image could not be read" }); }
-      else if (PDF.test(type)) { const t = await pdfText(buf); if (t) read.push({ name: m.name, kind: "PDF text", text: t.slice(0, MAX_TEXT) }); else unread.push({ name: m.name, why: "the PDF has no readable text (it may be a scan)" }); }
-      else { const t = buf.toString("utf8").trim(); read.push({ name: m.name, kind: "text file", text: t.slice(0, MAX_TEXT) }); }
-    } catch (e) { console.error("read attachment", e?.message); unread.push({ name: m.name, why: "it could not be read" }); }
-  }
-  return { read, unread };
+      if (!buf) return { unread: { name: m.name, why: "the stored file is missing" } };
+      if (IMAGE.test(type)) { const d = await describeImage(buf, type, m.name); return d ? { read: { name: m.name, kind: "image, described by a vision model", text: d } } : { unread: { name: m.name, why: "the image could not be read" } }; }
+      if (PDF.test(type)) { const t = await pdfText(buf); return t ? { read: { name: m.name, kind: "PDF text", text: t.slice(0, MAX_TEXT) } } : { unread: { name: m.name, why: "the PDF has no readable text (it may be a scan)" } }; }
+      return { read: { name: m.name, kind: "text file", text: buf.toString("utf8").trim().slice(0, MAX_TEXT) } };
+    } catch (e) { console.error("read attachment", e?.message); return { unread: { name: m.name, why: "it could not be read" } }; }
+  }));
+  return { read: results.filter((r) => r.read).map((r) => r.read), unread: results.filter((r) => r.unread).map((r) => r.unread) };
 }

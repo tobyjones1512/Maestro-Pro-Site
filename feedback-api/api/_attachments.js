@@ -8,7 +8,7 @@
 //              "unscanned" (no API key), "error" (VirusTotal could not be reached) or "toolarge" (not stored or scanned).
 import crypto from "node:crypto";
 import { put, get, del } from "@vercel/blob";
-import { loadThread, saveThread, readVersioned, writeVersioned } from "./_threads.js";
+import { loadThread, saveThread, updateThread, readVersioned, writeVersioned } from "./_threads.js";
 
 const ACCESS = () => (process.env.BLOB_ACCESS === "public" ? "public" : "private");
 export const MAX_FILE = 25 * 1024 * 1024;          // customer files above this are not stored (VirusTotal takes up to 32 MB)
@@ -92,6 +92,7 @@ export async function refreshThreadScans(thread, max = 4, gapMs = POLL_EVERY_MS)
   }
   if (await releaseNotice(thread)) changed = true;
   if (await releaseHeldReply(thread)) changed = true;
+  if (await releasePendingBot(thread)) changed = true;
   return changed;
 }
 
@@ -189,6 +190,7 @@ export async function processQueue() {
       await releaseNotice(thread);
       await saveThread(thread);
       await releaseHeldReply(thread);   // saves the thread itself if it sends
+      await releasePendingBot(thread);
     } catch (e) { console.error("scan queue", e?.message); }
   }
   return { started: taken.take.length, waiting: taken.waiting };
@@ -205,6 +207,8 @@ let noticeSender = null;
 /** support-inbound.js registers the function that emails the owner: (notice, files) => Promise, throwing if the email could not be sent. */
 export const setNoticeSender = (fn) => { noticeSender = fn; };
 const SETTLED = new Set(["clean", "flagged", "unscanned", "error", "toolarge"]);
+/** Has this file's scan finished (whatever the result)? */
+export const isSettled = (m) => SETTLED.has(m?.scan?.status);
 /** If this thread holds a held escalation email and every file on its message has a result, sends it and clears it. Returns true if the thread changed (the caller saves it).
  *  A failed send leaves it held to try again; Resend's idempotency key stops a double send. */
 export async function releaseNotice(thread) {
@@ -223,22 +227,22 @@ export async function settleScans(threadId, waitMs = 0) {
   for (;;) {
     await processQueue().catch(() => {});
     const t = await loadThread(threadId);
-    if (!t || (!t.pendingNotice && !t.heldReply)) return;
+    if (!t || (!t.pendingNotice && !t.heldReply && !t.pendingBot)) return;
     if (await refreshThreadScans(t)) await saveThread(t);
-    if ((!t.pendingNotice && !t.heldReply) || Date.now() + 5000 > end) return;
+    if ((!t.pendingNotice && !t.heldReply && !t.pendingBot) || Date.now() + 5000 > end) return;
     await new Promise((r) => setTimeout(r, 4000));
   }
 }
 
 /** Waits (up to `ms`) for the scans of the given files to finish, moving the queue and checking VirusTotal as it goes. Returns the thread as last saved.
  *  Used by the support bot, which wants to read a customer's files before it replies. */
-export async function waitForScans(threadId, fileIds, ms) {
+export async function waitForScans(threadId, fileIds, ms, gapMs = 12000) {
   const end = Date.now() + ms;
   for (;;) {
     await processQueue().catch(() => {});
     const t = await loadThread(threadId);
     if (!t) return null;
-    if (await refreshThreadScans(t, 4, 6000).catch(() => false)) await saveThread(t);
+    if (await refreshThreadScans(t, 4, gapMs).catch(() => false)) await saveThread(t);
     const mine = [...(t.messages || []).flatMap((m) => m.attachments || [])].filter((m) => fileIds.includes(m.id));
     if (mine.every((m) => SETTLED.has(m.scan?.status)) || Date.now() + 4000 > end) return t;
     await new Promise((r) => setTimeout(r, 3000));
@@ -268,5 +272,34 @@ export async function releaseHeldReply(thread) {
   if (files.some((f) => f.scan?.status !== "clean")) return unblocked;   // still queued or scanning
   await saveThread(thread);   // keep the scan results, then send (which reloads the thread)
   try { Object.assign(thread, await replySender(thread, h)); } catch (e) { console.error("held reply", e?.message); return false; }
+  return true;
+}
+
+// ---- A support@ email whose reply is waiting for its files to be scanned. The bot answers exactly once, after every file has a result (so it can read them):
+// the webhook waits a short while, and if the scans are not done it keeps the email's details here (thread.pendingBot) and the reply is built and sent when they are.
+let botRunner = null;
+/** support-inbound.js registers the function that answers an email: (job) => Promise. It never throws. */
+export const setBotRunner = (fn) => { botRunner = fn; };
+const BOT_WAIT_MAX_MS = 15 * 60000;   // if the scans have not finished after this long (VirusTotal down?), answer anyway without those files
+/** Answers the held email if every file on it has a scan result. Returns true if the thread changed (it is reloaded into `thread`). */
+export async function releasePendingBot(thread) {
+  const p = thread.pendingBot;
+  if (!p || !botRunner) return false;
+  const files = (thread.messages || []).find((m) => m.key === p.job.id)?.attachments || [];
+  const waited = Date.now() - Date.parse(p.at || 0);
+  if (!files.every(isSettled) && waited < BOT_WAIT_MAX_MS) return false;
+  await saveThread(thread);   // keep the scan results first
+  const claimed = await updateThread(thread.id, (t) => {
+    const c = t.pendingBot;
+    if (!c || (c.claimedAt && Date.now() - Date.parse(c.claimedAt) < 3 * 60000)) return false;   // gone, or another run is on it
+    c.claimedAt = new Date().toISOString();
+    return true;
+  }).catch(() => false);
+  if (!claimed) return false;
+  const fresh = await loadThread(thread.id);
+  if (!fresh?.messages.some((m) => m.key === `bot-${p.job.id}`)) await botRunner(p.job);   // not already answered
+  await updateThread(thread.id, (t) => { t.pendingBot = null; return true; }).catch(() => {});
+  Object.assign(thread, (await loadThread(thread.id)) || {});
+  thread.pendingBot = null;
   return true;
 }
