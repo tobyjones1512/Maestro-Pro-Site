@@ -8,7 +8,7 @@ import { OFFER_P, OFFER_FINAL } from "./student-cancel.js";
 import { buildKeyEmail, KEY_FROM, KEY_SUBJECT } from "./_key-email.js";
 import { listPayments, forceRefund } from "./_force-refund.js";
 import { loadActivity, seedActivity, TEST_EMAIL } from "./_activity.js";
-import { MAX_FILES, MAX_UPLOAD, MAX_SENT_TOTAL, VIEWABLE, isClean, findMeta, makeMeta, startScan, refreshScan, refreshThreadScans, readStream, readBuffer, removeFile } from "./_attachments.js";
+import { MAX_FILES, MAX_UPLOAD, MAX_SENT_TOTAL, VIEWABLE, isClean, findMeta, makeMeta, queueScans, processQueue, refreshScan, refreshThreadScans, readStream, readBuffer, removeFile } from "./_attachments.js";
 import { loadIndex, loadThread, recordMessage, saveThread, storeReady, loadSettings, saveSettings, assignCase } from "./_threads.js";
 
 const NOREPLY = "noreply@maestro-pro.app";
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
         const t = await loadThread(req.query.id), m = t && findMeta(t, String(req.query.file));
         if (!m) return res.status(404).json({ error: "No such file." });
         if (m.scan?.status === "pending") { m.scan = await refreshScan(m); await saveThread(t); }
-        if (!isClean(m)) return res.status(403).json({ error: m.scan?.status === "flagged" ? "VirusTotal flagged this file, so it can't be opened here." : m.scan?.status === "pending" ? "VirusTotal is still scanning this file. Try again in a minute." : "This file hasn't passed a virus scan, so it can't be opened here." });
+        if (!isClean(m)) return res.status(403).json({ error: m.scan?.status === "flagged" ? "VirusTotal flagged this file, so it can't be opened here." : m.scan?.status === "pending" || m.scan?.status === "queued" ? "This file is still waiting for its virus scan. Try again in a minute." : "This file hasn't passed a virus scan, so it can't be opened here." });
         const stream = await readStream(m.path);
         if (!stream) return res.status(404).json({ error: "The stored file is missing." });
         const view = VIEWABLE.test(m.type), ascii = m.name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
@@ -107,7 +107,8 @@ export default async function handler(req, res) {
         res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
         return Readable.fromWeb(stream).pipe(res);
       }
-      if (req.query.id) { const thread = await loadThread(req.query.id); let activity = []; if (thread) { try { if (await refreshThreadScans(thread)) await saveThread(thread); } catch (e) { console.error("scan refresh", e?.message); } await addDelivery(thread); activity = await loadActivity(thread.customer).catch(() => []); } return thread ? res.status(200).json({ storage: true, thread, activity }) : res.status(404).json({ error: "No such chain." }); }
+      if (req.query.id) { const thread = await loadThread(req.query.id); let activity = []; if (thread) { try { await processQueue(); const fresh = await loadThread(thread.id); if (fresh) Object.assign(thread, fresh); if (await refreshThreadScans(thread)) await saveThread(thread); } catch (e) { console.error("scan refresh", e?.message); } await addDelivery(thread); activity = await loadActivity(thread.customer).catch(() => []); } return thread ? res.status(200).json({ storage: true, thread, activity }) : res.status(404).json({ error: "No such chain." }); }
+      await processQueue().catch((e) => console.error("scan queue", e?.message));   // the desk being open keeps the scan queue moving
       return res.status(200).json({ storage: true, threads: await loadIndex() });
     }
     if (req.method !== "POST") return res.status(405).json({ error: "GET or POST only." });
@@ -184,8 +185,11 @@ export default async function handler(req, res) {
       if (!buf.length) return res.status(400).json({ error: "That file is empty." });
       if (buf.length > MAX_UPLOAD) return res.status(413).json({ error: `That file is over ${MAX_UPLOAD / 1048576} MB, which is the most that can be attached here.` });
       if (drafts.reduce((n, d) => n + d.size, 0) + buf.length > MAX_SENT_TOTAL) return res.status(400).json({ error: "Those files add up to too much for one email." });
-      thread.drafts = [...drafts, await makeMeta(thread.id, { name: b.name, type: b.type, buf })];
+      const meta = await makeMeta(thread.id, { name: b.name, type: b.type, buf });
+      thread.drafts = [...drafts, meta];
       await saveThread(thread);
+      await queueScans(thread.id, [meta]);
+      thread.drafts = (await loadThread(thread.id))?.drafts || thread.drafts;
       return res.status(200).json({ ok: true, thread });
     }
 
@@ -199,11 +203,10 @@ export default async function handler(req, res) {
       // Try the scan again for a file whose scan failed or never ran.
       const m = findMeta(thread, String(b.file));
       if (!m || !m.path) return res.status(404).json({ error: "No such file." });
-      const buf = await readBuffer(m.path);
-      if (!buf) return res.status(404).json({ error: "The stored file is missing." });
-      m.scan = await startScan(buf, m.name);
+      m.scan = { status: "queued", sha256: m.scan?.sha256, link: m.scan?.link, queuedAt: new Date().toISOString() };
       await saveThread(thread);
-      return res.status(200).json({ ok: true, thread });
+      await queueScans(thread.id, [m]);
+      return res.status(200).json({ ok: true, thread: (await loadThread(thread.id)) || thread });
     }
 
     if (b.action === "escalate") {

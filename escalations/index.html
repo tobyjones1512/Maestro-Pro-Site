@@ -307,8 +307,8 @@ function refundPanel(t){
 var LABEL={customer:"Customer",bot:"Support bot",toby:"You"};
 function fmtSize(n){return n<1024?n+" B":n<1048576?Math.round(n/1024)+" KB":(n/1048576).toFixed(1)+" MB"}
 function scanPill(s){
-  var st=s&&s.status,txt={clean:"virus-free",pending:"scanning...",flagged:"flagged",unscanned:"not scanned",error:"scan failed",toolarge:"too large"}[st]||st||"unknown";
-  var p=el("span","pill"+(st==="clean"?" pill--answered":st==="flagged"?" pill--open":st==="pending"?" pill--wait":""),txt);if(s&&s.note)p.title=s.note;return p;
+  var st=s&&s.status,txt={clean:"virus-free",queued:"queued",pending:"scanning...",flagged:"flagged",unscanned:"not scanned",error:"scan failed",toolarge:"too large"}[st]||st||"unknown";
+  var p=el("span","pill"+(st==="clean"?" pill--answered":st==="flagged"?" pill--open":st==="pending"||st==="queued"?" pill--wait":""),txt);if(s&&s.note)p.title=s.note;return p;
 }
 var VIEW=/^(image\/(png|jpe?g|gif|webp|heic|heif)|application\/pdf|text\/plain)$/i;
 function openFile(t,m){
@@ -365,7 +365,7 @@ function renderThread(){
     v.append(box);
   });
   clearTimeout(state.scanT);
-  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&f.scan.status==="pending"})})||(t.drafts||[]).some(function(f){return f.scan&&f.scan.status==="pending"});
+  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})})||(t.drafts||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")});
   if(scanning)state.scanT=setTimeout(function(){if(state.cur===t.id)openThread(t.id,true)},6000);
   if(t.escalated)v.append(composer(draft));
   else v.append(el("p","hint","This chain was answered by the bot and has not been escalated. Use Escalate to me to take it over."));

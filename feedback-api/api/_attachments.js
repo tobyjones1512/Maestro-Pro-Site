@@ -4,15 +4,19 @@
 //
 // A file's record ("meta") lives on the message that carried it, or in thread.drafts until it is sent:
 //   { id, name, type, size, path (in the blob store), scan: { status, sha256, link, malicious, suspicious, total, analysisId, note } }
-// scan.status: "pending" (VirusTotal is still looking), "clean", "flagged" (at least one engine says malicious or suspicious),
+// scan.status: "queued" (waiting its turn: only SCANS_PER_MINUTE files are sent to VirusTotal per minute), "pending" (VirusTotal is still looking), "clean", "flagged" (at least one engine says malicious or suspicious),
 //              "unscanned" (no API key), "error" (VirusTotal could not be reached) or "toolarge" (not stored or scanned).
 import crypto from "node:crypto";
 import { put, get, del } from "@vercel/blob";
+import { loadThread, saveThread, readVersioned, writeVersioned } from "./_threads.js";
 
 const ACCESS = () => (process.env.BLOB_ACCESS === "public" ? "public" : "private");
 export const MAX_FILE = 25 * 1024 * 1024;          // customer files above this are not stored (VirusTotal takes up to 32 MB)
 export const MAX_UPLOAD = 3 * 1024 * 1024;         // a file attached to a reply: it travels as base64 inside one request (Vercel allows 4.5 MB)
 export const MAX_FILES = 10;
+export const SCANS_PER_MINUTE = 3;                // the queue lets this many files start a scan in any rolling minute (VirusTotal's free key allows 4 requests a minute)
+const POLL_EVERY_MS = 20000;                       // a running scan is checked at most this often
+const STALE_QUEUED_MS = 3 * 60000;                 // a file queued longer than this without being picked up is put back in the queue
 export const MAX_SENT_TOTAL = 20 * 1024 * 1024;    // Resend allows 40 MB per email; stay well under
 const VT = "https://www.virustotal.com/api/v3";
 const vtKey = () => process.env.VIRUSTOTAL_API_KEY;
@@ -59,8 +63,10 @@ export async function startScan(buf, name) {
 
 /** Asks VirusTotal for the result of a pending scan. Returns the new scan record (the same one if it is still running). */
 export async function refreshScan(meta) {
-  const scan = meta.scan || {};
+  let scan = meta.scan || {};
   if (scan.status !== "pending") return scan;
+  if (scan.polledAt && Date.now() - Date.parse(scan.polledAt) < POLL_EVERY_MS) return scan;
+  scan = { ...scan, polledAt: new Date().toISOString() };
   if (!scan.analysisId) { const buf = await readBuffer(meta.path); return buf ? startScan(buf, meta.name) : { ...scan, status: "error", note: "The stored file is missing." }; }
   try {
     const r = await fetch(`${VT}/analyses/${encodeURIComponent(scan.analysisId)}`, { headers: { "x-apikey": vtKey() } });
@@ -73,13 +79,16 @@ export async function refreshScan(meta) {
   } catch { return scan; }
 }
 
-/** Refreshes every pending scan in a thread (messages and drafts). Returns true if anything changed. At most `max` lookups per call, to respect VirusTotal's rate limit. */
+/** Refreshes every running scan in a thread (messages and drafts), and puts back in the queue any file that has waited too long. Returns true if anything changed.
+ *  At most `max` lookups per call, and a scan is only checked every POLL_EVERY_MS, to respect VirusTotal's rate limit. */
 export async function refreshThreadScans(thread, max = 4) {
-  const metas = [...(thread.messages || []).flatMap((m) => m.attachments || []), ...(thread.drafts || [])].filter((m) => m.scan?.status === "pending").slice(0, max);
+  const all = [...(thread.messages || []).flatMap((m) => m.attachments || []), ...(thread.drafts || [])];
   let changed = false;
-  for (const m of metas) {
+  const stale = all.filter((m) => m.scan?.status === "queued" && Date.now() - Date.parse(m.scan.queuedAt || 0) > STALE_QUEUED_MS);
+  if (stale.length) { await enqueueScans(thread.id, stale); for (const m of stale) m.scan = { ...m.scan, queuedAt: new Date().toISOString() }; changed = true; }
+  for (const m of all.filter((x) => x.scan?.status === "pending").slice(0, max)) {
     const next = await refreshScan(m);
-    if (next.status !== m.scan.status || next.analysisId !== m.scan.analysisId) { m.scan = next; changed = true; }
+    if (JSON.stringify(next) !== JSON.stringify(m.scan)) { m.scan = next; changed = true; }
   }
   return changed;
 }
@@ -104,11 +113,12 @@ export async function readBuffer(path) {
 }
 export const removeFile = (path) => del(path).catch(() => {});
 
-/** Stores a buffer and starts its scan: the record for a message or a draft. */
+/** Stores a buffer: the record for a message or a draft. Its scan is "queued"; the caller saves it, then calls queueScans. */
 export async function makeMeta(threadId, { name, type, buf, inline }) {
   const meta = { id: newId(), name: safeName(name), type: String(type || "").slice(0, 100), size: buf.length, ...(inline && { inline: true }) };
   meta.path = await storeFile(threadId, meta.name, buf);
-  meta.scan = await startScan(buf, meta.name);
+  const sha = sha256(buf);
+  meta.scan = { status: "queued", sha256: sha, link: `https://www.virustotal.com/gui/file/${sha}`, queuedAt: new Date().toISOString() };   // scanned in turn by the queue, once the caller has saved it
   return meta;
 }
 
@@ -136,4 +146,51 @@ export async function ingestInbound(emailId, threadId) {
     }
   } catch (e) { console.error("attachments", e?.message); }
   return out;
+}
+
+// ---- The scan queue. One small JSON file: the files waiting, and when the last scans started. Only SCANS_PER_MINUTE files start in any rolling minute;
+// the rest wait. Anyone can run the queue (a new email, the desk being open): the file is updated with an ETag check so two runs never start the same file.
+const QUEUE = "support/scan-queue.json";
+async function updateQueue(change) {
+  for (let i = 0; i < 5; i++) {
+    const { data, etag } = await readVersioned(QUEUE);
+    const q = { items: data?.items || [], starts: data?.starts || [] };
+    const result = change(q);
+    if (await writeVersioned(QUEUE, q, etag)) return result;
+  }
+  throw new Error("The scan queue was busy.");
+}
+
+/** Puts files at the back of the queue (once each) and marks them queued. Call after the files are saved on their thread. */
+export async function enqueueScans(threadId, metas) {
+  const add = metas.filter((m) => m && m.id);
+  if (!add.length) return;
+  await updateQueue((q) => { for (const m of add) if (!q.items.some((x) => x.threadId === threadId && x.fileId === m.id)) q.items.push({ threadId, fileId: m.id, at: new Date().toISOString() }); });
+}
+
+/** Starts as many queued scans as this minute's allowance leaves, oldest first. Returns { started, waiting }. */
+export async function processQueue() {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return { started: 0, waiting: 0 };
+  const taken = await updateQueue((q) => {
+    const now = Date.now();
+    q.starts = q.starts.filter((t) => now - Date.parse(t) < 60000);
+    const take = q.items.splice(0, Math.max(0, SCANS_PER_MINUTE - q.starts.length));
+    for (let i = 0; i < take.length; i++) q.starts.push(new Date(now).toISOString());
+    return { take, waiting: q.items.length };
+  });
+  await Promise.all(taken.take.map(async (it) => {
+    try {
+      const thread = await loadThread(it.threadId), m = thread && findMeta(thread, it.fileId);
+      if (!m || m.scan?.status !== "queued") return;
+      const buf = await readBuffer(m.path);
+      m.scan = buf ? await startScan(buf, m.name) : { ...m.scan, status: "error", note: "The stored file is missing." };
+      await saveThread(thread);
+    } catch (e) { console.error("scan queue", e?.message); }
+  }));
+  return { started: taken.take.length, waiting: taken.waiting };
+}
+
+/** Queue freshly saved files and run the queue. Never throws. */
+export async function queueScans(threadId, metas) {
+  try { await enqueueScans(threadId, metas); await processQueue(); } catch (e) { console.error("queue scans", e?.message); }
 }
