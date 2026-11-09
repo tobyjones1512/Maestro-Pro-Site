@@ -8,7 +8,7 @@ import { OFFER_P, OFFER_FINAL } from "./student-cancel.js";
 import { buildKeyEmail, KEY_FROM, KEY_SUBJECT } from "./_key-email.js";
 import { listPayments, forceRefund } from "./_force-refund.js";
 import { loadActivity, seedActivity, TEST_EMAIL } from "./_activity.js";
-import { MAX_FILES, MAX_UPLOAD, MAX_SENT_TOTAL, VIEWABLE, isClean, findMeta, makeMeta, queueScans, processQueue, refreshScan, refreshThreadScans, readStream, readBuffer, removeFile } from "./_attachments.js";
+import { newId, setReplySender, MAX_FILES, MAX_UPLOAD, MAX_SENT_TOTAL, VIEWABLE, isClean, findMeta, makeMeta, queueScans, processQueue, refreshScan, refreshThreadScans, readStream, readBuffer, removeFile } from "./_attachments.js";
 import { loadIndex, loadThread, recordMessage, saveThread, storeReady, loadSettings, saveSettings, assignCase } from "./_threads.js";
 
 const NOREPLY = "noreply@maestro-pro.app";
@@ -71,6 +71,45 @@ export const makeResolve = (known) => (t) => {
   const x = String(t).trim();
   return /^https:\/\/[^\s"<>]+$/.test(x) ? x : LINKS[x]?.[1] || known.get(x)?.url || null;
 };
+
+const BAD_SCAN = new Set(["flagged", "error", "unscanned", "toolarge"]);
+const fail = (status, message) => Object.assign(new Error(message), { status });
+
+/** Emails the reply to the customer and records it on the chain. Every attached file must be clean. `id` (set for a held reply) makes the send and the record
+ *  idempotent, so a reply released twice at once goes out once. Returns the updated thread. Throws an error with a `status` when it can't send. */
+export async function sendDeskReply(thread, { id, text, close = false, guides: slugs = [], attachments: ids = [] }) {
+  const { pages } = await guideTree();
+  const known = new Map(pages.map((p) => [p.slug, p]));
+  const guides = [...new Set(slugs.map(String))].filter((s) => known.has(s)).slice(0, 6).map((s) => { const g = known.get(s); return { slug: s, title: g.title, url: g.url, summary: firstSentence(g.summary || "") }; });
+  // "Send & mark as done": the chain gets a unique case number, replies to the email go nowhere, and the email says how to re-open the case.
+  const caseNumber = close ? await assignCase(thread) : "";
+  if (close) await saveThread(thread);
+  const files = [];
+  for (const fid of ids) {
+    const m = (thread.drafts || []).find((d) => d.id === fid);
+    if (!m) throw fail(400, "One of the attached files is no longer there. Refresh and attach it again.");
+    if (!isClean(m)) throw fail(409, `${m.name} hasn't passed the virus scan (${m.scan?.status === "flagged" ? "VirusTotal flagged it" : m.scan?.status || "not scanned"}).`);
+    const buf = await readBuffer(m.path);
+    if (!buf) throw fail(400, `${m.name} is missing from storage. Remove it and attach it again.`);
+    files.push({ meta: m, buf });
+  }
+  const { html, text: plain } = buildEmail({ name: thread.name, reply: text, guides, attachments: files.map((f) => ({ name: f.meta.name, size: f.meta.size })), resolve: makeResolve(known), label: "Escalations", contact: close ? SUPPORT : ESCALATIONS, signoff: "Maestro Pro Escalations Team", caseNumber });
+  const lastIn = [...thread.messages].reverse().find((m) => m.dir === "in" && m.msgId)?.msgId;
+  const r = await send({
+    from: FROM(), to: [thread.customer], reply_to: close ? NOREPLY : ESCALATIONS,
+    subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,
+    text: plain, html,
+    ...(files.length && { attachments: files.map((f) => ({ filename: f.meta.name, content: f.buf.toString("base64"), ...(f.meta.type && { content_type: f.meta.type }) })) }),
+    ...(lastIn && { headers: { "In-Reply-To": lastIn, References: lastIn } }),
+  }, `desk-${thread.id}-${id || crypto.randomUUID()}`);
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok) throw fail(502, `The email could not be sent: ${String(out.message || out.error || "Resend " + r.status).slice(0, 200)}`);
+  const sent = await recordMessage({ threadKey: thread.id, customer: thread.customer, name: thread.name, subject: thread.subject, message: { key: `desk-${id || crypto.randomUUID()}`, dir: "out", by: "toby", text: plain, guides: guides.map((g) => g.title), ...(files.length && { attachments: files.map((f) => f.meta) }), ...(out.id && { resendId: out.id }), ...(offerIn(text) && { offer: offerIn(text) }), ...(close && { closed: caseNumber }) }, status: close ? "done" : "answered" });
+  if (files.length || sent.heldReply) { sent.drafts = (sent.drafts || []).filter((d) => !ids.includes(d.id)); if (!id || sent.heldReply?.id === id) sent.heldReply = null; await saveThread(sent); }
+  return sent;
+}
+// A held reply (see _attachments.js) is sent through this once its files are clean.
+setReplySender((thread, held) => sendDeskReply(thread, held));
 
 export default async function handler(req, res) {
   const origin = req.headers.origin;
@@ -194,6 +233,7 @@ export default async function handler(req, res) {
     }
 
     if (b.action === "remove-draft") {
+      if (thread.heldReply?.attachments?.includes(String(b.file))) return res.status(409).json({ error: "That file belongs to a reply waiting to be sent. Cancel the reply first." });
       const gone = (thread.drafts || []).find((d) => d.id === String(b.file));
       if (gone) { thread.drafts = thread.drafts.filter((d) => d !== gone); await saveThread(thread); await removeFile(gone.path); }
       return res.status(200).json({ ok: true, thread });
@@ -230,45 +270,35 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, ...suggestOffer(thread, String(b.offer || "auto")) });
     }
 
+    if (b.action === "cancel-held") {
+      // Take back a reply that is waiting for its files to be scanned. Its text goes back into the reply box.
+      const h = thread.heldReply;
+      if (h) { thread.heldReply = null; await saveThread(thread); }
+      return res.status(200).json({ ok: true, thread, text: h?.text || "" });
+    }
+
     if (b.action === "reply") {
       const text = String(b.text || "").replace(/\r\n/g, "\n").trim();
       if (!text) return res.status(400).json({ error: "Write a reply first." });
       if (text.length > 6000) return res.status(400).json({ error: "That reply is too long." });
       if (!thread.escalated) return res.status(400).json({ error: "Only escalated chains can be answered here." });
-      const { pages } = await guideTree();
-      const known = new Map(pages.map((p) => [p.slug, p]));
-      const guides = [...new Set([].concat(b.guides || []).map(String))].filter((s) => known.has(s)).slice(0, 6).map((s) => { const g = known.get(s); return { slug: s, title: g.title, url: g.url, summary: firstSentence(g.summary || "") }; });
-      // "Send & mark as done": the chain gets a unique case number, replies to the email go nowhere, and the email says how to re-open the case.
-      const close = b.close === true, caseNumber = close ? await assignCase(thread) : "";
-      if (close) await saveThread(thread);
-      const { html, text: plain } = buildEmail({ name: thread.name, reply: text, guides, resolve: makeResolve(known), label: "Escalations", contact: close ? SUPPORT : ESCALATIONS, signoff: "Maestro Pro Escalations Team", caseNumber });
-      // Attached files: each must be one of this chain's drafts and clean on VirusTotal right now.
-      const ids = [...new Set([].concat(b.attachments || []).map(String))];
-      const files = [];
+      if (thread.heldReply) return res.status(409).json({ error: "A reply is already waiting for its files to be scanned. Cancel it first." });
+      const ids = [...new Set([].concat(b.attachments || []).map(String))], slugs = [].concat(b.guides || []).map(String), close = b.close === true;
       if (ids.length) {
         try { if (await refreshThreadScans(thread, 10)) await saveThread(thread); } catch (e) { console.error("scan refresh", e?.message); }
-        for (const id of ids) {
-          const m = (thread.drafts || []).find((d) => d.id === id);
-          if (!m) return res.status(400).json({ error: "One of the attached files is no longer there. Refresh and attach it again." });
-          if (!isClean(m)) return res.status(409).json({ error: `${m.name} hasn't passed the virus scan (${m.scan?.status === "flagged" ? "VirusTotal flagged it" : m.scan?.status || "not scanned"}). Remove it or wait for the scan.` });
-          const buf = await readBuffer(m.path);
-          if (!buf) return res.status(400).json({ error: `${m.name} is missing from storage. Remove it and attach it again.` });
-          files.push({ meta: m, buf });
+        const files = ids.map((id) => (thread.drafts || []).find((d) => d.id === id));
+        if (files.some((f) => !f)) return res.status(400).json({ error: "One of the attached files is no longer there. Refresh and attach it again." });
+        const bad = files.find((f) => BAD_SCAN.has(f.scan?.status));
+        if (bad) return res.status(409).json({ error: `${bad.name} can't be sent (${bad.scan.status === "flagged" ? "VirusTotal flagged it" : bad.scan.status === "toolarge" ? "too large to scan" : "its scan failed"}). Remove it, or use Scan again.` });
+        if (files.some((f) => !isClean(f))) {
+          // Some files are still queued or being scanned: keep the reply and send it automatically when every file is clean.
+          thread.heldReply = { id: newId(), text, close, guides: slugs, attachments: ids, at: new Date().toISOString() };
+          await saveThread(thread);
+          return res.status(200).json({ ok: true, held: true, thread });
         }
       }
-      const lastIn = [...thread.messages].reverse().find((m) => m.dir === "in" && m.msgId)?.msgId;
-      const r = await send({
-        from: FROM(), to: [thread.customer], reply_to: close ? NOREPLY : ESCALATIONS,
-        subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,
-        text: plain, html,
-        ...(files.length && { attachments: files.map((f) => ({ filename: f.meta.name, content: f.buf.toString("base64"), ...(f.meta.type && { content_type: f.meta.type }) })) }),
-        ...(lastIn && { headers: { "In-Reply-To": lastIn, References: lastIn } }),
-      }, `desk-${thread.id}-${crypto.randomUUID()}`);
-      const out = await r.json().catch(() => ({}));
-      if (!r.ok) return res.status(502).json({ error: `The email could not be sent: ${String(out.message || out.error || "Resend " + r.status).slice(0, 200)}` });
-      const sent = await recordMessage({ threadKey: thread.id, customer: thread.customer, name: thread.name, subject: thread.subject, message: { key: `desk-${crypto.randomUUID()}`, dir: "out", by: "toby", text: plain, guides: guides.map((g) => g.title), ...(files.length && { attachments: files.map((f) => f.meta) }), ...(out.id && { resendId: out.id }), ...(offerIn(text) && { offer: offerIn(text) }), ...(close && { closed: caseNumber }) }, status: close ? "done" : "answered" });
-      if (files.length) { sent.drafts = (sent.drafts || []).filter((d) => !ids.includes(d.id)); await saveThread(sent); }
-      return res.status(200).json({ ok: true, thread: sent });
+      try { return res.status(200).json({ ok: true, thread: await sendDeskReply(thread, { text, close, guides: slugs, attachments: ids }) }); }
+      catch (e) { if (e.status) return res.status(e.status).json({ error: e.message }); throw e; }
     }
     return res.status(400).json({ error: "Unknown action." });
   } catch (err) {

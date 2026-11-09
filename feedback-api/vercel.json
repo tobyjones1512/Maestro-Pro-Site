@@ -19,7 +19,7 @@
   ],
   "functions": {
     "api/support-inbound.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/scan-sweep.js": {
       "maxDuration": 60

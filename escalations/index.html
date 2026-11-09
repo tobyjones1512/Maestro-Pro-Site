@@ -78,6 +78,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .att small{color:var(--brass-dim)}
 .att a{color:var(--brass)}
 .files{display:grid;gap:6px;padding:8px 0}
+.held{max-width:760px;margin-top:22px;border:1px solid var(--amber);border-radius:10px;background:var(--walnut-2);display:grid;gap:8px;padding:12px 0 14px}
+.held h3{margin:0;padding:0 14px;font:700 16px var(--serif)}
+.held .hint{margin:0;padding:0 14px}
+.held>button{justify-self:start;margin:0 14px}
 dialog.viewer{width:min(920px,94vw);max-height:92vh;padding:0;border:1px solid var(--rule);border-radius:14px;background:var(--walnut-2);color:var(--cream);overflow:hidden}
 dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
 .viewer__in{display:grid;grid-template-rows:auto auto 1fr;max-height:92vh}
@@ -380,6 +384,16 @@ function fileRow(t,m,draft,group){
   if(draft){var x=el("button","btn btn--ghost btn--sm","Remove");x.type="button";x.addEventListener("click",function(){x.disabled=true;call("POST","",{action:"remove-draft",id:t.id,file:m.id}).then(function(j){state.thread=j.thread;renderThread()}).catch(function(e){x.disabled=false;showErr(e)})});r.append(x)}
   return r;
 }
+function heldBanner(t){
+  var h=t.heldReply,b=el("section","held"),blocked=!!h.blocked;
+  b.append(el("h3",null,blocked?"Reply on hold: a file can't be sent":"Reply queued: it will send when every file is virus-free"));
+  b.append(el("p","hint",blocked?h.blocked+" The reply will not be sent. Cancel it to edit, remove the file or scan it again.":"Waiting for VirusTotal. This page checks every few seconds, and you can leave it: the reply sends by itself once all its files come back clean."+(h.close?" It will also close the case.":"")));
+  b.append(el("div","msg__b",h.text));
+  var fl=el("div","atts");(h.attachments||[]).forEach(function(id){var f=(t.drafts||[]).filter(function(d){return d.id===id})[0];if(f)fl.append(fileRow(t,f,false,t.drafts))});b.append(fl);
+  var c=el("button","btn btn--ghost btn--sm","Cancel and edit");c.type="button";
+  c.addEventListener("click",function(){c.disabled=true;call("POST","",{action:"cancel-held",id:t.id}).then(function(j){state.thread=j.thread;renderThread();var ta=document.getElementById("reply");if(ta&&j.text)ta.value=j.text}).catch(function(e){c.disabled=false;showErr(e)})});
+  b.append(c);return b;
+}
 function renderThread(){
   var t=state.thread,v=$("view");if(!t)return;
   var draft=document.getElementById("reply")?document.getElementById("reply").value:"";
@@ -416,8 +430,9 @@ function renderThread(){
     v.append(box);
   });
   clearTimeout(state.scanT);
-  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})})||(t.drafts||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")});
+  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})})||(t.drafts||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})||!!t.heldReply;
   if(scanning)state.scanT=setTimeout(function(){if(state.cur===t.id)openThread(t.id,true)},6000);
+  if(t.escalated&&t.heldReply)v.append(heldBanner(t));
   if(t.escalated)v.append(composer(draft));
   else v.append(el("p","hint","This chain was answered by the bot and has not been escalated. Use Escalate to me to take it over."));
 }
@@ -510,7 +525,7 @@ function composer(draft){
   var drafts=(state.thread&&state.thread.drafts)||[],fl=el("div","files"),fpick=document.createElement("input");fpick.type="file";fpick.multiple=true;fpick.hidden=true;
   var addf=el("button","btn btn--ghost btn--sm","Attach files...");addf.type="button";addf.addEventListener("click",function(){fpick.click()});
   drafts.forEach(function(d){fl.append(fileRow(state.thread,d,true,drafts))});
-  c.append(addf,fpick,fl,el("p","hint","Files up to 3 MB each. Every file is checked with VirusTotal first and can only be sent once it comes back clean."));
+  c.append(addf,fpick,fl,el("p","hint","Files up to 3 MB each. Every file is checked with VirusTotal. If you send while a scan is still running, the reply is queued and goes out automatically once every file is clean."));
   fpick.addEventListener("change",function(){
     var list=Array.prototype.slice.call(fpick.files||[]);fpick.value="";if(!list.length)return;
     var m=document.getElementById("sendMsg");addf.disabled=true;
@@ -531,13 +546,14 @@ function composer(draft){
   c.append(el("p","hint","Send & mark as done closes the case: it gets a case number, replies to that email will not be received, and the email says to contact support to re-open it."));
   function go(close){
     var text=ta.value.trim();if(!text){msg.textContent="Write a reply first.";return}
-    var waitingScan=drafts.filter(function(d){return !(d.scan&&d.scan.status==="clean")});
-    if(waitingScan.length){msg.style.color="";msg.textContent=waitingScan[0].name+" hasn't passed the virus scan yet. Wait for it, or remove it.";return}
+    var badScan=drafts.filter(function(d){var st=d.scan&&d.scan.status;return st!=="clean"&&st!=="queued"&&st!=="pending"});
+    if(badScan.length){msg.style.color="";msg.textContent=badScan[0].name+" can't be sent ("+(badScan[0].scan&&badScan[0].scan.status==="flagged"?"VirusTotal flagged it":"its scan failed or never ran")+"). Remove it, or use Scan again.";return}
+    if(state.thread&&state.thread.heldReply){msg.style.color="";msg.textContent="A reply is already queued. Cancel it first.";return}
     if(close&&!confirm("Send this reply and close the case? The customer will be given a case number, and replies to the email will not be received."))return;
     send.disabled=done.disabled=true;msg.style.color="";msg.textContent="Sending...";
     call("POST","",{action:"reply",id:state.cur,text:text,close:close,guides:state.picked.map(function(p){return p.slug}),attachments:drafts.map(function(d){return d.id})}).then(function(j){
       state.picked=[];ta.value="";state.thread=j.thread;renderThread();loadList();
-      var m=document.getElementById("sendMsg");if(m){m.style.color="var(--ok)";m.textContent=close?"Sent and closed, case "+j.thread.caseNumber+".":"Sent."}
+      var m=document.getElementById("sendMsg");if(m){m.style.color="var(--ok)";m.textContent=j.held?"Queued. It sends by itself once every file is virus-free.":close?"Sent and closed, case "+j.thread.caseNumber+".":"Sent."}
     }).catch(function(err){send.disabled=done.disabled=false;msg.style.color="";msg.textContent=err.message});
   }
   c.addEventListener("submit",function(e){e.preventDefault();go(false)});
