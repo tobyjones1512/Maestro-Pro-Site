@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["3KXHDYVY73.com.tobyjones.PlayAlong"],
+        "components": [
+          { "/": "/open/*", "comment": "Links that open Maestro Pro, e.g. the student discount" }
+        ]
+      }
+    ]
+  }
+}
