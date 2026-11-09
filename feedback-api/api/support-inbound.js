@@ -82,9 +82,12 @@ Rules:
 - Do not write any URLs yourself; use the links and pages fields.
 - Escalating to a person is rare. Always try to help yourself: answer from the facts and excerpts, give the right link, or ask the customer one or two short clarifying questions (which device, which iOS or macOS version, what exactly they see, what they tapped) when you lack detail. Set escalate to true ONLY when the customer is making a complaint: they are expressing real dissatisfaction or frustration with the app, the service, a charge, or how they have been treated, and want it put right. Do NOT escalate for anything else: not for bugs, technical problems, billing questions, legal, privacy or data requests, unusual questions, things you are unsure about, or questions you cannot answer. Ask clarifying questions instead. (A customer who has replied twice in the same conversation is escalated automatically, except on refund, licence key and TestFlight questions, so you never need to decide that.) If you escalate, still fill "issue".
 - Set refund_problem to true ONLY when the customer says a refund has not come through, has not arrived yet, or is wrong in some way (wrong amount, taken twice, charged after cancelling). A customer who is simply asking how to get a refund or cancel is NOT a refund problem: send them to the cancellation page. Otherwise leave refund_problem false.
+- Set business to true ONLY when the email is a business enquiry that is not about using or buying Maestro Pro: a partnership, sponsorship, advertising or press request, a reseller, distribution, licensing or investment approach, a collaboration or hiring proposal, or a sales pitch for another company's product or service. A customer's own question, a refund, a licence key, a bug, feedback, or an Education licence purchase is NOT a business enquiry. When business is true, reply may be empty because nobody writes back; the email is passed to the owner.
 - "issue" (base it on the whole conversation) is a short lower-case phrase that finishes the sentence "I'm sorry to hear ...", for example "that the tuner can't hear you" or "you can't access your account". No full stop, no URLs, under 100 characters. It is only used if you escalate.
-Reply with only JSON: {"reply": string, "pages": string[], "links": string[], "escalate": boolean, "refund_problem": boolean, "issue": string, "evidence": "guide" | "code" | "facts" | "none"}. "evidence" is where your answer came from ("none" only if you made no claim about the app). Allowed links: {{LINKS}}.`;
-export const promptFor = (custom) => String(custom || DEFAULT_PROMPT).replaceAll("{{LINKS}}", Object.keys(LINKS).join(", "));
+Reply with only JSON: {"reply": string, "pages": string[], "links": string[], "escalate": boolean, "refund_problem": boolean, "business": boolean, "issue": string, "evidence": "guide" | "code" | "facts" | "none"}. "evidence" is where your answer came from ("none" only if you made no claim about the app). Allowed links: {{LINKS}}.`;
+// A prompt saved on the desk before the business-enquiry rule existed gets the rule added, so the model always knows about the field.
+const BUSINESS_RULE = DEFAULT_PROMPT.split("\n").find((l) => l.startsWith("- Set business to true")) || "";
+export const promptFor = (custom) => { let p = String(custom || DEFAULT_PROMPT); if (custom && !/\bbusiness\b.*\btrue\b/i.test(p)) p += `\n${BUSINESS_RULE}\n(Also add "business": boolean to the JSON.)`; return p.replaceAll("{{LINKS}}", Object.keys(LINKS).join(", ")); };
 
 // ---- Reference material: the guide's tree (guide/tree.json) and Markdown pages (guide/<slug>.md) on the website, cached for an hour.
 // Pages are picked by matching the email against each page's title, keywords and summary, so only a few short pages are sent to the model.
@@ -503,6 +506,9 @@ export function shouldEscalate({ replies = 0, complaint = false, links = [], ref
   return { escalate: false };
 }
 
+/** Clear business approaches (partnerships, sponsorship, advertising, press, resale, investment...). A customer's own question never matches: the words are about doing business WITH us. */
+export const BUSINESS = /\b(?:business (?:enquir\w*|inquir\w*|proposal|opportunit\w*|partnership)|partner(?:ship|ing)? (?:with|opportunit\w*|proposal)|(?:sponsor(?:ship|ed|ing)?|advertis\w+|press|media|pr|affiliate|influencer) (?:enquir\w*|inquir\w*|request|opportunit\w*|deal|collaboration|partnership)|collaborat(?:e|ion) with (?:you|maestro)|(?:resell\w*|distribut(?:or|ion)|wholesale|white[- ]?label)\b|invest(?:or|ment) (?:in|opportunit\w*)|(?:seo|marketing|web ?design|app development|lead generation) (?:services?|agency|packages?)|guest post|link building|we (?:would|'d) love to (?:work|partner|feature)|feature (?:you|maestro pro) (?:on|in)|acqui(?:re|sition))\b/i;
+
 /** The quoted earlier messages in a reply, for context (the main body strips them). */
 const quoted = (e) => {
   const t = e.text || "";
@@ -534,7 +540,7 @@ async function draft(subject, body, guide = { top: [], outline: "" }, code = [],
   const content = (await r.json()).choices?.[0]?.message?.content || "";
   let j = {};
   try { j = JSON.parse(/\{[\s\S]*\}/.exec(content)?.[0] || "{}"); } catch { /* escalate below */ }
-  return { reply: String(j.reply || "").trim() || NO_ANSWER, links: Array.isArray(j.links) ? j.links.filter((k) => LINKS[k]) : [], pages: Array.isArray(j.pages) ? j.pages.map(String) : [], escalate: j.escalate === true, refundProblem: j.refund_problem === true, evidence: String(j.evidence || ""), issue: String(j.issue || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").replace(/[.!]+$/, "").trim().slice(0, 100) };
+  return { reply: String(j.reply || "").trim() || NO_ANSWER, links: Array.isArray(j.links) ? j.links.filter((k) => LINKS[k]) : [], pages: Array.isArray(j.pages) ? j.pages.map(String) : [], escalate: j.escalate === true, refundProblem: j.refund_problem === true, business: j.business === true, evidence: String(j.evidence || ""), issue: String(j.issue || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").replace(/[.!]+$/, "").trim().slice(0, 100) };
 }
 
 /** Used when the model gives no usable reply. A missing answer is never a reason to escalate; ask the customer for detail instead. */
@@ -623,6 +629,14 @@ export async function noticeOwner({ tid, msgKey, payload, idem, fwd, rep }) {
 export async function answerEmail(job) {
   const { id, from, subject, body, msgId, replies = 0, earlier = "" } = job;
   const tid = threadId(addr(from), subject);
+  // A business enquiry is passed to toby@ (and so on to the owner) and gets no reply from the bot.
+  const passOn = async (why) => {
+    const { forwardInbound } = await import("./_toby.js");
+    await forwardInbound({ data: { email_id: id, from, subject, message_id: msgId } });
+    console.log(JSON.stringify({ evt: "support-business", id, why }));
+    return { escalated: false, forwarded: true };
+  };
+  if (!replies && BUSINESS.test(`${subject}\n${body}`)) return passOn("pattern");
     const guide = await relevantPages(subject, body);
     let code = await relevantCode(subject, body, !guide.strong);   // no clear guide match: search the app's code as well
     const settings = await loadSettings().catch(() => ({}));   // what the desk page has set: the prompt and the reply delay
@@ -639,6 +653,7 @@ export async function answerEmail(job) {
       d = await draft(subject, body, guide, code, earlier, `Your last answer told the customer that something is not available or does not exist. Check again. Guide pages that may cover this: ${covers}. Read them and the app code, and answer from them: a feature the guide describes is a real feature of the app. If, after checking the guide pages, the guide tree and the app code, you find no sign of the feature, you may tell the customer plainly and kindly that it isn't available right now, and offer what they can do instead.`, system, attachBlock);
       denied = deniesWithoutEvidence(d.reply);
     }
+    if (d.business && !replies) return passOn("model");
     console.log(JSON.stringify({ evt: "support-evidence", id, guidePages: guide.top.map((p) => p.slug), bestScore: guide.best, coverage: Math.round(guide.coverage * 100) / 100, strong: guide.strong, codeFiles: code.map((c) => c.path), evidence: d.evidence, retried, stillDenies: denied }));
 
     // Guide pages the model chose, checked against the real tree (it never supplies a URL).
