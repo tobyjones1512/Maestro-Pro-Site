@@ -1,0 +1,11 @@
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:16px;margin:1.4em 0}
+.mp-card{display:block;padding:18px;border:1px solid var(--hair);border-radius:14px;text-decoration:none;color:var(--fg);background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%);transition:border-color .2s,transform .2s}
+.mp-card:hover{border-color:var(--hl);transform:translateY(-2px)}
+.mp-card b{display:block;font-family:var(--serif);font-size:1.2rem;line-height:1.2}
+.mp-card small{display:block;color:var(--fg2);margin-top:4px}
+.mp-card .mp-price{margin-top:12px;font-weight:700;color:var(--hl)}
+.pay input[type=number],.pay input[type=password],.pay textarea{display:block;width:100%;margin-top:6px;padding:12px 14px;font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--hair);border-radius:9px}
+.pay input[type=file]{display:block;margin-top:6px;max-width:100%}
+.pay input[type=checkbox]{margin-right:8px}
+.pay--wide{max-width:36rem}
+.pay__msg{min-height:1.4em;margin-top:.8em}

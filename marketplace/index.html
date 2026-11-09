@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Marketplace | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Marketplace</h1>
+<p>Sheet music, backing tracks and karaoke for Maestro Pro. Buy a piece, download it, and open the file in the app.</p>
+<p id="where" class="pay__fine"></p>
+<div id="grid" class="mp-grid" aria-live="polite">Loading…</div>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api, esc, local, dollars } from "/assets/marketplace.js";
+const grid = document.getElementById("grid");
+try {
+  const d = await api("list");
+  document.getElementById("where").textContent = d.currency === "USD" ? "Prices are in US dollars." : `Prices are shown in ${d.currency}, the currency you will be charged in.`;
+  grid.innerHTML = d.listings.length ? d.listings.map((l) => `<a class="mp-card" href="/marketplace/item/?id=${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.composer)}</small><small>${esc(l.contents)}</small><div class="mp-price">${esc(local(l.priceUSD, d))}</div></a>`).join("") : "<p>Nothing for sale yet.</p>";
+} catch (e) { grid.textContent = e.message; }
+</script>
+</body>
+</html>
