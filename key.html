@@ -6,14 +6,14 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Your Maestro Pro licence key</title>
 <meta name="description" content="Get your Maestro Pro licence key emailed to you.">
-<link rel="icon" href="assets/favicon.png" type="image/png">
-<link rel="stylesheet" href="assets/maestro.css">
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
-  <a class="top__brand" href="index.html"><img width="160" height="160" src="assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="index.html#features">Features</a><a href="index.html#plans">Plans</a><a href="index.html#compatibility">Compatibility</a><a href="guide/index.html">Guide</a><a href="education.html">For Education</a><a href="support.html">Support</a></nav>
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/#features">Features</a><a href="/#plans">Plans</a><a href="/#compatibility">Compatibility</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a></nav>
 </header>
 <main id="main" class="plain">
 <h1>Your Maestro Pro licence key</h1>
@@ -25,13 +25,14 @@
 </form>
 <p>In the app, tap &ldquo;Already have a licence key?&rdquo; on the paywall and enter the key.</p>
 <p>The email also includes the TestFlight link to install the app.</p>
+<p>A licence bought on this website works on up to 3 devices. Using it on a new device and told the limit is reached? <a href="/key/devices/">Manage the devices using your licence</a>.</p>
 </main>
 <footer class="foot">
-  <nav aria-label="Footer"><a href="index.html">Maestro Pro</a><a href="guide/index.html">Guide</a><a href="education.html">For Education</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
-  <p>&copy; <span id="yr">2026</span> Toby Jones T/A The Caffeine Media Company.</p>
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a><a href="/feedback/">Feedback</a><a href="/privacy/">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
 </footer>
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
-<script src="assets/nav.js" defer></script>
+<script src="/assets/nav.js" defer></script>
 <script>
 var email = "";
 try { email = localStorage.getItem("maestroEmail") || ""; } catch (e) {}
@@ -46,7 +47,7 @@ document.getElementById("m").addEventListener("submit", function (e) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: v })
   }).then(function (r) { return r.json(); }).then(function (d) {
-    msg.textContent = d.ok ? "Sent. Check your inbox." : (d.error || "Couldn't send.");
+    msg.textContent = d.ok ? (d.keys > 1 ? "Sent. We found " + d.keys + " active keys, each listed with its plan. Check your inbox." : "Sent. Check your inbox.") : (d.error || "Couldn't send.");
   }).catch(function () { msg.textContent = "Couldn't send. Try again."; });
 });
 </script>

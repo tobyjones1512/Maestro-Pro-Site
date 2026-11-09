@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Your licence devices - Maestro Pro</title>
+<meta name="description" content="See and remove the devices using your Maestro Pro licence.">
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/#features">Features</a><a href="/#plans">Plans</a><a href="/#compatibility">Compatibility</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Your licence devices</h1>
+<p>A licence bought on this website works on up to <strong>3 devices</strong>. Enter your licence key to see where yours is being used, and remove any device you no longer use. Removing a device frees its place straight away.</p>
+<form id="f" class="pay pay--inline" autocomplete="off">
+  <label class="field">Licence key<input name="key" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MPS-..." required></label>
+  <button class="pay__btn" type="submit">Show my devices</button>
+  <p id="msg" class="pay__msg" role="status" style="flex-basis:100%"></p>
+</form>
+<p>Don't have your key to hand? <a href="/key.html">Have it emailed to you</a> first.</p>
+<section id="out" hidden aria-live="polite">
+  <h2 id="count"></h2>
+  <div id="list"></div>
+  <p id="note" class="fine"></p>
+  <div class="actions" id="acts" hidden><button class="pay__btn" type="button" id="refresh">Refresh</button><button class="pay__btn" type="button" id="all" style="background:transparent;color:var(--fg);box-shadow:inset 0 0 0 1.5px var(--hair)">Remove all devices</button></div>
+</section>
+<h2>Which device is which?</h2>
+<p>Maestro Pro checks the licence each time it is opened. To find a device, open the app on it, then press <strong>Refresh</strong> here: that device's <em>last used</em> time moves to the top. A removed device is signed out the next time it checks, and a device that has not been used for 60 days is removed automatically.</p>
+<p>Education licences have no device limit.</p>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a><a href="/feedback/">Feedback</a><a href="/privacy/">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script>
+(function () {
+  var API = "https://fider-feedback-api.vercel.app/api/student-check", key = "";
+  var $ = function (id) { return document.getElementById(id); };
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function when(ms) { var d = new Date(ms); return isNaN(d) ? "" : d.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+  function call(body) {
+    return fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok && !j.devices) throw new Error(j.error || "Something went wrong. Try again."); return j; }); });
+  }
+  function show(j) {
+    $("out").hidden = false; var list = $("list"); list.replaceChildren();
+    if (j.unlimited) { $("count").textContent = "Education licence"; $("note").textContent = "This licence works on any number of devices, so there is nothing to remove."; $("acts").hidden = true; return; }
+    var n = j.devices.length;
+    $("count").textContent = n + " of " + j.limit + " devices in use";
+    $("note").textContent = n ? "" : "No devices are using this licence yet. The first time you open Maestro Pro and enter your key, that device will appear here.";
+    $("acts").hidden = !n;
+    j.devices.forEach(function (d, i) {
+      var row = el("div", "dev");
+      var left = el("div"); left.append(el("strong", null, "Device " + (i + 1) + (d.os ? " (" + d.os + ")" : "")));
+      var meta = el("div", "fine", "Added " + when(d.first) + ". Last used " + when(d.last) + (d.confirmed ? "" : ". Waiting for its first full check") + ".");
+      left.append(meta);
+      var b = el("button", "pay__btn", "Remove"); b.type = "button"; b.setAttribute("aria-label", "Remove device " + (i + 1));
+      b.addEventListener("click", function () {
+        if (!confirm("Remove this device? It will be signed out of Maestro Pro the next time it checks the licence.")) return;
+        b.disabled = true; $("msg").textContent = "Removing...";
+        call({ key: key, action: "remove", ref: d.ref }).then(function (r) { $("msg").textContent = "Removed."; show(r); }).catch(function (e) { b.disabled = false; $("msg").textContent = e.message; });
+      });
+      row.append(left, b); list.append(row);
+    });
+  }
+  function load(action) {
+    $("msg").textContent = "Checking...";
+    return call({ key: key, action: action || "list" }).then(function (j) { $("msg").textContent = ""; show(j); }).catch(function (e) { $("out").hidden = true; $("msg").textContent = e.message; });
+  }
+  $("f").addEventListener("submit", function (e) { e.preventDefault(); key = this.key.value.trim().toUpperCase(); load("list"); });
+  $("refresh").addEventListener("click", function () { load("list"); });
+  $("all").addEventListener("click", function () {
+    if (!confirm("Remove every device? Each one is signed out the next time it checks the licence, and you can add up to 3 again.")) return;
+    call({ key: key, action: "remove-all" }).then(function (r) { $("msg").textContent = "All devices removed."; show(r); }).catch(function (e) { $("msg").textContent = e.message; });
+  });
+})();
+</script>
+<style>.dev{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:14px 16px;margin:0 0 10px;border:1px solid var(--hair);border-radius:10px;max-width:40rem}.dev .pay__btn,#out .actions .pay__btn{width:auto;flex:none;margin:0;padding:8px 18px}.dev .fine{margin:4px 0 0}.dev strong{display:block}#out .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}</style>
+</body>
+</html>

@@ -1,0 +1,3837 @@
+{
+ "site": "https://maestro-pro.app",
+ "about": "Every Maestro Pro guide, grouped. Each page has an HTML url and a Markdown url.",
+ "generated": "2026-11-08",
+ "groups": [
+  {
+   "title": "Start here",
+   "topics": [
+    {
+     "slug": "getting-started",
+     "title": "Getting Started",
+     "summary": "Maestro Pro is a working tool for musicians: it reads your scores and follows them to the note, turns pages hands-free, rehearses with a backing track, a song from Apple Music, the built-in instrument or a metronome, and lets you write and revise the music itself.",
+     "url": "https://maestro-pro.app/guide/getting-started/",
+     "md": "https://maestro-pro.app/guide/getting-started.md",
+     "keywords": [
+      "start",
+      "first time",
+      "begin",
+      "new",
+      "welcome",
+      "introduction",
+      "what is",
+      "import",
+      "sample",
+      "play"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "what-is-maestro-pro",
+       "title": "What Maestro Pro is",
+       "summary": "Maestro Pro is an app for musicians that reads your scores, follows them to the note and plays along.",
+       "url": "https://maestro-pro.app/guide/what-is-maestro-pro/",
+       "md": "https://maestro-pro.app/guide/what-is-maestro-pro.md",
+       "keywords": [
+        "what is",
+        "about",
+        "overview",
+        "features",
+        "app",
+        "sheet music"
+       ],
+       "see": [
+        "your-first-minute",
+        "plans-and-pricing",
+        "devices-and-compatibility"
+       ],
+       "children": []
+      },
+      {
+       "slug": "your-first-minute",
+       "title": "Your first minute",
+       "summary": "Import a score, press Play and tap the music to start from any point.",
+       "url": "https://maestro-pro.app/guide/your-first-minute/",
+       "md": "https://maestro-pro.app/guide/your-first-minute.md",
+       "keywords": [
+        "first minute",
+        "start",
+        "begin",
+        "import score",
+        "play",
+        "tap to start",
+        "progress bar"
+       ],
+       "see": [
+        "import-a-score",
+        "open-the-sample-score",
+        "play-and-pause"
+       ],
+       "children": []
+      },
+      {
+       "slug": "open-the-sample-score",
+       "title": "Open the sample score",
+       "summary": "Try the app straight away with the built-in sample, no files needed.",
+       "url": "https://maestro-pro.app/guide/open-the-sample-score/",
+       "md": "https://maestro-pro.app/guide/open-the-sample-score.md",
+       "keywords": [
+        "sample",
+        "demo",
+        "try",
+        "nothing to play",
+        "no music",
+        "example"
+       ],
+       "see": [
+        "your-first-minute",
+        "find-free-scores"
+       ],
+       "children": []
+      },
+      {
+       "slug": "find-free-scores",
+       "title": "Find free scores with Search Scores",
+       "summary": "Search Scores downloads classical pieces and jazz tunes, and searches the web for free scores.",
+       "url": "https://maestro-pro.app/guide/find-free-scores/",
+       "md": "https://maestro-pro.app/guide/find-free-scores.md",
+       "keywords": [
+        "search scores",
+        "free scores",
+        "download",
+        "classical",
+        "jazz",
+        "web search",
+        "internet",
+        "find music"
+       ],
+       "see": [
+        "jazz-tunes-need-internet",
+        "when-the-app-uses-the-internet",
+        "performer-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "free-plan-limits",
+       "title": "What the Free plan includes",
+       "summary": "The Free plan keeps up to three scores and lets you view and play them, with some tools left for paid plans.",
+       "url": "https://maestro-pro.app/guide/free-plan-limits/",
+       "md": "https://maestro-pro.app/guide/free-plan-limits.md",
+       "keywords": [
+        "free",
+        "free plan",
+        "limits",
+        "three scores",
+        "what is free",
+        "cannot",
+        "paywall"
+       ],
+       "see": [
+        "free-plan",
+        "compare-plans",
+        "performer-plan"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "your-library",
+     "title": "Your Library",
+     "summary": "Everything you import lives in the library and stays on the device. It is also kept in iCloud when iCloud Drive is on.",
+     "url": "https://maestro-pro.app/guide/your-library/",
+     "md": "https://maestro-pro.app/guide/your-library.md",
+     "keywords": [
+      "library",
+      "import",
+      "files",
+      "pdf",
+      "musicxml",
+      "midi",
+      "folder",
+      "icloud",
+      "blank score",
+      "lyrics",
+      "karaoke",
+      "file types"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "supported-file-types",
+       "title": "Supported file types",
+       "summary": "PDF, MusicXML, MIDI, karaoke, lyrics, CD+Graphics and Maestro Pro files can all be imported.",
+       "url": "https://maestro-pro.app/guide/supported-file-types/",
+       "md": "https://maestro-pro.app/guide/supported-file-types.md",
+       "keywords": [
+        "file types",
+        "supported files",
+        "formats",
+        "pdf",
+        "musicxml",
+        "mxl",
+        "midi",
+        "kar",
+        "lrc",
+        "cdg",
+        "maestropro",
+        "what can I import"
+       ],
+       "see": [
+        "import-a-score",
+        "import-band-in-a-box-files",
+        "import-does-nothing-or-greyed-out"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-a-score",
+       "title": "Import a score",
+       "summary": "Tap Import Score, choose your files, and they appear in the library.",
+       "url": "https://maestro-pro.app/guide/import-a-score/",
+       "md": "https://maestro-pro.app/guide/import-a-score.md",
+       "keywords": [
+        "import",
+        "import score",
+        "add music",
+        "add a file",
+        "bring in",
+        "open a file",
+        "pdf",
+        "load"
+       ],
+       "see": [
+        "supported-file-types",
+        "import-several-files",
+        "drag-files-onto-the-window"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-a-pdf",
+       "title": "Import a PDF score",
+       "summary": "PDFs are read by the app, which only reads printed notation, and scans need to be straight and clear.",
+       "url": "https://maestro-pro.app/guide/import-a-pdf/",
+       "md": "https://maestro-pro.app/guide/import-a-pdf.md",
+       "keywords": [
+        "import pdf",
+        "pdf score",
+        "scan",
+        "printed notation",
+        "read pdf",
+        "pdf not reading"
+       ],
+       "see": [
+        "pdf-notes-read-wrongly",
+        "pdf-plays-wrong-number-of-beats",
+        "edit-a-pdf-score"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-musicxml-files",
+       "title": "Import MusicXML files",
+       "summary": "MusicXML files (.musicxml, .xml, .mxl) import like any other score and can be edited.",
+       "url": "https://maestro-pro.app/guide/import-musicxml-files/",
+       "md": "https://maestro-pro.app/guide/import-musicxml-files.md",
+       "keywords": [
+        "musicxml",
+        "mxl",
+        "xml",
+        "import musicxml",
+        "notation file",
+        "free scores"
+       ],
+       "see": [
+        "supported-file-types",
+        "export-as-musicxml",
+        "open-the-score-editor"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-midi-and-karaoke-files",
+       "title": "Import MIDI and karaoke files",
+       "summary": "MIDI and karaoke (.mid, .kar) files import with Import Score; karaoke files carry their own words.",
+       "url": "https://maestro-pro.app/guide/import-midi-and-karaoke-files/",
+       "md": "https://maestro-pro.app/guide/import-midi-and-karaoke-files.md",
+       "keywords": [
+        "midi",
+        "kar",
+        "karaoke midi",
+        "mid",
+        "import midi"
+       ],
+       "see": [
+        "supported-file-types",
+        "karaoke-midi-files"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-several-files",
+       "title": "Import several files at once",
+       "summary": "Choose more than one file in the import dialog and they all arrive together.",
+       "url": "https://maestro-pro.app/guide/import-several-files/",
+       "md": "https://maestro-pro.app/guide/import-several-files.md",
+       "keywords": [
+        "multiple files",
+        "several files",
+        "batch import",
+        "many scores"
+       ],
+       "see": [
+        "import-a-score",
+        "import-a-folder"
+       ],
+       "children": []
+      },
+      {
+       "slug": "drag-files-onto-the-window",
+       "title": "Drag files onto the window",
+       "summary": "Drag files from the Files app straight onto the Maestro Pro window to import them.",
+       "url": "https://maestro-pro.app/guide/drag-files-onto-the-window/",
+       "md": "https://maestro-pro.app/guide/drag-files-onto-the-window.md",
+       "keywords": [
+        "drag and drop",
+        "drag files",
+        "drop",
+        "files app",
+        "window"
+       ],
+       "see": [
+        "import-a-score",
+        "import-from-another-app"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-from-another-app",
+       "title": "Import from another app's share sheet",
+       "summary": "Choose Maestro Pro in the share sheet of Files, Mail, Safari, Messages and other apps.",
+       "url": "https://maestro-pro.app/guide/import-from-another-app/",
+       "md": "https://maestro-pro.app/guide/import-from-another-app.md",
+       "keywords": [
+        "share sheet",
+        "open in",
+        "mail attachment",
+        "safari",
+        "messages",
+        "files",
+        "send to maestro pro"
+       ],
+       "see": [
+        "import-a-score",
+        "drag-files-onto-the-window"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-a-folder",
+       "title": "Import a whole folder",
+       "summary": "Import Folder reads every supported file in a folder.",
+       "url": "https://maestro-pro.app/guide/import-a-folder/",
+       "md": "https://maestro-pro.app/guide/import-a-folder.md",
+       "keywords": [
+        "import folder",
+        "folder",
+        "bulk import",
+        "directory"
+       ],
+       "see": [
+        "link-a-folder",
+        "import-several-files"
+       ],
+       "children": []
+      },
+      {
+       "slug": "link-a-folder",
+       "title": "Link a folder to the library",
+       "summary": "In Settings, Link a Folder keeps a folder in step with the library so new files appear by themselves.",
+       "url": "https://maestro-pro.app/guide/link-a-folder/",
+       "md": "https://maestro-pro.app/guide/link-a-folder.md",
+       "keywords": [
+        "link folder",
+        "sync folder",
+        "watch folder",
+        "settings link a folder",
+        "automatic import"
+       ],
+       "see": [
+        "import-a-folder",
+        "icloud-library"
+       ],
+       "children": []
+      },
+      {
+       "slug": "start-a-blank-score",
+       "title": "Start a blank score",
+       "summary": "New Blank Score creates an empty score with the name, time signature, key, bars, staves and tempo you choose.",
+       "url": "https://maestro-pro.app/guide/start-a-blank-score/",
+       "md": "https://maestro-pro.app/guide/start-a-blank-score.md",
+       "keywords": [
+        "new blank score",
+        "empty score",
+        "write a score",
+        "compose",
+        "create score",
+        "new score"
+       ],
+       "see": [
+        "open-the-score-editor",
+        "professional-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "add-lyrics-with-backing",
+       "title": "Lyrics with Backing",
+       "summary": "Choose a backing track and the app finds its timed lyrics online for a karaoke-style screen.",
+       "url": "https://maestro-pro.app/guide/add-lyrics-with-backing/",
+       "md": "https://maestro-pro.app/guide/add-lyrics-with-backing.md",
+       "keywords": [
+        "lyrics with backing",
+        "karaoke screen",
+        "find lyrics",
+        "backing and lyrics",
+        "timed lyrics"
+       ],
+       "see": [
+        "find-lyrics-online",
+        "add-a-backing-track"
+       ],
+       "children": []
+      },
+      {
+       "slug": "icloud-library",
+       "title": "Keep your library in iCloud",
+       "summary": "Your library is stored on the device and is also kept in iCloud when iCloud Drive is on.",
+       "url": "https://maestro-pro.app/guide/icloud-library/",
+       "md": "https://maestro-pro.app/guide/icloud-library.md",
+       "keywords": [
+        "icloud",
+        "icloud drive",
+        "sync devices",
+        "backup",
+        "library on other devices"
+       ],
+       "see": [
+        "what-stays-on-your-device",
+        "link-a-folder"
+       ],
+       "children": []
+      },
+      {
+       "slug": "set-lists",
+       "title": "Set-lists for rehearsals and gigs",
+       "summary": "Build set-lists for a lesson, a rehearsal or a concert.",
+       "url": "https://maestro-pro.app/guide/set-lists/",
+       "md": "https://maestro-pro.app/guide/set-lists.md",
+       "keywords": [
+        "set list",
+        "setlist",
+        "gig",
+        "concert",
+        "rehearsal",
+        "lesson plan",
+        "playlist"
+       ],
+       "see": [
+        "your-library",
+        "import-a-score"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-band-in-a-box-files",
+       "title": "Band-in-a-Box files",
+       "summary": "Band-in-a-Box files cannot be read; export MusicXML and audio from Band-in-a-Box instead.",
+       "url": "https://maestro-pro.app/guide/import-band-in-a-box-files/",
+       "md": "https://maestro-pro.app/guide/import-band-in-a-box-files.md",
+       "keywords": [
+        "band in a box",
+        "biab",
+        "band-in-a-box",
+        "closed format",
+        "export"
+       ],
+       "see": [
+        "supported-file-types",
+        "import-musicxml-files"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "playing-a-score",
+     "title": "Playing a Score",
+     "summary": "The bar at the bottom controls playback; the toolbar and the Inspector change how it looks and sounds.",
+     "url": "https://maestro-pro.app/guide/playing-a-score/",
+     "md": "https://maestro-pro.app/guide/playing-a-score.md",
+     "keywords": [
+      "play",
+      "pause",
+      "speed",
+      "tempo",
+      "loop",
+      "count in",
+      "metronome",
+      "transpose",
+      "practice speed",
+      "bar",
+      "progress"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "play-and-pause",
+       "title": "Play, pause and skip",
+       "summary": "The bar at the bottom has Play and Pause, skip by bar and a progress bar you can drag.",
+       "url": "https://maestro-pro.app/guide/play-and-pause/",
+       "md": "https://maestro-pro.app/guide/play-and-pause.md",
+       "keywords": [
+        "play",
+        "pause",
+        "skip",
+        "skip bar",
+        "progress bar",
+        "transport",
+        "controls",
+        "counter"
+       ],
+       "see": [
+        "jump-to-a-bar",
+        "mac-playback-keys"
+       ],
+       "children": []
+      },
+      {
+       "slug": "jump-to-a-bar",
+       "title": "Start from any bar",
+       "summary": "Tap the music to jump to that point, or drag the progress bar.",
+       "url": "https://maestro-pro.app/guide/jump-to-a-bar/",
+       "md": "https://maestro-pro.app/guide/jump-to-a-bar.md",
+       "keywords": [
+        "jump",
+        "start from here",
+        "tap to start",
+        "seek",
+        "go to bar"
+       ],
+       "see": [
+        "play-and-pause"
+       ],
+       "children": []
+      },
+      {
+       "slug": "mac-playback-keys",
+       "title": "Playback keys on a Mac",
+       "summary": "Space plays and pauses, arrows skip bars, Return goes to the start and K toggles the metronome.",
+       "url": "https://maestro-pro.app/guide/mac-playback-keys/",
+       "md": "https://maestro-pro.app/guide/mac-playback-keys.md",
+       "keywords": [
+        "mac keys",
+        "space bar",
+        "arrow keys",
+        "return",
+        "k key",
+        "keyboard playback"
+       ],
+       "see": [
+        "see-the-shortcuts",
+        "play-and-pause"
+       ],
+       "children": []
+      },
+      {
+       "slug": "change-practice-speed",
+       "title": "Slow down or speed up without changing pitch",
+       "summary": "Practice Speed runs from 10 to 400 percent and keeps the pitch the same.",
+       "url": "https://maestro-pro.app/guide/change-practice-speed/",
+       "md": "https://maestro-pro.app/guide/change-practice-speed.md",
+       "keywords": [
+        "practice speed",
+        "slow down",
+        "speed up",
+        "slower",
+        "faster",
+        "percentage",
+        "pitch",
+        "slow a passage"
+       ],
+       "see": [
+        "tempo-and-custom-tempo",
+        "loop-a-passage"
+       ],
+       "children": []
+      },
+      {
+       "slug": "tempo-and-custom-tempo",
+       "title": "Tempo and Custom Tempo",
+       "summary": "The tempo is the score's own unless you set one; Custom Tempo goes back to the score's.",
+       "url": "https://maestro-pro.app/guide/tempo-and-custom-tempo/",
+       "md": "https://maestro-pro.app/guide/tempo-and-custom-tempo.md",
+       "keywords": [
+        "tempo",
+        "bpm",
+        "custom tempo",
+        "metronome mark",
+        "change tempo",
+        "score tempo"
+       ],
+       "see": [
+        "tap-the-tempo",
+        "change-practice-speed"
+       ],
+       "children": []
+      },
+      {
+       "slug": "tap-the-tempo",
+       "title": "Tap the tempo",
+       "summary": "Tap the tempo, then tap the Tap key in time with the beat and the tempo follows you.",
+       "url": "https://maestro-pro.app/guide/tap-the-tempo/",
+       "md": "https://maestro-pro.app/guide/tap-the-tempo.md",
+       "keywords": [
+        "tap tempo",
+        "tap",
+        "tempo pad",
+        "set tempo by tapping",
+        "beat"
+       ],
+       "see": [
+        "tempo-and-custom-tempo",
+        "use-the-inspector"
+       ],
+       "children": []
+      },
+      {
+       "slug": "loop-a-passage",
+       "title": "Loop a hard passage",
+       "summary": "In the Inspector, Loop plays the bars you choose over and over.",
+       "url": "https://maestro-pro.app/guide/loop-a-passage/",
+       "md": "https://maestro-pro.app/guide/loop-a-passage.md",
+       "keywords": [
+        "loop",
+        "repeat",
+        "practise a passage",
+        "hard bar",
+        "loop bars",
+        "section"
+       ],
+       "see": [
+        "change-practice-speed",
+        "use-the-inspector"
+       ],
+       "children": []
+      },
+      {
+       "slug": "count-in-and-lead-in-bars",
+       "title": "Count In and Lead-in Bars",
+       "summary": "Count In plays a bar of clicks first; Lead-in Bars sets how many bars of introduction come before bar 1.",
+       "url": "https://maestro-pro.app/guide/count-in-and-lead-in-bars/",
+       "md": "https://maestro-pro.app/guide/count-in-and-lead-in-bars.md",
+       "keywords": [
+        "count in",
+        "count-in",
+        "lead-in",
+        "lead in bars",
+        "intro",
+        "backing track intro",
+        "clicks"
+       ],
+       "see": [
+        "use-the-metronome",
+        "match-key-and-tempo"
+       ],
+       "children": []
+      },
+      {
+       "slug": "use-the-metronome",
+       "title": "Use the metronome",
+       "summary": "The metronome clicks on every beat and can be turned on and off, with K on a Mac.",
+       "url": "https://maestro-pro.app/guide/use-the-metronome/",
+       "md": "https://maestro-pro.app/guide/use-the-metronome.md",
+       "keywords": [
+        "metronome",
+        "click",
+        "beat",
+        "click track",
+        "k key"
+       ],
+       "see": [
+        "count-in-and-lead-in-bars",
+        "tempo-and-custom-tempo"
+       ],
+       "children": []
+      },
+      {
+       "slug": "transpose-for-your-instrument",
+       "title": "Transpose for your instrument",
+       "summary": "Transposing typesets the score again in the new key, rather than just labelling it.",
+       "url": "https://maestro-pro.app/guide/transpose-for-your-instrument/",
+       "md": "https://maestro-pro.app/guide/transpose-for-your-instrument.md",
+       "keywords": [
+        "transpose",
+        "key change",
+        "change key",
+        "clarinet",
+        "trumpet",
+        "saxophone",
+        "transposing instrument",
+        "new key"
+       ],
+       "see": [
+        "set-your-instrument",
+        "equaliser-and-key-changes"
+       ],
+       "children": []
+      },
+      {
+       "slug": "set-your-instrument",
+       "title": "Set your instrument",
+       "summary": "Setting your instrument to B flat or E flat in the Inspector shows the written note in the tuner.",
+       "url": "https://maestro-pro.app/guide/set-your-instrument/",
+       "md": "https://maestro-pro.app/guide/set-your-instrument.md",
+       "keywords": [
+        "instrument",
+        "b flat",
+        "e flat",
+        "transposing",
+        "inspector instrument",
+        "clarinet",
+        "sax"
+       ],
+       "see": [
+        "transpose-for-your-instrument",
+        "tune-a-b-flat-or-e-flat-instrument"
+       ],
+       "children": []
+      },
+      {
+       "slug": "page-turning",
+       "title": "Automatic page turning",
+       "summary": "The page scrolls or curls over like a real book exactly when you need it.",
+       "url": "https://maestro-pro.app/guide/page-turning/",
+       "md": "https://maestro-pro.app/guide/page-turning.md",
+       "keywords": [
+        "page turn",
+        "turn page",
+        "scroll",
+        "curl",
+        "hands-free",
+        "auto page"
+       ],
+       "see": [
+        "note-and-bar-highlighting",
+        "play-and-pause"
+       ],
+       "children": []
+      },
+      {
+       "slug": "note-and-bar-highlighting",
+       "title": "Notes and bars that light up",
+       "summary": "Notes glow as they sound and a soft wash marks the bar; this needs the Performer plan or above.",
+       "url": "https://maestro-pro.app/guide/note-and-bar-highlighting/",
+       "md": "https://maestro-pro.app/guide/note-and-bar-highlighting.md",
+       "keywords": [
+        "highlight",
+        "note highlighting",
+        "bar highlighting",
+        "moving line",
+        "glow",
+        "follow along"
+       ],
+       "see": [
+        "highlight-colour",
+        "free-plan-limits"
+       ],
+       "children": []
+      },
+      {
+       "slug": "use-the-inspector",
+       "title": "The Inspector",
+       "summary": "The Inspector holds tempo, practice speed, loop, key, instrument and backing tracks.",
+       "url": "https://maestro-pro.app/guide/use-the-inspector/",
+       "md": "https://maestro-pro.app/guide/use-the-inspector.md",
+       "keywords": [
+        "inspector",
+        "panel",
+        "settings for score",
+        "controls",
+        "tempo panel"
+       ],
+       "see": [
+        "tap-the-tempo",
+        "loop-a-passage",
+        "set-your-instrument"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Plans and licences",
+   "topics": [
+    {
+     "slug": "plans-and-pricing",
+     "title": "Plans and pricing",
+     "summary": "Free, Performer and Professional: what each plan includes, and how to buy.",
+     "url": "https://maestro-pro.app/guide/plans-and-pricing/",
+     "md": "https://maestro-pro.app/guide/plans-and-pricing.md",
+     "keywords": [
+      "plans",
+      "pricing",
+      "price",
+      "cost",
+      "subscription",
+      "free",
+      "performer",
+      "professional",
+      "buy",
+      "licence",
+      "how much"
+     ],
+     "see": [
+      "compare-plans",
+      "buy-on-the-website",
+      "licences-and-keys"
+     ],
+     "children": [
+      {
+       "slug": "free-plan",
+       "title": "The Free plan",
+       "summary": "What you get for nothing: up to three scores, viewing, lyrics files, your own audio, GitHub and scales.",
+       "url": "https://maestro-pro.app/guide/free-plan/",
+       "md": "https://maestro-pro.app/guide/free-plan.md",
+       "keywords": [
+        "free plan",
+        "free",
+        "no cost",
+        "three scores",
+        "what is included"
+       ],
+       "see": [
+        "free-plan-limits",
+        "compare-plans"
+       ],
+       "children": []
+      },
+      {
+       "slug": "performer-plan",
+       "title": "The Performer plan",
+       "summary": "Everything except the score editor, with a library of any size.",
+       "url": "https://maestro-pro.app/guide/performer-plan/",
+       "md": "https://maestro-pro.app/guide/performer-plan.md",
+       "keywords": [
+        "performer",
+        "performer plan",
+        "subscription",
+        "in-app",
+        "what does performer include"
+       ],
+       "see": [
+        "compare-plans",
+        "professional-plan",
+        "buy-on-the-website"
+       ],
+       "children": []
+      },
+      {
+       "slug": "professional-plan",
+       "title": "The Professional plan",
+       "summary": "Everything, including the score editor, medleys and version history with GitHub sync.",
+       "url": "https://maestro-pro.app/guide/professional-plan/",
+       "md": "https://maestro-pro.app/guide/professional-plan.md",
+       "keywords": [
+        "professional",
+        "professional plan",
+        "editor",
+        "write music",
+        "medley",
+        "version history",
+        "github sync",
+        "github",
+        "git",
+        "repo"
+       ],
+       "see": [
+        "compare-plans",
+        "buy-on-the-website",
+        "open-the-score-editor"
+       ],
+       "children": []
+      },
+      {
+       "slug": "compare-plans",
+       "title": "Which plan do I need?",
+       "summary": "A quick way to choose between Free, Performer and Professional.",
+       "url": "https://maestro-pro.app/guide/compare-plans/",
+       "md": "https://maestro-pro.app/guide/compare-plans.md",
+       "keywords": [
+        "which plan",
+        "compare",
+        "difference",
+        "choose",
+        "upgrade",
+        "free vs performer",
+        "performer vs professional"
+       ],
+       "see": [
+        "free-plan",
+        "performer-plan",
+        "professional-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "buy-on-the-website",
+       "title": "Buy Professional on this website",
+       "summary": "Pay monthly or yearly on the website, then recover your licence key and install the app.",
+       "url": "https://maestro-pro.app/guide/buy-on-the-website/",
+       "md": "https://maestro-pro.app/guide/buy-on-the-website.md",
+       "keywords": [
+        "buy",
+        "purchase",
+        "website",
+        "professional",
+        "pay",
+        "monthly",
+        "yearly",
+        "licence",
+        "order"
+       ],
+       "see": [
+        "licences-and-keys",
+        "install-and-testflight",
+        "money-back-guarantee"
+       ],
+       "children": []
+      },
+      {
+       "slug": "website-or-in-app",
+       "title": "Website or in-app: which is cheaper?",
+       "summary": "Professional bought on the website costs less than Performer bought in the app, and includes the editor.",
+       "url": "https://maestro-pro.app/guide/website-or-in-app/",
+       "md": "https://maestro-pro.app/guide/website-or-in-app.md",
+       "keywords": [
+        "cheaper",
+        "website vs app",
+        "in-app purchase",
+        "apple subscription",
+        "price difference"
+       ],
+       "see": [
+        "buy-on-the-website",
+        "performer-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "prices-and-currency",
+       "title": "Prices and currencies",
+       "summary": "Website prices are in pounds sterling or the local equivalent, and app prices show in your own currency.",
+       "url": "https://maestro-pro.app/guide/prices-and-currency/",
+       "md": "https://maestro-pro.app/guide/prices-and-currency.md",
+       "keywords": [
+        "price",
+        "currency",
+        "pounds",
+        "gbp",
+        "dollars",
+        "euros",
+        "local currency",
+        "how much"
+       ],
+       "see": [
+        "plans-and-pricing",
+        "website-or-in-app"
+       ],
+       "children": []
+      },
+      {
+       "slug": "manage-an-apple-subscription",
+       "title": "Manage a subscription bought in the app",
+       "summary": "Performer and Professional bought in the app are managed in your Apple Account settings.",
+       "url": "https://maestro-pro.app/guide/manage-an-apple-subscription/",
+       "md": "https://maestro-pro.app/guide/manage-an-apple-subscription.md",
+       "keywords": [
+        "apple subscription",
+        "manage subscription",
+        "cancel app subscription",
+        "apple account",
+        "in-app"
+       ],
+       "see": [
+        "performer-plan",
+        "website-or-in-app"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "licences-and-keys",
+     "title": "Licences and keys",
+     "summary": "How your licence key works, how to enter it and what to do if you lose it.",
+     "url": "https://maestro-pro.app/guide/licences-and-keys/",
+     "md": "https://maestro-pro.app/guide/licences-and-keys.md",
+     "keywords": [
+      "licence",
+      "license",
+      "key",
+      "licence key",
+      "activate",
+      "paywall",
+      "already have a licence key"
+     ],
+     "see": [
+      "enter-your-licence-key",
+      "recover-your-licence-key",
+      "devices-per-licence",
+      "manage-your-licence-in-the-app"
+     ],
+     "children": [
+      {
+       "slug": "enter-your-licence-key",
+       "title": "Enter your licence key in the app",
+       "summary": "On the paywall, tap Already have a licence key? and type your key.",
+       "url": "https://maestro-pro.app/guide/enter-your-licence-key/",
+       "md": "https://maestro-pro.app/guide/enter-your-licence-key.md",
+       "keywords": [
+        "enter key",
+        "activate",
+        "paywall",
+        "already have a licence key",
+        "unlock",
+        "type key"
+       ],
+       "see": [
+        "recover-your-licence-key",
+        "licence-key-not-working"
+       ],
+       "children": []
+      },
+      {
+       "slug": "recover-your-licence-key",
+       "title": "Recover a lost licence key",
+       "summary": "Enter the email address you paid with and the key is emailed to you.",
+       "url": "https://maestro-pro.app/guide/recover-your-licence-key/",
+       "md": "https://maestro-pro.app/guide/recover-your-licence-key.md",
+       "keywords": [
+        "lost key",
+        "recover key",
+        "forgot key",
+        "resend key",
+        "where is my key",
+        "licence key email"
+       ],
+       "see": [
+        "enter-your-licence-key",
+        "several-licence-keys"
+       ],
+       "children": []
+      },
+      {
+       "slug": "manage-your-licence-in-the-app",
+       "title": "Manage your licence in the app",
+       "summary": "With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.",
+       "url": "https://maestro-pro.app/guide/manage-your-licence-in-the-app/",
+       "md": "https://maestro-pro.app/guide/manage-your-licence-in-the-app.md",
+       "keywords": [
+        "manage licence",
+        "settings",
+        "remove a device",
+        "request cancellation",
+        "cancel licence",
+        "licence key settings",
+        "manage subscription"
+       ],
+       "see": [
+        "remove-a-device",
+        "how-to-request-a-refund",
+        "devices-per-licence"
+       ],
+       "children": []
+      },
+      {
+       "slug": "devices-per-licence",
+       "title": "Use your licence on up to 3 devices",
+       "summary": "A licence bought on the website works on up to 3 devices. Education licences have no limit.",
+       "url": "https://maestro-pro.app/guide/devices-per-licence/",
+       "md": "https://maestro-pro.app/guide/devices-per-licence.md",
+       "keywords": [
+        "devices",
+        "three devices",
+        "3 devices",
+        "device limit",
+        "how many devices",
+        "another device",
+        "new iphone",
+        "new ipad",
+        "share licence",
+        "limit reached"
+       ],
+       "see": [
+        "remove-a-device",
+        "enter-your-licence-key",
+        "buy-for-your-organisation"
+       ],
+       "children": []
+      },
+      {
+       "slug": "remove-a-device",
+       "title": "Remove a device from your licence",
+       "summary": "Use the devices page on the key page to see where your licence is used and remove a device.",
+       "url": "https://maestro-pro.app/guide/remove-a-device/",
+       "md": "https://maestro-pro.app/guide/remove-a-device.md",
+       "keywords": [
+        "remove device",
+        "revoke device",
+        "sign out device",
+        "free a place",
+        "device limit reached",
+        "old iphone",
+        "sold device",
+        "lost device",
+        "devices page"
+       ],
+       "see": [
+        "devices-per-licence",
+        "recover-your-licence-key",
+        "licence-key-not-working"
+       ],
+       "children": []
+      },
+      {
+       "slug": "several-licence-keys",
+       "title": "If you have more than one licence key",
+       "summary": "If you have subscribed more than once, the email lists every active key with its plan.",
+       "url": "https://maestro-pro.app/guide/several-licence-keys/",
+       "md": "https://maestro-pro.app/guide/several-licence-keys.md",
+       "keywords": [
+        "multiple keys",
+        "two keys",
+        "more than one licence",
+        "several licences",
+        "which key"
+       ],
+       "see": [
+        "recover-your-licence-key",
+        "licence-key-not-working"
+       ],
+       "children": []
+      },
+      {
+       "slug": "licence-key-not-working",
+       "title": "My licence key is not working",
+       "summary": "Check the key, check it is still active, and recover it again if needed.",
+       "url": "https://maestro-pro.app/guide/licence-key-not-working/",
+       "md": "https://maestro-pro.app/guide/licence-key-not-working.md",
+       "keywords": [
+        "key not working",
+        "invalid key",
+        "key rejected",
+        "licence invalid",
+        "wrong key",
+        "expired key"
+       ],
+       "see": [
+        "recover-your-licence-key",
+        "enter-your-licence-key",
+        "several-licence-keys"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "install-and-testflight",
+     "title": "Install with TestFlight",
+     "summary": "Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store.",
+     "url": "https://maestro-pro.app/guide/install-and-testflight/",
+     "md": "https://maestro-pro.app/guide/install-and-testflight.md",
+     "keywords": [
+      "install",
+      "testflight",
+      "download",
+      "install link",
+      "invitation",
+      "app store",
+      "get the app"
+     ],
+     "see": [
+      "install-with-testflight",
+      "lost-the-testflight-link",
+      "enter-your-licence-key"
+     ],
+     "children": [
+      {
+       "slug": "install-with-testflight",
+       "title": "Install Maestro Pro step by step",
+       "summary": "Install TestFlight, accept the invitation, install Maestro Pro, then enter your key.",
+       "url": "https://maestro-pro.app/guide/install-with-testflight/",
+       "md": "https://maestro-pro.app/guide/install-with-testflight.md",
+       "keywords": [
+        "install steps",
+        "accept invitation",
+        "testflight install",
+        "how to install",
+        "first launch"
+       ],
+       "see": [
+        "enter-your-licence-key",
+        "lost-the-testflight-link"
+       ],
+       "children": []
+      },
+      {
+       "slug": "lost-the-testflight-link",
+       "title": "I lost the TestFlight link",
+       "summary": "The key email includes the TestFlight link, and the install page has it too.",
+       "url": "https://maestro-pro.app/guide/lost-the-testflight-link/",
+       "md": "https://maestro-pro.app/guide/lost-the-testflight-link.md",
+       "keywords": [
+        "lost link",
+        "testflight link",
+        "install link",
+        "download link",
+        "where is the link",
+        "invitation"
+       ],
+       "see": [
+        "recover-your-licence-key",
+        "install-with-testflight"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "refunds-and-cancellation",
+     "title": "Refunds and cancellation",
+     "summary": "The 14-day money-back guarantee, and how to cancel a licence bought on the website.",
+     "url": "https://maestro-pro.app/guide/refunds-and-cancellation/",
+     "md": "https://maestro-pro.app/guide/refunds-and-cancellation.md",
+     "keywords": [
+      "refund",
+      "cancel",
+      "cancellation",
+      "money back",
+      "guarantee",
+      "cancel licence",
+      "stop paying"
+     ],
+     "see": [
+      "money-back-guarantee",
+      "how-to-request-a-refund",
+      "after-the-14-days",
+      "refund-for-app-store-subscriptions"
+     ],
+     "children": [
+      {
+       "slug": "money-back-guarantee",
+       "title": "The 14-day money-back guarantee",
+       "summary": "Ask for a full refund within 14 days of your first payment, once the payment has cleared.",
+       "url": "https://maestro-pro.app/guide/money-back-guarantee/",
+       "md": "https://maestro-pro.app/guide/money-back-guarantee.md",
+       "keywords": [
+        "guarantee",
+        "14 day",
+        "money back",
+        "refund window",
+        "full refund",
+        "day 8",
+        "cleared"
+       ],
+       "see": [
+        "refund-timing",
+        "how-to-request-a-refund"
+       ],
+       "children": []
+      },
+      {
+       "slug": "how-to-request-a-refund",
+       "title": "How to request a refund or cancel",
+       "summary": "Use the cancellation page with your licence key and follow the steps.",
+       "url": "https://maestro-pro.app/guide/how-to-request-a-refund/",
+       "md": "https://maestro-pro.app/guide/how-to-request-a-refund.md",
+       "keywords": [
+        "request refund",
+        "how to cancel",
+        "cancel licence",
+        "cancellation page",
+        "refund request"
+       ],
+       "see": [
+        "refund-timing",
+        "money-back-guarantee",
+        "recover-your-licence-key",
+        "refund-for-app-store-subscriptions"
+       ],
+       "children": []
+      },
+      {
+       "slug": "refund-for-app-store-subscriptions",
+       "title": "Refunds for subscriptions bought in the app",
+       "summary": "If you subscribed inside the app through the App Store, Apple handles the refund, not us.",
+       "url": "https://maestro-pro.app/guide/refund-for-app-store-subscriptions/",
+       "md": "https://maestro-pro.app/guide/refund-for-app-store-subscriptions.md",
+       "keywords": [
+        "app store refund",
+        "apple refund",
+        "in-app refund",
+        "performer refund",
+        "subscribed in app",
+        "report a problem",
+        "apple account refund"
+       ],
+       "see": [
+        "manage-an-apple-subscription",
+        "how-to-request-a-refund",
+        "website-or-in-app"
+       ],
+       "children": []
+      },
+      {
+       "slug": "refund-timing",
+       "title": "When can I get a refund?",
+       "summary": "Refunds are made from day 8 to day 14 after the first payment, once it has cleared.",
+       "url": "https://maestro-pro.app/guide/refund-timing/",
+       "md": "https://maestro-pro.app/guide/refund-timing.md",
+       "keywords": [
+        "refund timing",
+        "day 7",
+        "day 8",
+        "too early",
+        "payment cleared",
+        "when refund",
+        "how long"
+       ],
+       "see": [
+        "money-back-guarantee",
+        "after-the-14-days"
+       ],
+       "children": []
+      },
+      {
+       "slug": "after-the-14-days",
+       "title": "Cancelling after the 14 days",
+       "summary": "No refund, but you can cancel going forward, and how that works differs for yearly and monthly plans.",
+       "url": "https://maestro-pro.app/guide/after-the-14-days/",
+       "md": "https://maestro-pro.app/guide/after-the-14-days.md",
+       "keywords": [
+        "cancel after 14 days",
+        "no refund",
+        "late cancel",
+        "cancel yearly",
+        "cancel monthly",
+        "cancellation fee"
+       ],
+       "see": [
+        "cancel-a-yearly-licence",
+        "cancel-a-monthly-licence",
+        "refund-timing"
+       ],
+       "children": []
+      },
+      {
+       "slug": "cancel-a-yearly-licence",
+       "title": "Cancel a yearly licence",
+       "summary": "Your yearly subscription is cancelled and the key works until the end of the year you paid for.",
+       "url": "https://maestro-pro.app/guide/cancel-a-yearly-licence/",
+       "md": "https://maestro-pro.app/guide/cancel-a-yearly-licence.md",
+       "keywords": [
+        "cancel yearly",
+        "annual",
+        "cancel annual licence",
+        "stop renewal",
+        "yearly cancel"
+       ],
+       "see": [
+        "after-the-14-days",
+        "how-to-request-a-refund"
+       ],
+       "children": []
+      },
+      {
+       "slug": "cancel-a-monthly-licence",
+       "title": "Cancel a monthly licence",
+       "summary": "Monthly licences are on a 12-month contract, so cancelling early costs one month plus half of the remaining term.",
+       "url": "https://maestro-pro.app/guide/cancel-a-monthly-licence/",
+       "md": "https://maestro-pro.app/guide/cancel-a-monthly-licence.md",
+       "keywords": [
+        "cancel monthly",
+        "monthly contract",
+        "12 month",
+        "early cancellation fee",
+        "cancellation fee",
+        "monthly cancel"
+       ],
+       "see": [
+        "after-the-14-days",
+        "how-to-request-a-refund"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "education-and-schools",
+     "title": "Education and schools",
+     "summary": "How schools, colleges and tutors can get Maestro Pro, including volume licensing outside the App Store.",
+     "url": "https://maestro-pro.app/guide/education-and-schools/",
+     "md": "https://maestro-pro.app/guide/education-and-schools.md",
+     "keywords": [
+      "education",
+      "school",
+      "college",
+      "students",
+      "teachers",
+      "tutors",
+      "volume licensing",
+      "music service",
+      "class"
+     ],
+     "see": [
+      "apple-volume-purchasing",
+      "buy-for-your-organisation",
+      "student-licence"
+     ],
+     "children": [
+      {
+       "slug": "apple-volume-purchasing",
+       "title": "Apple volume purchasing",
+       "summary": "Schools can roll the free version out through Apple School Manager or Apple Business Manager.",
+       "url": "https://maestro-pro.app/guide/apple-volume-purchasing/",
+       "md": "https://maestro-pro.app/guide/apple-volume-purchasing.md",
+       "keywords": [
+        "apple school manager",
+        "apple business manager",
+        "volume purchase",
+        "apps and books",
+        "mdm",
+        "jamf",
+        "roll out"
+       ],
+       "see": [
+        "buy-for-your-organisation",
+        "free-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "buy-for-your-organisation",
+       "title": "Buy for a whole organisation",
+       "summary": "One licence for unlimited students and teachers, £499 a year, bought direct and outside the App Store.",
+       "url": "https://maestro-pro.app/guide/buy-for-your-organisation/",
+       "md": "https://maestro-pro.app/guide/buy-for-your-organisation.md",
+       "keywords": [
+        "organisation licence",
+        "school licence",
+        "499",
+        "unlimited students",
+        "volume licence",
+        "direct purchase",
+        "site licence"
+       ],
+       "see": [
+        "apple-volume-purchasing",
+        "recover-your-licence-key"
+       ],
+       "children": []
+      },
+      {
+       "slug": "student-licence",
+       "title": "The student licence",
+       "summary": "Students can buy Professional for £48 a year or £6 a month on a 12-month contract.",
+       "url": "https://maestro-pro.app/guide/student-licence/",
+       "md": "https://maestro-pro.app/guide/student-licence.md",
+       "keywords": [
+        "student",
+        "student price",
+        "student licence",
+        "students discount",
+        "48",
+        "6 pounds"
+       ],
+       "see": [
+        "buy-for-your-organisation",
+        "how-to-request-a-refund"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Practise",
+   "topics": [
+    {
+     "slug": "tuner-wait-for-me",
+     "title": "Tuner & Wait for Me",
+     "summary": "Maestro Pro can listen through the microphone: to tune your instrument, to train a steady note, and to wait for you to play a score note by note. Sound is analysed on the device and is never recorded or sent anywhere.",
+     "url": "https://maestro-pro.app/guide/tuner-wait-for-me/",
+     "md": "https://maestro-pro.app/guide/tuner-wait-for-me.md",
+     "keywords": [
+      "tuner",
+      "tune",
+      "wait for me",
+      "microphone",
+      "cents",
+      "reference note",
+      "steady note",
+      "pitch"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "open-the-tuner",
+       "title": "Open the tuner",
+       "summary": "The Tuner is on the home screen, the + menu, Settings under Listening, and the tuning fork in a score's toolbar.",
+       "url": "https://maestro-pro.app/guide/open-the-tuner/",
+       "md": "https://maestro-pro.app/guide/open-the-tuner.md",
+       "keywords": [
+        "tuner",
+        "open tuner",
+        "tune",
+        "tuning fork",
+        "find tuner",
+        "where is the tuner"
+       ],
+       "see": [
+        "read-the-tuner-display",
+        "microphone-cannot-hear-me"
+       ],
+       "children": []
+      },
+      {
+       "slug": "read-the-tuner-display",
+       "title": "Read the tuner display",
+       "summary": "It shows the note name, how many cents sharp or flat you are, and the frequency, with a needle and an eight-second trace.",
+       "url": "https://maestro-pro.app/guide/read-the-tuner-display/",
+       "md": "https://maestro-pro.app/guide/read-the-tuner-display.md",
+       "keywords": [
+        "cents",
+        "sharp",
+        "flat",
+        "needle",
+        "green zone",
+        "in tune",
+        "frequency",
+        "trace",
+        "tuner display"
+       ],
+       "see": [
+        "open-the-tuner",
+        "play-a-reference-note"
+       ],
+       "children": []
+      },
+      {
+       "slug": "play-a-reference-note",
+       "title": "Play a reference note",
+       "summary": "Play Reference Note sounds the note you are aiming for.",
+       "url": "https://maestro-pro.app/guide/play-a-reference-note/",
+       "md": "https://maestro-pro.app/guide/play-a-reference-note.md",
+       "keywords": [
+        "reference note",
+        "play reference",
+        "pitch note",
+        "tuning note",
+        "a note"
+       ],
+       "see": [
+        "read-the-tuner-display",
+        "change-concert-pitch"
+       ],
+       "children": []
+      },
+      {
+       "slug": "change-concert-pitch",
+       "title": "Change the tuning pitch (A = 440 Hz)",
+       "summary": "A = 440 Hz can be changed between 415 and 466 for baroque or orchestral tuning.",
+       "url": "https://maestro-pro.app/guide/change-concert-pitch/",
+       "md": "https://maestro-pro.app/guide/change-concert-pitch.md",
+       "keywords": [
+        "a440",
+        "concert pitch",
+        "415",
+        "466",
+        "baroque pitch",
+        "tuning pitch",
+        "orchestra"
+       ],
+       "see": [
+        "play-a-reference-note",
+        "read-the-tuner-display"
+       ],
+       "children": []
+      },
+      {
+       "slug": "tune-a-b-flat-or-e-flat-instrument",
+       "title": "Tune a B flat or E flat instrument",
+       "summary": "With your instrument set to B flat or E flat in the Inspector, the tuner shows the written note too.",
+       "url": "https://maestro-pro.app/guide/tune-a-b-flat-or-e-flat-instrument/",
+       "md": "https://maestro-pro.app/guide/tune-a-b-flat-or-e-flat-instrument.md",
+       "keywords": [
+        "transposing instrument",
+        "clarinet",
+        "trumpet",
+        "alto sax",
+        "tenor sax",
+        "written note",
+        "b flat",
+        "e flat"
+       ],
+       "see": [
+        "set-your-instrument",
+        "read-the-tuner-display"
+       ],
+       "children": []
+      },
+      {
+       "slug": "what-is-wait-for-me",
+       "title": "What is Wait for Me?",
+       "summary": "Wait for Me holds the score until the right note is played in tune.",
+       "url": "https://maestro-pro.app/guide/what-is-wait-for-me/",
+       "md": "https://maestro-pro.app/guide/what-is-wait-for-me.md",
+       "keywords": [
+        "wait for me",
+        "waits for you",
+        "follows you",
+        "note by note",
+        "play along",
+        "learn a piece"
+       ],
+       "see": [
+        "microphone-cannot-hear-me",
+        "wrong-octave-detected",
+        "steady-note-trainer"
+       ],
+       "children": []
+      },
+      {
+       "slug": "steady-note-trainer",
+       "title": "The steady-note trainer",
+       "summary": "A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.",
+       "url": "https://maestro-pro.app/guide/steady-note-trainer/",
+       "md": "https://maestro-pro.app/guide/steady-note-trainer.md",
+       "keywords": [
+        "steady note",
+        "long note",
+        "trainer",
+        "hold a note",
+        "intonation"
+       ],
+       "see": [
+        "open-the-tuner",
+        "what-is-wait-for-me"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "record-review",
+     "title": "Record & Review",
+     "summary": "Record yourself playing a score, then review the take with the notes lit: green where you should have been, red where you actually were. It listens through the microphone, so it works with any instrument or your voice.",
+     "url": "https://maestro-pro.app/guide/record-review/",
+     "md": "https://maestro-pro.app/guide/record-review.md",
+     "keywords": [
+      "record",
+      "recording",
+      "review",
+      "take",
+      "microphone",
+      "practise",
+      "wrong notes"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "record-yourself",
+       "title": "Record yourself",
+       "summary": "Press Record, play along after the count-in, then press Stop.",
+       "url": "https://maestro-pro.app/guide/record-yourself/",
+       "md": "https://maestro-pro.app/guide/record-yourself.md",
+       "keywords": [
+        "record",
+        "recording",
+        "record myself",
+        "record button",
+        "cmd r",
+        "take"
+       ],
+       "see": [
+        "record-with-a-backing-track",
+        "review-your-recording"
+       ],
+       "children": []
+      },
+      {
+       "slug": "record-with-a-backing-track",
+       "title": "Record when the score has a backing track",
+       "summary": "The app asks first, because the microphone would hear the backing: Mute It and Record, or Record Anyway.",
+       "url": "https://maestro-pro.app/guide/record-with-a-backing-track/",
+       "md": "https://maestro-pro.app/guide/record-with-a-backing-track.md",
+       "keywords": [
+        "record backing track",
+        "mute backing",
+        "headphones",
+        "record anyway",
+        "mute it and record"
+       ],
+       "see": [
+        "record-yourself",
+        "add-a-backing-track"
+       ],
+       "children": []
+      },
+      {
+       "slug": "review-your-recording",
+       "title": "Review your take",
+       "summary": "The take is shown with the notes lit: green where you should have been, red where you actually were.",
+       "url": "https://maestro-pro.app/guide/review-your-recording/",
+       "md": "https://maestro-pro.app/guide/review-your-recording.md",
+       "keywords": [
+        "review",
+        "playback take",
+        "green red notes",
+        "wrong notes",
+        "late entry",
+        "practise feedback"
+       ],
+       "see": [
+        "record-yourself",
+        "where-recordings-are-kept"
+       ],
+       "children": []
+      },
+      {
+       "slug": "where-recordings-are-kept",
+       "title": "Where recordings are kept",
+       "summary": "Recordings are kept with the score, copied when you duplicate it, and compressed to well under a megabyte a minute.",
+       "url": "https://maestro-pro.app/guide/where-recordings-are-kept/",
+       "md": "https://maestro-pro.app/guide/where-recordings-are-kept.md",
+       "keywords": [
+        "recordings stored",
+        "file size",
+        "duplicate score",
+        "recording storage",
+        "privacy recordings"
+       ],
+       "see": [
+        "record-yourself",
+        "what-stays-on-your-device"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "scales-arpeggios",
+     "title": "Scales & Arpeggios",
+     "summary": "Practice material made on demand.",
+     "url": "https://maestro-pro.app/guide/scales-arpeggios/",
+     "md": "https://maestro-pro.app/guide/scales-arpeggios.md",
+     "keywords": [
+      "scales",
+      "arpeggios",
+      "major",
+      "minor",
+      "blues",
+      "key",
+      "practice material"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "make-a-scale",
+       "title": "Make a scale or arpeggio",
+       "summary": "Choose Scales & Arpeggios on the home screen, pick the kind and a key, and a score is created for you.",
+       "url": "https://maestro-pro.app/guide/make-a-scale/",
+       "md": "https://maestro-pro.app/guide/make-a-scale.md",
+       "keywords": [
+        "make a scale",
+        "scale",
+        "arpeggio",
+        "create scale",
+        "practice scale",
+        "key"
+       ],
+       "see": [
+        "scale-types-and-keys",
+        "scales-are-free"
+       ],
+       "children": []
+      },
+      {
+       "slug": "scale-types-and-keys",
+       "title": "Scale types and keys",
+       "summary": "Major, minor, blues, arpeggios and more, in any key.",
+       "url": "https://maestro-pro.app/guide/scale-types-and-keys/",
+       "md": "https://maestro-pro.app/guide/scale-types-and-keys.md",
+       "keywords": [
+        "major",
+        "minor",
+        "blues",
+        "arpeggios",
+        "any key",
+        "scale kinds",
+        "which scales"
+       ],
+       "see": [
+        "make-a-scale",
+        "scales-are-free"
+       ],
+       "children": []
+      },
+      {
+       "slug": "scales-are-free",
+       "title": "Scales are free on every plan",
+       "summary": "Making scales and arpeggios in any key is included on the Free plan too.",
+       "url": "https://maestro-pro.app/guide/scales-are-free/",
+       "md": "https://maestro-pro.app/guide/scales-are-free.md",
+       "keywords": [
+        "free scales",
+        "scales free plan",
+        "scales without paying"
+       ],
+       "see": [
+        "make-a-scale",
+        "free-plan"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "annotating",
+     "title": "Annotating",
+     "summary": "Mark up the page like a paper part.",
+     "url": "https://maestro-pro.app/guide/annotating/",
+     "md": "https://maestro-pro.app/guide/annotating.md",
+     "keywords": [
+      "annotate",
+      "draw",
+      "pencil",
+      "ink",
+      "pen",
+      "marker",
+      "eraser",
+      "markup"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "draw-on-a-score",
+       "title": "Draw on a score",
+       "summary": "Turn on Annotate in the toolbar and draw; the ink is saved with the score and shows while you play.",
+       "url": "https://maestro-pro.app/guide/draw-on-a-score/",
+       "md": "https://maestro-pro.app/guide/draw-on-a-score.md",
+       "keywords": [
+        "annotate",
+        "draw",
+        "markup",
+        "apple pencil",
+        "write on score",
+        "ink",
+        "mark up"
+       ],
+       "see": [
+        "annotation-tools",
+        "annotation-zoom-sizes"
+       ],
+       "children": []
+      },
+      {
+       "slug": "annotation-tools",
+       "title": "Annotation tools",
+       "summary": "Pens, markers, pencil, colours and an eraser.",
+       "url": "https://maestro-pro.app/guide/annotation-tools/",
+       "md": "https://maestro-pro.app/guide/annotation-tools.md",
+       "keywords": [
+        "pen",
+        "marker",
+        "pencil",
+        "colours",
+        "eraser",
+        "tool palette",
+        "annotation tools"
+       ],
+       "see": [
+        "draw-on-a-score"
+       ],
+       "children": []
+      },
+      {
+       "slug": "annotation-zoom-sizes",
+       "title": "Annotations and zoom",
+       "summary": "Each zoom size keeps its own drawing so it stays lined up with the music.",
+       "url": "https://maestro-pro.app/guide/annotation-zoom-sizes/",
+       "md": "https://maestro-pro.app/guide/annotation-zoom-sizes.md",
+       "keywords": [
+        "zoom",
+        "annotation zoom",
+        "drawing lined up",
+        "zoom size"
+       ],
+       "see": [
+        "draw-on-a-score",
+        "export-with-your-ink"
+       ],
+       "children": []
+      },
+      {
+       "slug": "annotate-on-a-mac",
+       "title": "Annotate on a Mac",
+       "summary": "On a Mac you draw with the trackpad or mouse instead of Apple Pencil.",
+       "url": "https://maestro-pro.app/guide/annotate-on-a-mac/",
+       "md": "https://maestro-pro.app/guide/annotate-on-a-mac.md",
+       "keywords": [
+        "mac annotate",
+        "trackpad",
+        "mouse",
+        "draw on mac",
+        "no pencil"
+       ],
+       "see": [
+        "draw-on-a-score",
+        "apple-pencil"
+       ],
+       "children": []
+      },
+      {
+       "slug": "export-with-your-ink",
+       "title": "Export and print with your ink",
+       "summary": "Export as PDF and Print include your ink for the key and zoom you are viewing.",
+       "url": "https://maestro-pro.app/guide/export-with-your-ink/",
+       "md": "https://maestro-pro.app/guide/export-with-your-ink.md",
+       "keywords": [
+        "export annotations",
+        "print annotations",
+        "pdf with ink",
+        "share marked up score"
+       ],
+       "see": [
+        "export-as-pdf",
+        "print-a-score"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Sound and words",
+   "topics": [
+    {
+     "slug": "backing-tracks-sound",
+     "title": "Backing Tracks & Sound",
+     "summary": "A backing track is a recording that plays with the score. The built-in instrument can play the notes on the page too.",
+     "url": "https://maestro-pro.app/guide/backing-tracks-sound/",
+     "md": "https://maestro-pro.app/guide/backing-tracks-sound.md",
+     "keywords": [
+      "backing track",
+      "audio",
+      "track",
+      "level",
+      "reduce vocals",
+      "built-in instrument",
+      "sound",
+      "match key"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "add-a-backing-track",
+       "title": "Add a backing track",
+       "summary": "Add the first backing track with Add Backing Track, and it plays in time with the score.",
+       "url": "https://maestro-pro.app/guide/add-a-backing-track/",
+       "md": "https://maestro-pro.app/guide/add-a-backing-track.md",
+       "keywords": [
+        "add backing track",
+        "backing",
+        "audio file",
+        "accompaniment",
+        "play along",
+        "own audio"
+       ],
+       "see": [
+        "add-another-backing-track",
+        "match-key-and-tempo"
+       ],
+       "children": []
+      },
+      {
+       "slug": "add-another-backing-track",
+       "title": "Add more than one backing track",
+       "summary": "A score can have several tracks, for example a rhythm section and a separate guide vocal.",
+       "url": "https://maestro-pro.app/guide/add-another-backing-track/",
+       "md": "https://maestro-pro.app/guide/add-another-backing-track.md",
+       "keywords": [
+        "multiple backing tracks",
+        "second track",
+        "guide vocal",
+        "rhythm section",
+        "stack tracks"
+       ],
+       "see": [
+        "backing-track-levels-and-switches",
+        "the-first-backing-track"
+       ],
+       "children": []
+      },
+      {
+       "slug": "backing-track-levels-and-switches",
+       "title": "Track switches and levels",
+       "summary": "Each track has its own switch and its own level from minus 24 to plus 12 decibels.",
+       "url": "https://maestro-pro.app/guide/backing-track-levels-and-switches/",
+       "md": "https://maestro-pro.app/guide/backing-track-levels-and-switches.md",
+       "keywords": [
+        "track level",
+        "volume",
+        "decibels",
+        "mute track",
+        "turn off track",
+        "mix"
+       ],
+       "see": [
+        "add-another-backing-track",
+        "reduce-vocals"
+       ],
+       "children": []
+      },
+      {
+       "slug": "the-first-backing-track",
+       "title": "The first track keeps time",
+       "summary": "The first backing track is the one the score keeps time with; later tracks follow its speed and key.",
+       "url": "https://maestro-pro.app/guide/the-first-backing-track/",
+       "md": "https://maestro-pro.app/guide/the-first-backing-track.md",
+       "keywords": [
+        "first track",
+        "master track",
+        "other tracks",
+        "follow speed",
+        "edit lanes",
+        "start together"
+       ],
+       "see": [
+        "match-key-and-tempo",
+        "add-another-backing-track"
+       ],
+       "children": []
+      },
+      {
+       "slug": "match-key-and-tempo",
+       "title": "Match Key and Tempo to a track",
+       "summary": "Match Key & Tempo works on the first backing track; use it again if the track starts late or early.",
+       "url": "https://maestro-pro.app/guide/match-key-and-tempo/",
+       "md": "https://maestro-pro.app/guide/match-key-and-tempo.md",
+       "keywords": [
+        "match key",
+        "match tempo",
+        "match key and tempo",
+        "adjust to track",
+        "align"
+       ],
+       "see": [
+        "the-first-backing-track",
+        "backing-track-starts-late-or-early"
+       ],
+       "children": []
+      },
+      {
+       "slug": "reduce-vocals",
+       "title": "Reduce vocals on a track",
+       "summary": "Reduce Vocals cuts the singer down in a stereo recording; it cannot remove a voice from a mono recording.",
+       "url": "https://maestro-pro.app/guide/reduce-vocals/",
+       "md": "https://maestro-pro.app/guide/reduce-vocals.md",
+       "keywords": [
+        "reduce vocals",
+        "remove vocals",
+        "karaoke version",
+        "vocal removal",
+        "singer",
+        "centre channel"
+       ],
+       "see": [
+        "backing-track-levels-and-switches",
+        "lyrics-karaoke"
+       ],
+       "children": []
+      },
+      {
+       "slug": "play-along-with-apple-music",
+       "title": "Play along with Apple Music",
+       "summary": "Play a song from your Apple Music subscription alongside a score and see its lyrics.",
+       "url": "https://maestro-pro.app/guide/play-along-with-apple-music/",
+       "md": "https://maestro-pro.app/guide/play-along-with-apple-music.md",
+       "keywords": [
+        "apple music",
+        "song",
+        "play along",
+        "subscription",
+        "streaming",
+        "lyrics apple music"
+       ],
+       "see": [
+        "apple-music-permission",
+        "performer-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "built-in-instrument",
+       "title": "The built-in instrument",
+       "summary": "The built-in instrument can play the notes on the page, as can a metronome.",
+       "url": "https://maestro-pro.app/guide/built-in-instrument/",
+       "md": "https://maestro-pro.app/guide/built-in-instrument.md",
+       "keywords": [
+        "built-in instrument",
+        "synth",
+        "play the notes",
+        "instrument sound",
+        "midi sound"
+       ],
+       "see": [
+        "free-plan-limits",
+        "add-a-backing-track"
+       ],
+       "children": []
+      },
+      {
+       "slug": "equaliser-and-key-changes",
+       "title": "Equaliser and key changes",
+       "summary": "Key changes and the equaliser are part of the Performer and Professional plans.",
+       "url": "https://maestro-pro.app/guide/equaliser-and-key-changes/",
+       "md": "https://maestro-pro.app/guide/equaliser-and-key-changes.md",
+       "keywords": [
+        "equaliser",
+        "equalizer",
+        "eq",
+        "key changes",
+        "key change",
+        "plan features"
+       ],
+       "see": [
+        "transpose-for-your-instrument",
+        "compare-plans"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "lyrics-karaoke",
+     "title": "Lyrics & Karaoke",
+     "summary": "Lyrics scroll in time with the music like in Apple Music, and CD+Graphics karaoke files show their built-in pictures.",
+     "url": "https://maestro-pro.app/guide/lyrics-karaoke/",
+     "md": "https://maestro-pro.app/guide/lyrics-karaoke.md",
+     "keywords": [
+      "lyrics",
+      "karaoke",
+      "lrc",
+      "kar",
+      "cdg",
+      "syllables",
+      "words",
+      "singer"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "add-a-lyrics-file",
+       "title": "Add a lyrics file",
+       "summary": "Add a .lrc file (timed lines) or a .txt file to a score from the Lyrics menu.",
+       "url": "https://maestro-pro.app/guide/add-a-lyrics-file/",
+       "md": "https://maestro-pro.app/guide/add-a-lyrics-file.md",
+       "keywords": [
+        "add lyrics",
+        "lrc",
+        "txt",
+        "lyrics file",
+        "import lyrics"
+       ],
+       "see": [
+        "lyrics-timing",
+        "show-lyrics-instead-of-music"
+       ],
+       "children": []
+      },
+      {
+       "slug": "show-lyrics-instead-of-music",
+       "title": "Show lyrics instead of music",
+       "summary": "Show Lyrics Instead of Music swaps the page for the words, which scroll in time like Apple Music.",
+       "url": "https://maestro-pro.app/guide/show-lyrics-instead-of-music/",
+       "md": "https://maestro-pro.app/guide/show-lyrics-instead-of-music.md",
+       "keywords": [
+        "show lyrics",
+        "lyrics screen",
+        "karaoke screen",
+        "words instead of music"
+       ],
+       "see": [
+        "animate-syllables",
+        "lyrics-appearance-settings"
+       ],
+       "children": []
+      },
+      {
+       "slug": "animate-syllables",
+       "title": "Animate syllables",
+       "summary": "Animate Syllables swells each syllable as it is sung, and Show Syllable Progress fills it.",
+       "url": "https://maestro-pro.app/guide/animate-syllables/",
+       "md": "https://maestro-pro.app/guide/animate-syllables.md",
+       "keywords": [
+        "syllables",
+        "animate syllables",
+        "syllable progress",
+        "karaoke effect"
+       ],
+       "see": [
+        "show-lyrics-instead-of-music",
+        "lyrics-appearance-settings"
+       ],
+       "children": []
+      },
+      {
+       "slug": "lyrics-appearance-settings",
+       "title": "Lyrics typeface, size and blur",
+       "summary": "Typeface, size, alignment and blur for lines not being sung are set in Settings.",
+       "url": "https://maestro-pro.app/guide/lyrics-appearance-settings/",
+       "md": "https://maestro-pro.app/guide/lyrics-appearance-settings.md",
+       "keywords": [
+        "lyrics font",
+        "lyrics size",
+        "alignment",
+        "blur",
+        "lyrics settings"
+       ],
+       "see": [
+        "show-lyrics-instead-of-music",
+        "appearance-light-dark"
+       ],
+       "children": []
+      },
+      {
+       "slug": "lyrics-only-items",
+       "title": "Lyrics-only items",
+       "summary": "A lyrics-only item has its own screen with a transport bar and an optional backing track.",
+       "url": "https://maestro-pro.app/guide/lyrics-only-items/",
+       "md": "https://maestro-pro.app/guide/lyrics-only-items.md",
+       "keywords": [
+        "lyrics only",
+        "no notation",
+        "lyrics screen",
+        "transport bar"
+       ],
+       "see": [
+        "add-a-lyrics-file",
+        "add-a-backing-track"
+       ],
+       "children": []
+      },
+      {
+       "slug": "lyrics-timing",
+       "title": "Lyrics in seconds or in bars",
+       "summary": "When a lyrics file has no timing, you can choose whether lyrics are timed in seconds or in bars.",
+       "url": "https://maestro-pro.app/guide/lyrics-timing/",
+       "md": "https://maestro-pro.app/guide/lyrics-timing.md",
+       "keywords": [
+        "lyrics timing",
+        "seconds",
+        "bars",
+        "untimed lyrics",
+        "txt timing"
+       ],
+       "see": [
+        "add-a-lyrics-file",
+        "lyrics-only-items"
+       ],
+       "children": []
+      },
+      {
+       "slug": "karaoke-midi-files",
+       "title": "Karaoke MIDI (.kar) files",
+       "summary": "Karaoke MIDI files contain their own words.",
+       "url": "https://maestro-pro.app/guide/karaoke-midi-files/",
+       "md": "https://maestro-pro.app/guide/karaoke-midi-files.md",
+       "keywords": [
+        "kar",
+        "karaoke midi",
+        "midi karaoke",
+        "words in file"
+       ],
+       "see": [
+        "import-midi-and-karaoke-files",
+        "show-lyrics-instead-of-music"
+       ],
+       "children": []
+      },
+      {
+       "slug": "cdg-karaoke",
+       "title": "CD+Graphics karaoke (.cdg)",
+       "summary": "CD+Graphics karaoke files show their built-in pictures.",
+       "url": "https://maestro-pro.app/guide/cdg-karaoke/",
+       "md": "https://maestro-pro.app/guide/cdg-karaoke.md",
+       "keywords": [
+        "cdg",
+        "cd+g",
+        "karaoke pictures",
+        "cd graphics"
+       ],
+       "see": [
+        "supported-file-types",
+        "lyrics-karaoke"
+       ],
+       "children": []
+      },
+      {
+       "slug": "find-lyrics-online",
+       "title": "Find lyrics and singers online",
+       "summary": "Lyrics and singers can be found online; this needs the internet and sends the song title and artist to lyric services.",
+       "url": "https://maestro-pro.app/guide/find-lyrics-online/",
+       "md": "https://maestro-pro.app/guide/find-lyrics-online.md",
+       "keywords": [
+        "find lyrics",
+        "lyrics online",
+        "singers",
+        "genius",
+        "lrclib",
+        "online lyrics"
+       ],
+       "see": [
+        "add-lyrics-with-backing",
+        "when-the-app-uses-the-internet"
+       ],
+       "children": []
+      },
+      {
+       "slug": "duets-and-singers",
+       "title": "Duets and singers",
+       "summary": "Duets get a singer each, in their own colour.",
+       "url": "https://maestro-pro.app/guide/duets-and-singers/",
+       "md": "https://maestro-pro.app/guide/duets-and-singers.md",
+       "keywords": [
+        "duet",
+        "singers",
+        "colours",
+        "two singers",
+        "who sings"
+       ],
+       "see": [
+        "find-lyrics-online",
+        "show-lyrics-instead-of-music"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Write and keep",
+   "topics": [
+    {
+     "slug": "writing-editing-music",
+     "title": "Writing & Editing Music",
+     "summary": "The score editor changes the notes in a MusicXML score. A PDF is first read by the app, and the editor works on a copy of what it read. Open it with Edit Score (the music-note-list button; in Simple mode it appears for scores you created).",
+     "url": "https://maestro-pro.app/guide/writing-editing-music/",
+     "md": "https://maestro-pro.app/guide/writing-editing-music.md",
+     "keywords": [
+      "editor",
+      "edit",
+      "write",
+      "notes",
+      "rests",
+      "marks",
+      "dynamics",
+      "bars",
+      "form",
+      "medley",
+      "erase",
+      "draw",
+      "musicxml"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "open-the-score-editor",
+       "title": "Open the score editor",
+       "summary": "Edit Score opens the editor, which works on MusicXML scores and on a copy of what the app read from a PDF.",
+       "url": "https://maestro-pro.app/guide/open-the-score-editor/",
+       "md": "https://maestro-pro.app/guide/open-the-score-editor.md",
+       "keywords": [
+        "score editor",
+        "edit score",
+        "open editor",
+        "music note list button",
+        "simple mode",
+        "edit"
+       ],
+       "see": [
+        "the-nine-editor-modes",
+        "edit-a-pdf-score",
+        "professional-plan"
+       ],
+       "children": []
+      },
+      {
+       "slug": "the-nine-editor-modes",
+       "title": "The nine editor modes",
+       "summary": "One strip of nine modes at the bottom of the editor: Notes, Rests, Marks, Dynamics, Bars, Form, Medley, Erase and Draw.",
+       "url": "https://maestro-pro.app/guide/the-nine-editor-modes/",
+       "md": "https://maestro-pro.app/guide/the-nine-editor-modes.md",
+       "keywords": [
+        "editor modes",
+        "nine modes",
+        "mode strip",
+        "editing tools",
+        "notes rests marks"
+       ],
+       "see": [
+        "editor-notes-mode",
+        "editor-rests-mode",
+        "editor-marks-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-notes-mode",
+       "title": "Notes mode: add and move notes",
+       "summary": "Slide on a rest to choose a pitch, lift to place a note, drag to move one, scribble to rub it out.",
+       "url": "https://maestro-pro.app/guide/editor-notes-mode/",
+       "md": "https://maestro-pro.app/guide/editor-notes-mode.md",
+       "keywords": [
+        "add notes",
+        "write notes",
+        "move note",
+        "change length",
+        "note length",
+        "pitch",
+        "scribble"
+       ],
+       "see": [
+        "editor-rests-mode",
+        "editor-erase-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-rests-mode",
+       "title": "Rests mode",
+       "summary": "Turn a note into a rest, change a rest's length, or take a rest off the page.",
+       "url": "https://maestro-pro.app/guide/editor-rests-mode/",
+       "md": "https://maestro-pro.app/guide/editor-rests-mode.md",
+       "keywords": [
+        "rests",
+        "rest length",
+        "turn note into rest",
+        "delete rest",
+        "bin"
+       ],
+       "see": [
+        "editor-notes-mode",
+        "editor-erase-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-marks-mode",
+       "title": "Marks mode: accidentals, ties and articulations",
+       "summary": "Add a sharp, flat or natural, tie notes, or give a note staccato, accent, tenuto, marcato or a fermata.",
+       "url": "https://maestro-pro.app/guide/editor-marks-mode/",
+       "md": "https://maestro-pro.app/guide/editor-marks-mode.md",
+       "keywords": [
+        "sharp",
+        "flat",
+        "natural",
+        "tie",
+        "staccato",
+        "accent",
+        "tenuto",
+        "marcato",
+        "fermata",
+        "articulation"
+       ],
+       "see": [
+        "editor-dynamics-mode",
+        "editor-notes-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-dynamics-mode",
+       "title": "Dynamics mode",
+       "summary": "Put dynamics from ppp to fff on a note or bar, and crescendo or diminuendo hairpins over bars.",
+       "url": "https://maestro-pro.app/guide/editor-dynamics-mode/",
+       "md": "https://maestro-pro.app/guide/editor-dynamics-mode.md",
+       "keywords": [
+        "dynamics",
+        "ppp",
+        "fff",
+        "crescendo",
+        "diminuendo",
+        "hairpin",
+        "loud",
+        "soft"
+       ],
+       "see": [
+        "editor-marks-mode",
+        "editor-bars-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-bars-mode",
+       "title": "Bars mode: repeats, adding and deleting bars",
+       "summary": "Repeat signs, adding a bar before or after, deleting one or several bars, and Expand Repeats to write a piece out as it is played.",
+       "url": "https://maestro-pro.app/guide/editor-bars-mode/",
+       "md": "https://maestro-pro.app/guide/editor-bars-mode.md",
+       "keywords": [
+        "bars",
+        "repeat signs",
+        "add bar",
+        "add bar before",
+        "add bar after",
+        "delete bar",
+        "delete several bars",
+        "expand repeats"
+       ],
+       "see": [
+        "editor-form-mode",
+        "editor-medley-mode",
+        "editor-context-menu"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-context-menu",
+       "title": "The touch and hold menu",
+       "summary": "Touch and hold a note, rest or bar in the editor for a menu of what you can do to it.",
+       "url": "https://maestro-pro.app/guide/editor-context-menu/",
+       "md": "https://maestro-pro.app/guide/editor-context-menu.md",
+       "keywords": [
+        "context menu",
+        "touch and hold",
+        "long press",
+        "right click",
+        "menu",
+        "quick menu",
+        "editor shortcuts"
+       ],
+       "see": [
+        "editor-bars-mode",
+        "editor-marks-mode",
+        "editor-rests-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-form-mode",
+       "title": "Form mode: endings, jumps and tempo marks",
+       "summary": "First and second time bars, Segno, Coda, To Coda, D.C., D.S., Fine and tempo marks.",
+       "url": "https://maestro-pro.app/guide/editor-form-mode/",
+       "md": "https://maestro-pro.app/guide/editor-form-mode.md",
+       "keywords": [
+        "form",
+        "first and second time",
+        "segno",
+        "coda",
+        "d.c.",
+        "d.s.",
+        "fine",
+        "tempo marks",
+        "jumps"
+       ],
+       "see": [
+        "editor-bars-mode",
+        "tempo-and-custom-tempo"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-medley-mode",
+       "title": "Medley mode: copy, cut and paste bars",
+       "summary": "Drag across bars to choose them, then Copy, Cut, Paste, Duplicate or Delete, or Insert from Score.",
+       "url": "https://maestro-pro.app/guide/editor-medley-mode/",
+       "md": "https://maestro-pro.app/guide/editor-medley-mode.md",
+       "keywords": [
+        "medley",
+        "copy bars",
+        "paste bars",
+        "duplicate bars",
+        "insert from score",
+        "arrange",
+        "combine"
+       ],
+       "see": [
+        "editor-bars-mode",
+        "start-a-branch"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-erase-mode",
+       "title": "Erase mode",
+       "summary": "Touch or drag over notes and rests to erase them; double-tap Apple Pencil to switch to the eraser.",
+       "url": "https://maestro-pro.app/guide/editor-erase-mode/",
+       "md": "https://maestro-pro.app/guide/editor-erase-mode.md",
+       "keywords": [
+        "erase",
+        "rub out",
+        "delete notes",
+        "eraser",
+        "pencil double tap"
+       ],
+       "see": [
+        "editor-notes-mode",
+        "editor-rests-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-draw-mode",
+       "title": "Draw mode",
+       "summary": "Write over the music with Apple Pencil using pen, marker, pencil and colour tools; the ink stays on the page.",
+       "url": "https://maestro-pro.app/guide/editor-draw-mode/",
+       "md": "https://maestro-pro.app/guide/editor-draw-mode.md",
+       "keywords": [
+        "draw in editor",
+        "pencil drawing",
+        "ink",
+        "handwriting"
+       ],
+       "see": [
+        "draw-on-a-score",
+        "editor-erase-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-beats-per-bar",
+       "title": "Beats per bar",
+       "summary": "Options has Beats per Bar: 4, 3 or a custom number, chosen to match the score when the editor opens.",
+       "url": "https://maestro-pro.app/guide/editor-beats-per-bar/",
+       "md": "https://maestro-pro.app/guide/editor-beats-per-bar.md",
+       "keywords": [
+        "beats per bar",
+        "time signature",
+        "4 beats",
+        "3 beats",
+        "custom beats",
+        "bar length",
+        "metre",
+        "3/4",
+        "4/4"
+       ],
+       "see": [
+        "editor-bars-mode",
+        "open-the-score-editor"
+       ],
+       "children": []
+      },
+      {
+       "slug": "edit-a-pdf-score",
+       "title": "Edit a score that came from a PDF",
+       "summary": "The app first reads a PDF, and the editor works on a copy of what it read.",
+       "url": "https://maestro-pro.app/guide/edit-a-pdf-score/",
+       "md": "https://maestro-pro.app/guide/edit-a-pdf-score.md",
+       "keywords": [
+        "edit pdf",
+        "pdf editing",
+        "edit scanned score",
+        "read pdf",
+        "copy of what it read"
+       ],
+       "see": [
+        "import-a-pdf",
+        "pdf-notes-read-wrongly"
+       ],
+       "children": []
+      },
+      {
+       "slug": "edit-with-apple-pencil-only",
+       "title": "Stop a resting hand changing notes",
+       "summary": "The setting Edit with Apple Pencil Only stops a resting hand changing notes.",
+       "url": "https://maestro-pro.app/guide/edit-with-apple-pencil-only/",
+       "md": "https://maestro-pro.app/guide/edit-with-apple-pencil-only.md",
+       "keywords": [
+        "pencil only",
+        "palm rejection",
+        "hand changing notes",
+        "finger editing",
+        "accidental edits"
+       ],
+       "see": [
+        "apple-pencil",
+        "open-the-score-editor"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "version-history-github",
+     "title": "Version History & GitHub",
+     "summary": "Save versions of a score, try ideas on branches, merge them back, and keep it all on GitHub.",
+     "url": "https://maestro-pro.app/guide/version-history-github/",
+     "md": "https://maestro-pro.app/guide/version-history-github.md",
+     "keywords": [
+      "version",
+      "history",
+      "branch",
+      "merge",
+      "roll back",
+      "github",
+      "git",
+      "repo",
+      "repository",
+      "connect github",
+      "commit",
+      "push",
+      "save",
+      "clash"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "save-a-version",
+       "title": "Save a version",
+       "summary": "In the score editor, History and Save Version keep a snapshot you can return to.",
+       "url": "https://maestro-pro.app/guide/save-a-version/",
+       "md": "https://maestro-pro.app/guide/save-a-version.md",
+       "keywords": [
+        "save version",
+        "snapshot",
+        "history",
+        "version",
+        "backup",
+        "save",
+        "git",
+        "commit",
+        "repo",
+        "repository"
+       ],
+       "see": [
+        "start-a-branch",
+        "roll-back-a-version"
+       ],
+       "children": []
+      },
+      {
+       "slug": "start-a-branch",
+       "title": "Start a branch to try an idea",
+       "summary": "New Branch starts a separate line of edits from now or from any earlier version.",
+       "url": "https://maestro-pro.app/guide/start-a-branch/",
+       "md": "https://maestro-pro.app/guide/start-a-branch.md",
+       "keywords": [
+        "branch",
+        "new branch",
+        "try an idea",
+        "experiment",
+        "version branch",
+        "git",
+        "repo",
+        "repository",
+        "branching"
+       ],
+       "see": [
+        "merge-branches",
+        "save-a-version"
+       ],
+       "children": []
+      },
+      {
+       "slug": "roll-back-a-version",
+       "title": "Roll back to an earlier version",
+       "summary": "Roll Back to This Version restores an earlier snapshot as a new version, so nothing is lost.",
+       "url": "https://maestro-pro.app/guide/roll-back-a-version/",
+       "md": "https://maestro-pro.app/guide/roll-back-a-version.md",
+       "keywords": [
+        "roll back",
+        "restore",
+        "undo",
+        "earlier version",
+        "revert"
+       ],
+       "see": [
+        "save-a-version",
+        "start-a-branch"
+       ],
+       "children": []
+      },
+      {
+       "slug": "merge-branches",
+       "title": "Merge a branch",
+       "summary": "Merge brings another branch into the current one, bar by bar.",
+       "url": "https://maestro-pro.app/guide/merge-branches/",
+       "md": "https://maestro-pro.app/guide/merge-branches.md",
+       "keywords": [
+        "merge",
+        "merge branch",
+        "combine branches",
+        "bring in changes",
+        "git",
+        "pull request",
+        "repo"
+       ],
+       "see": [
+        "resolve-merge-clashes",
+        "start-a-branch"
+       ],
+       "children": []
+      },
+      {
+       "slug": "resolve-merge-clashes",
+       "title": "Resolve merge clashes",
+       "summary": "A bar changed on both branches clashes, and you choose to keep yours or take theirs.",
+       "url": "https://maestro-pro.app/guide/resolve-merge-clashes/",
+       "md": "https://maestro-pro.app/guide/resolve-merge-clashes.md",
+       "keywords": [
+        "clash",
+        "conflict",
+        "merge conflict",
+        "keep mine",
+        "take theirs",
+        "bars matched by number",
+        "git",
+        "merge conflict",
+        "conflicts"
+       ],
+       "see": [
+        "merge-branches"
+       ],
+       "children": []
+      },
+      {
+       "slug": "connect-github",
+       "title": "Connect a score to GitHub",
+       "summary": "Connect a score to your own GitHub repository and push its version history there.",
+       "url": "https://maestro-pro.app/guide/connect-github/",
+       "md": "https://maestro-pro.app/guide/connect-github.md",
+       "keywords": [
+        "github",
+        "connect github",
+        "push",
+        "repository",
+        "sync",
+        "personal access token",
+        "repo",
+        "repository",
+        "git",
+        "connect to github",
+        "link github",
+        "github repo",
+        "push to github",
+        "commit",
+        "sync"
+       ],
+       "see": [
+        "github-token-safety",
+        "save-a-version"
+       ],
+       "children": []
+      },
+      {
+       "slug": "github-token-safety",
+       "title": "Where your GitHub token is kept",
+       "summary": "The token is kept in your device's Keychain and sent only to GitHub.",
+       "url": "https://maestro-pro.app/guide/github-token-safety/",
+       "md": "https://maestro-pro.app/guide/github-token-safety.md",
+       "keywords": [
+        "github token",
+        "keychain",
+        "privacy github",
+        "token safe",
+        "personal access token",
+        "repo",
+        "repository",
+        "git",
+        "access token",
+        "pat",
+        "credentials",
+        "login to github"
+       ],
+       "see": [
+        "connect-github",
+        "privacy-and-permissions"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "share-export-print",
+     "title": "Share, Export & Print",
+     "summary": "Get a score, or a video of it, out of the app.",
+     "url": "https://maestro-pro.app/guide/share-export-print/",
+     "md": "https://maestro-pro.app/guide/share-export-print.md",
+     "keywords": [
+      "share",
+      "export",
+      "print",
+      "pdf",
+      "musicxml",
+      "airdrop",
+      "files",
+      "video"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "export-as-musicxml",
+       "title": "Export as MusicXML",
+       "summary": "MusicXML opens in MuseScore, Finale, Sibelius, Dorico, Notion and most other notation apps.",
+       "url": "https://maestro-pro.app/guide/export-as-musicxml/",
+       "md": "https://maestro-pro.app/guide/export-as-musicxml.md",
+       "keywords": [
+        "export musicxml",
+        "musescore",
+        "finale",
+        "sibelius",
+        "dorico",
+        "notion",
+        "notation apps"
+       ],
+       "see": [
+        "share-menu",
+        "export-as-pdf"
+       ],
+       "children": []
+      },
+      {
+       "slug": "export-as-pdf",
+       "title": "Export as PDF",
+       "summary": "A PDF score is passed on as it is; any other score is typeset in the key currently shown.",
+       "url": "https://maestro-pro.app/guide/export-as-pdf/",
+       "md": "https://maestro-pro.app/guide/export-as-pdf.md",
+       "keywords": [
+        "export pdf",
+        "pdf",
+        "save pdf",
+        "typeset",
+        "current key"
+       ],
+       "see": [
+        "export-with-your-ink",
+        "print-a-score"
+       ],
+       "children": []
+      },
+      {
+       "slug": "print-a-score",
+       "title": "Print a score",
+       "summary": "Print opens the system print dialog.",
+       "url": "https://maestro-pro.app/guide/print-a-score/",
+       "md": "https://maestro-pro.app/guide/print-a-score.md",
+       "keywords": [
+        "print",
+        "printing",
+        "paper",
+        "printer"
+       ],
+       "see": [
+        "export-as-pdf",
+        "export-with-your-ink"
+       ],
+       "children": []
+      },
+      {
+       "slug": "share-menu",
+       "title": "The Share menu",
+       "summary": "Press and hold a score in the library and choose Share for Export as MusicXML, Export as PDF and Print.",
+       "url": "https://maestro-pro.app/guide/share-menu/",
+       "md": "https://maestro-pro.app/guide/share-menu.md",
+       "keywords": [
+        "share",
+        "share menu",
+        "long press",
+        "library share",
+        "send score"
+       ],
+       "see": [
+        "export-as-musicxml",
+        "share-with-airdrop-or-files"
+       ],
+       "children": []
+      },
+      {
+       "slug": "share-with-airdrop-or-files",
+       "title": "Save to Files, AirDrop, email or message",
+       "summary": "In the share sheet you can save to Files, AirDrop, email or message the file.",
+       "url": "https://maestro-pro.app/guide/share-with-airdrop-or-files/",
+       "md": "https://maestro-pro.app/guide/share-with-airdrop-or-files.md",
+       "keywords": [
+        "airdrop",
+        "save to files",
+        "email score",
+        "message score",
+        "send file"
+       ],
+       "see": [
+        "share-menu",
+        "export-as-pdf"
+       ],
+       "children": []
+      },
+      {
+       "slug": "export-a-video",
+       "title": "Get a video of a score",
+       "summary": "A video of the music following along can be taken out of the app.",
+       "url": "https://maestro-pro.app/guide/export-a-video/",
+       "md": "https://maestro-pro.app/guide/export-a-video.md",
+       "keywords": [
+        "video",
+        "export video",
+        "music video",
+        "follow along video"
+       ],
+       "see": [
+        "share-menu",
+        "export-as-pdf"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Together",
+   "topics": [
+    {
+     "slug": "play-together",
+     "title": "Play Together",
+     "summary": "Up to eight devices running Maestro Pro can play in time with each other (Advanced mode).",
+     "url": "https://maestro-pro.app/guide/play-together/",
+     "md": "https://maestro-pro.app/guide/play-together.md",
+     "keywords": [
+      "play together",
+      "session",
+      "join",
+      "devices",
+      "ensemble",
+      "nudge",
+      "local network",
+      "teacher"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "start-a-session",
+       "title": "Start a Play Together session",
+       "summary": "Open your parts, choose Play Together, then Start a Session, and allow each player in.",
+       "url": "https://maestro-pro.app/guide/start-a-session/",
+       "md": "https://maestro-pro.app/guide/start-a-session.md",
+       "keywords": [
+        "start session",
+        "host",
+        "play together host",
+        "begin session",
+        "teacher"
+       ],
+       "see": [
+        "join-a-session",
+        "play-together-permissions"
+       ],
+       "children": []
+      },
+      {
+       "slug": "join-a-session",
+       "title": "Join a session",
+       "summary": "Choose Join a Session and pick the host's device.",
+       "url": "https://maestro-pro.app/guide/join-a-session/",
+       "md": "https://maestro-pro.app/guide/join-a-session.md",
+       "keywords": [
+        "join session",
+        "join",
+        "connect",
+        "student join",
+        "ensemble join"
+       ],
+       "see": [
+        "start-a-session",
+        "play-together-permissions"
+       ],
+       "children": []
+      },
+      {
+       "slug": "play-together-permissions",
+       "title": "Local Network permission",
+       "summary": "Allow the Local Network permission if asked; devices find each other over Wi-Fi and Bluetooth, with no account.",
+       "url": "https://maestro-pro.app/guide/play-together-permissions/",
+       "md": "https://maestro-pro.app/guide/play-together-permissions.md",
+       "keywords": [
+        "local network",
+        "permission",
+        "wifi",
+        "bluetooth",
+        "cannot find device",
+        "no account"
+       ],
+       "see": [
+        "start-a-session",
+        "local-network-permission"
+       ],
+       "children": []
+      },
+      {
+       "slug": "nudge-wireless-audio",
+       "title": "Nudge for wireless speakers and headphones",
+       "summary": "The Nudge slider moves your sound earlier or later if you use wireless speakers or headphones.",
+       "url": "https://maestro-pro.app/guide/nudge-wireless-audio/",
+       "md": "https://maestro-pro.app/guide/nudge-wireless-audio.md",
+       "keywords": [
+        "nudge",
+        "delay",
+        "latency",
+        "bluetooth headphones",
+        "out of sync",
+        "wireless speakers"
+       ],
+       "see": [
+        "start-a-session"
+       ],
+       "children": []
+      },
+      {
+       "slug": "play-together-in-lessons",
+       "title": "Using Play Together in lessons and rehearsals",
+       "summary": "Play, pause, seek and tempo changes on any device are mirrored on all of them.",
+       "url": "https://maestro-pro.app/guide/play-together-in-lessons/",
+       "md": "https://maestro-pro.app/guide/play-together-in-lessons.md",
+       "keywords": [
+        "teacher",
+        "students",
+        "ensemble",
+        "lesson",
+        "rehearsal",
+        "mirrored controls",
+        "in step"
+       ],
+       "see": [
+        "start-a-session",
+        "join-a-session"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Settings and help",
+   "topics": [
+    {
+     "slug": "keyboard-shortcuts",
+     "title": "Keyboard Shortcuts",
+     "summary": "On a Mac nearly everything has a keyboard shortcut, shown in the Playback, Score and View menus. On an iPad with a keyboard, hold the Command key to see them. Every shortcut can be changed.",
+     "url": "https://maestro-pro.app/guide/keyboard-shortcuts/",
+     "md": "https://maestro-pro.app/guide/keyboard-shortcuts.md",
+     "keywords": [
+      "keyboard",
+      "shortcut",
+      "keys",
+      "mac",
+      "command",
+      "change shortcut"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "see-the-shortcuts",
+       "title": "See the keyboard shortcuts",
+       "summary": "On a Mac shortcuts are shown in the Playback, Score and View menus; on an iPad hold the Command key.",
+       "url": "https://maestro-pro.app/guide/see-the-shortcuts/",
+       "md": "https://maestro-pro.app/guide/see-the-shortcuts.md",
+       "keywords": [
+        "shortcuts",
+        "keyboard",
+        "command key",
+        "menus",
+        "mac menus",
+        "list of shortcuts"
+       ],
+       "see": [
+        "change-a-shortcut",
+        "mac-playback-keys"
+       ],
+       "children": []
+      },
+      {
+       "slug": "change-a-shortcut",
+       "title": "Change a shortcut",
+       "summary": "In Settings under Keyboard Shortcuts, click a shortcut and press the keys you want instead.",
+       "url": "https://maestro-pro.app/guide/change-a-shortcut/",
+       "md": "https://maestro-pro.app/guide/change-a-shortcut.md",
+       "keywords": [
+        "change shortcut",
+        "rebind",
+        "custom shortcut",
+        "remap key",
+        "assign key"
+       ],
+       "see": [
+        "reset-shortcuts",
+        "see-the-shortcuts"
+       ],
+       "children": []
+      },
+      {
+       "slug": "reset-shortcuts",
+       "title": "Put shortcuts back",
+       "summary": "The arrow beside a shortcut resets it, and Reset All to Defaults resets them all.",
+       "url": "https://maestro-pro.app/guide/reset-shortcuts/",
+       "md": "https://maestro-pro.app/guide/reset-shortcuts.md",
+       "keywords": [
+        "reset shortcuts",
+        "defaults",
+        "undo shortcut change",
+        "restore keys"
+       ],
+       "see": [
+        "change-a-shortcut"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "settings-accessibility",
+     "title": "Settings & Accessibility",
+     "summary": "Settings has the choices that apply everywhere.",
+     "url": "https://maestro-pro.app/guide/settings-accessibility/",
+     "md": "https://maestro-pro.app/guide/settings-accessibility.md",
+     "keywords": [
+      "settings",
+      "appearance",
+      "dark",
+      "light",
+      "colour",
+      "accessibility",
+      "defaults",
+      "highlight"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "open-the-guide-and-support",
+       "title": "Open the guide and support from the app",
+       "summary": "Settings has Guide and Support buttons that open this website inside the app.",
+       "url": "https://maestro-pro.app/guide/open-the-guide-and-support/",
+       "md": "https://maestro-pro.app/guide/open-the-guide-and-support.md",
+       "keywords": [
+        "guide",
+        "support",
+        "help",
+        "open guide",
+        "contact support",
+        "settings",
+        "where is help"
+       ],
+       "see": [
+        "troubleshooting",
+        "provide-feedback"
+       ],
+       "children": []
+      },
+      {
+       "slug": "appearance-light-dark",
+       "title": "Light, dark or system appearance",
+       "summary": "Appearance is light, dark, or follows the system.",
+       "url": "https://maestro-pro.app/guide/appearance-light-dark/",
+       "md": "https://maestro-pro.app/guide/appearance-light-dark.md",
+       "keywords": [
+        "dark mode",
+        "light mode",
+        "appearance",
+        "theme",
+        "dark sheet music"
+       ],
+       "see": [
+        "score-defaults",
+        "highlight-colour"
+       ],
+       "children": []
+      },
+      {
+       "slug": "highlight-colour",
+       "title": "Highlight colour",
+       "summary": "Highlight Colour chooses the colour that lights up playing notes; the toolbar uses your accent colour.",
+       "url": "https://maestro-pro.app/guide/highlight-colour/",
+       "md": "https://maestro-pro.app/guide/highlight-colour.md",
+       "keywords": [
+        "highlight colour",
+        "accent colour",
+        "note colour",
+        "colour of playing notes"
+       ],
+       "see": [
+        "customise-every-colour",
+        "note-and-bar-highlighting"
+       ],
+       "children": []
+      },
+      {
+       "slug": "customise-every-colour",
+       "title": "Customise every colour",
+       "summary": "Advanced mode has Customise Every Colour.",
+       "url": "https://maestro-pro.app/guide/customise-every-colour/",
+       "md": "https://maestro-pro.app/guide/customise-every-colour.md",
+       "keywords": [
+        "custom colours",
+        "advanced mode",
+        "colour customisation",
+        "accessibility colours"
+       ],
+       "see": [
+        "highlight-colour",
+        "appearance-light-dark"
+       ],
+       "children": []
+      },
+      {
+       "slug": "score-defaults",
+       "title": "Defaults that any score can override",
+       "summary": "Zoom, dark sheet music, follow playback and the three highlights have defaults in Settings.",
+       "url": "https://maestro-pro.app/guide/score-defaults/",
+       "md": "https://maestro-pro.app/guide/score-defaults.md",
+       "keywords": [
+        "defaults",
+        "zoom default",
+        "follow playback",
+        "highlights",
+        "per score settings",
+        "override"
+       ],
+       "see": [
+        "appearance-light-dark",
+        "highlight-colour"
+       ],
+       "children": []
+      },
+      {
+       "slug": "provide-feedback",
+       "title": "Provide feedback from the app",
+       "summary": "Provide Feedback in Settings posts your title and description to the public feedback board.",
+       "url": "https://maestro-pro.app/guide/provide-feedback/",
+       "md": "https://maestro-pro.app/guide/provide-feedback.md",
+       "keywords": [
+        "feedback",
+        "report bug",
+        "suggest feature",
+        "fider",
+        "feedback board",
+        "request"
+       ],
+       "see": [
+        "privacy-feedback-board"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "troubleshooting",
+     "title": "Troubleshooting",
+     "summary": "If something is not right, check here first.",
+     "url": "https://maestro-pro.app/guide/troubleshooting/",
+     "md": "https://maestro-pro.app/guide/troubleshooting.md",
+     "keywords": [
+      "problem",
+      "fix",
+      "not working",
+      "error",
+      "cannot",
+      "can't",
+      "wrong",
+      "help",
+      "fault"
+     ],
+     "see": [],
+     "children": [
+      {
+       "slug": "pdf-plays-wrong-number-of-beats",
+       "title": "A PDF plays the wrong number of beats",
+       "summary": "Set Crotchet Beats per Bar in the Inspector, or answer the metre question the first time the score opens.",
+       "url": "https://maestro-pro.app/guide/pdf-plays-wrong-number-of-beats/",
+       "md": "https://maestro-pro.app/guide/pdf-plays-wrong-number-of-beats.md",
+       "keywords": [
+        "wrong beats",
+        "wrong time signature",
+        "metre",
+        "beats per bar",
+        "crotchet beats",
+        "plays too fast",
+        "plays wrong length"
+       ],
+       "see": [
+        "import-a-pdf",
+        "use-the-inspector"
+       ],
+       "children": []
+      },
+      {
+       "slug": "microphone-cannot-hear-me",
+       "title": "Wait for Me or the tuner cannot hear me",
+       "summary": "Allow the microphone in Settings, raise Microphone Sensitivity, play one note at a time and keep other sound down.",
+       "url": "https://maestro-pro.app/guide/microphone-cannot-hear-me/",
+       "md": "https://maestro-pro.app/guide/microphone-cannot-hear-me.md",
+       "keywords": [
+        "cannot hear",
+        "can't hear me",
+        "microphone",
+        "mic not working",
+        "sensitivity",
+        "wait for me stuck",
+        "tuner not working"
+       ],
+       "see": [
+        "wrong-octave-detected",
+        "microphone-permission"
+       ],
+       "children": []
+      },
+      {
+       "slug": "wrong-octave-detected",
+       "title": "It hears the wrong octave",
+       "summary": "Try Accept Any Octave if the tuner or Wait for Me still hears the wrong octave.",
+       "url": "https://maestro-pro.app/guide/wrong-octave-detected/",
+       "md": "https://maestro-pro.app/guide/wrong-octave-detected.md",
+       "keywords": [
+        "wrong octave",
+        "octave",
+        "accept any octave",
+        "octave error"
+       ],
+       "see": [
+        "microphone-cannot-hear-me",
+        "what-is-wait-for-me"
+       ],
+       "children": []
+      },
+      {
+       "slug": "pdf-notes-read-wrongly",
+       "title": "Notes in a PDF look wrongly read",
+       "summary": "Only printed notation can be read and scans need to be straight and clear; try a MusicXML file instead.",
+       "url": "https://maestro-pro.app/guide/pdf-notes-read-wrongly/",
+       "md": "https://maestro-pro.app/guide/pdf-notes-read-wrongly.md",
+       "keywords": [
+        "wrong notes",
+        "pdf misread",
+        "scan not reading",
+        "notes wrong",
+        "ocr",
+        "bad scan"
+       ],
+       "see": [
+        "import-a-pdf",
+        "import-musicxml-files"
+       ],
+       "children": []
+      },
+      {
+       "slug": "backing-track-starts-late-or-early",
+       "title": "A backing track starts late or early",
+       "summary": "Drag the track marker, or use Delay Start, then use Match Key and Tempo to Track to listen again.",
+       "url": "https://maestro-pro.app/guide/backing-track-starts-late-or-early/",
+       "md": "https://maestro-pro.app/guide/backing-track-starts-late-or-early.md",
+       "keywords": [
+        "backing track late",
+        "backing early",
+        "out of sync",
+        "delay start",
+        "track marker",
+        "timing"
+       ],
+       "see": [
+        "match-key-and-tempo",
+        "count-in-and-lead-in-bars"
+       ],
+       "children": []
+      },
+      {
+       "slug": "band-in-a-box-files",
+       "title": "Band-in-a-Box files will not open",
+       "summary": "They cannot be read; save as MusicXML for the notation and as audio for the backing.",
+       "url": "https://maestro-pro.app/guide/band-in-a-box-files/",
+       "md": "https://maestro-pro.app/guide/band-in-a-box-files.md",
+       "keywords": [
+        "band in a box",
+        "biab",
+        "will not open",
+        "closed format"
+       ],
+       "see": [
+        "import-band-in-a-box-files"
+       ],
+       "children": []
+      },
+      {
+       "slug": "import-does-nothing-or-greyed-out",
+       "title": "Import does nothing or a file is greyed out",
+       "summary": "Choose All Files in the Files browser, or drag the file onto the window.",
+       "url": "https://maestro-pro.app/guide/import-does-nothing-or-greyed-out/",
+       "md": "https://maestro-pro.app/guide/import-does-nothing-or-greyed-out.md",
+       "keywords": [
+        "import not working",
+        "greyed out",
+        "cannot select file",
+        "files browser",
+        "all files"
+       ],
+       "see": [
+        "supported-file-types",
+        "drag-files-onto-the-window"
+       ],
+       "children": []
+      },
+      {
+       "slug": "jazz-tunes-need-internet",
+       "title": "Jazz tunes need the internet",
+       "summary": "Jazz tunes need an internet connection the first time you add them.",
+       "url": "https://maestro-pro.app/guide/jazz-tunes-need-internet/",
+       "md": "https://maestro-pro.app/guide/jazz-tunes-need-internet.md",
+       "keywords": [
+        "jazz tunes",
+        "jazz",
+        "internet",
+        "download jazz",
+        "offline"
+       ],
+       "see": [
+        "find-free-scores",
+        "when-the-app-uses-the-internet"
+       ],
+       "children": []
+      },
+      {
+       "slug": "overfull-bar-in-editor",
+       "title": "An overfull bar in the editor",
+       "summary": "Turn Free Editing off, or delete a note and the editor will tidy the bar.",
+       "url": "https://maestro-pro.app/guide/overfull-bar-in-editor/",
+       "md": "https://maestro-pro.app/guide/overfull-bar-in-editor.md",
+       "keywords": [
+        "overfull bar",
+        "bar too long",
+        "free editing",
+        "editor bar length",
+        "too many beats"
+       ],
+       "see": [
+        "the-nine-editor-modes",
+        "editor-notes-mode"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Your devices and privacy",
+   "topics": [
+    {
+     "slug": "devices-and-compatibility",
+     "title": "Devices and compatibility",
+     "summary": "Which iPhones, iPads and Macs run Maestro Pro, and what is optional.",
+     "url": "https://maestro-pro.app/guide/devices-and-compatibility/",
+     "md": "https://maestro-pro.app/guide/devices-and-compatibility.md",
+     "keywords": [
+      "devices",
+      "compatibility",
+      "requirements",
+      "iphone",
+      "ipad",
+      "mac",
+      "ios 17",
+      "ipados 17",
+      "macos 14",
+      "supported"
+     ],
+     "see": [
+      "iphone-requirements",
+      "ipad-requirements",
+      "mac-requirements"
+     ],
+     "children": [
+      {
+       "slug": "iphone-requirements",
+       "title": "iPhone requirements",
+       "summary": "iOS 17 or later, which covers iPhone XS and later, including iPhone XR and iPhone SE (2nd generation) and later.",
+       "url": "https://maestro-pro.app/guide/iphone-requirements/",
+       "md": "https://maestro-pro.app/guide/iphone-requirements.md",
+       "keywords": [
+        "iphone",
+        "ios 17",
+        "iphone xs",
+        "iphone xr",
+        "iphone se",
+        "which iphones",
+        "supported iphone"
+       ],
+       "see": [
+        "iphone-duo",
+        "devices-and-compatibility"
+       ],
+       "children": []
+      },
+      {
+       "slug": "iphone-duo",
+       "title": "iPhone Duo",
+       "summary": "On iPhone Duo the music and controls use both screens, and the playback bar folds away for lyrics.",
+       "url": "https://maestro-pro.app/guide/iphone-duo/",
+       "md": "https://maestro-pro.app/guide/iphone-duo.md",
+       "keywords": [
+        "iphone duo",
+        "dual screen",
+        "two screens",
+        "foldable"
+       ],
+       "see": [
+        "iphone-requirements"
+       ],
+       "children": []
+      },
+      {
+       "slug": "ipad-requirements",
+       "title": "iPad requirements",
+       "summary": "iPadOS 17 or later, covering iPad Pro, iPad Air, iPad and iPad mini generations listed here.",
+       "url": "https://maestro-pro.app/guide/ipad-requirements/",
+       "md": "https://maestro-pro.app/guide/ipad-requirements.md",
+       "keywords": [
+        "ipad",
+        "ipados 17",
+        "ipad pro",
+        "ipad air",
+        "ipad mini",
+        "which ipads",
+        "supported ipad"
+       ],
+       "see": [
+        "apple-pencil",
+        "devices-and-compatibility"
+       ],
+       "children": []
+      },
+      {
+       "slug": "mac-requirements",
+       "title": "Mac requirements",
+       "summary": "macOS 14 Sonoma or later, with keyboard shortcuts, multiple windows and trackpad or mouse drawing.",
+       "url": "https://maestro-pro.app/guide/mac-requirements/",
+       "md": "https://maestro-pro.app/guide/mac-requirements.md",
+       "keywords": [
+        "mac",
+        "macos 14",
+        "sonoma",
+        "mac requirements",
+        "supported mac"
+       ],
+       "see": [
+        "see-the-shortcuts",
+        "annotate-on-a-mac"
+       ],
+       "children": []
+      },
+      {
+       "slug": "apple-pencil",
+       "title": "Apple Pencil",
+       "summary": "Optional: any Apple Pencil that works with your iPad will do, and you do not need one to read, play, transpose or edit.",
+       "url": "https://maestro-pro.app/guide/apple-pencil/",
+       "md": "https://maestro-pro.app/guide/apple-pencil.md",
+       "keywords": [
+        "apple pencil",
+        "pencil",
+        "stylus",
+        "pencil compatible",
+        "do I need a pencil"
+       ],
+       "see": [
+        "annotate-on-a-mac",
+        "edit-with-apple-pencil-only"
+       ],
+       "children": []
+      },
+      {
+       "slug": "optional-extras",
+       "title": "Optional extras the app can use",
+       "summary": "Microphone, Apple Music, iCloud Drive, local network and the internet are all optional.",
+       "url": "https://maestro-pro.app/guide/optional-extras/",
+       "md": "https://maestro-pro.app/guide/optional-extras.md",
+       "keywords": [
+        "microphone",
+        "apple music",
+        "icloud",
+        "local network",
+        "internet",
+        "optional",
+        "permissions list"
+       ],
+       "see": [
+        "privacy-and-permissions",
+        "what-stays-on-your-device"
+       ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "privacy-and-permissions",
+     "title": "Privacy and permissions",
+     "summary": "What stays on your device, what permissions the app asks for, and what is ever sent anywhere.",
+     "url": "https://maestro-pro.app/guide/privacy-and-permissions/",
+     "md": "https://maestro-pro.app/guide/privacy-and-permissions.md",
+     "keywords": [
+      "privacy",
+      "data",
+      "permissions",
+      "personal data",
+      "tracking",
+      "analytics",
+      "what is collected"
+     ],
+     "see": [
+      "what-stays-on-your-device",
+      "usage-statistics",
+      "when-the-app-uses-the-internet"
+     ],
+     "children": [
+      {
+       "slug": "what-stays-on-your-device",
+       "title": "What stays on your device",
+       "summary": "Your library is stored in the app's folder on your device, or in your own iCloud if you turn it on.",
+       "url": "https://maestro-pro.app/guide/what-stays-on-your-device/",
+       "md": "https://maestro-pro.app/guide/what-stays-on-your-device.md",
+       "keywords": [
+        "local storage",
+        "library storage",
+        "data on device",
+        "where is my music stored"
+       ],
+       "see": [
+        "icloud-library",
+        "where-recordings-are-kept"
+       ],
+       "children": []
+      },
+      {
+       "slug": "microphone-permission",
+       "title": "Microphone permission",
+       "summary": "The microphone hears whether you are playing the right note, tunes, and records you, all on the device.",
+       "url": "https://maestro-pro.app/guide/microphone-permission/",
+       "md": "https://maestro-pro.app/guide/microphone-permission.md",
+       "keywords": [
+        "microphone permission",
+        "mic access",
+        "allow microphone",
+        "audio privacy"
+       ],
+       "see": [
+        "microphone-cannot-hear-me",
+        "record-yourself"
+       ],
+       "children": []
+      },
+      {
+       "slug": "apple-music-permission",
+       "title": "Apple Music permission",
+       "summary": "Apple Music is used to play a song alongside a score and show its lyrics, under your own account.",
+       "url": "https://maestro-pro.app/guide/apple-music-permission/",
+       "md": "https://maestro-pro.app/guide/apple-music-permission.md",
+       "keywords": [
+        "apple music permission",
+        "apple music access",
+        "subscription"
+       ],
+       "see": [
+        "play-along-with-apple-music"
+       ],
+       "children": []
+      },
+      {
+       "slug": "local-network-permission",
+       "title": "Local network permission",
+       "summary": "Needed so devices can find each other for Play Together; messages go directly between them and are encrypted.",
+       "url": "https://maestro-pro.app/guide/local-network-permission/",
+       "md": "https://maestro-pro.app/guide/local-network-permission.md",
+       "keywords": [
+        "local network permission",
+        "network access",
+        "play together permission"
+       ],
+       "see": [
+        "play-together-permissions"
+       ],
+       "children": []
+      },
+      {
+       "slug": "when-the-app-uses-the-internet",
+       "title": "When the app uses the internet",
+       "summary": "Only when you ask it to: searching for scores, lyrics or singers, downloading a score, and GitHub.",
+       "url": "https://maestro-pro.app/guide/when-the-app-uses-the-internet/",
+       "md": "https://maestro-pro.app/guide/when-the-app-uses-the-internet.md",
+       "keywords": [
+        "internet",
+        "online",
+        "offline",
+        "network use",
+        "search internet",
+        "does it need wifi"
+       ],
+       "see": [
+        "find-free-scores",
+        "find-lyrics-online",
+        "connect-github"
+       ],
+       "children": []
+      },
+      {
+       "slug": "usage-statistics",
+       "title": "Anonymous usage statistics",
+       "summary": "Maestro Pro counts which features are used with Aptabase, with no account, name, email or fixed device identifier.",
+       "url": "https://maestro-pro.app/guide/usage-statistics/",
+       "md": "https://maestro-pro.app/guide/usage-statistics.md",
+       "keywords": [
+        "analytics",
+        "aptabase",
+        "usage statistics",
+        "tracking",
+        "telemetry",
+        "anonymous"
+       ],
+       "see": [
+        "privacy-and-permissions"
+       ],
+       "children": []
+      },
+      {
+       "slug": "privacy-feedback-board",
+       "title": "Feedback is public",
+       "summary": "Feedback you send is posted to a public board, so leave out personal details.",
+       "url": "https://maestro-pro.app/guide/privacy-feedback-board/",
+       "md": "https://maestro-pro.app/guide/privacy-feedback-board.md",
+       "keywords": [
+        "feedback privacy",
+        "public board",
+        "fider",
+        "feedback public"
+       ],
+       "see": [
+        "provide-feedback"
+       ],
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

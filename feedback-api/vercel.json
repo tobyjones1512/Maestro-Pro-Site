@@ -1,0 +1,37 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/licence-start",
+      "destination": "/api/licence?fn=start"
+    },
+    {
+      "source": "/api/licence-complete",
+      "destination": "/api/licence?fn=complete"
+    },
+    {
+      "source": "/api/licence-check",
+      "destination": "/api/licence?fn=check"
+    },
+    {
+      "source": "/api/student-owns",
+      "destination": "/api/student-key?fn=owns"
+    }
+  ],
+  "functions": {
+    "api/support-inbound.js": {
+      "maxDuration": 60
+    },
+    "api/scan-sweep.js": {
+      "maxDuration": 60
+    },
+    "api/support-admin.js": {
+      "maxDuration": 60
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/scan-sweep",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}

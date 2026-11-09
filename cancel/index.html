@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Request licence cancellation - Maestro Pro</title>
+<meta name="description" content="Cancel your Maestro Pro licence, with a 14-day money-back guarantee. App Store subscriptions are refunded by Apple.">
+<meta name="theme-color" content="#15100B">
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="preload" href="/assets/fonts/BodoniModa-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/maestro.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/#features">Features</a><a href="/#plans">Plans</a><a href="/#compatibility">Compatibility</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Request licence cancellation</h1>
+<div class="notice"><p><strong>Subscribed inside the app through the App Store?</strong> Apple handles those payments, so this page cannot find them. <a href="https://support.apple.com/en-us/118223" rel="noopener">Request a refund from Apple</a> instead.</p></div>
+<p>Enter your licence key and we will check where you stand before anything is cancelled or charged. You will see exactly what will happen and can then confirm or walk away.</p>
+<ul class="price-list">
+  <li><b>Days 8 to 14 after your first payment:</b> full refund, and your licence and any future payments are cancelled.</li>
+  <li><b>Within the first 7 days:</b> a payment has to clear before it can be refunded, so you will be told the date to come back.</li>
+  <li><b>After day 14:</b> no refund, but you can cancel going forward. Paying yearly: your subscription is cancelled and your key works to the end of the year. Paying monthly: one month plus half of the remaining 12-month term is collected, then your payments stop.</li>
+</ul>
+<form id="f" class="pay pay--wide" novalidate>
+  <label class="field">Licence key<input id="key" name="key" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="MPS-CU000...-XXXXXXXXXX" required></label>
+  <button class="pay__btn" id="check" type="submit">Check my licence</button>
+  <div id="result" hidden>
+    <div class="notice"><p id="text"></p></div>
+    <label class="field" id="why" hidden>Why are you cancelling?<textarea id="reason" maxlength="3000" aria-describedby="count"></textarea>
+      <span class="hint" id="count">Please tell us in at least 20 words. It helps make Maestro Pro better. 0 of 20 words.</span></label>
+    <p class="skip-reason" id="skipwrap" hidden><button type="button" class="linkbtn" id="skip">I don&rsquo;t want to</button></p>
+    <button class="pay__btn" id="confirm" type="button" hidden disabled>Confirm cancellation</button>
+    <button class="pay__btn pay__btn--ghost" id="keep" type="button" hidden>Keep my licence</button>
+  </div>
+  <p id="msg" class="pay__msg" role="status"></p>
+</form>
+<div id="offer" class="notice" hidden></div>
+<p>Don&rsquo;t have your key? <a href="/key.html">Recover your licence key</a> first. Questions? <a href="/support/">Contact support</a>.</p>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a><a href="/feedback/">Feedback</a><a href="/privacy/">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/cookie-consent.js" defer></script><script src="/assets/nav.js" defer></script>
+<script>
+var API = "https://fider-feedback-api.vercel.app/api/student-cancel";
+function $(id) { return document.getElementById(id); }
+var state = null;
+function call(body) {
+  return fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || "Something went wrong. Try again."); return j; }); });
+}
+function words() { return ($("reason").value.match(/[\p{L}\p{N}]+/gu) || []).length; }
+function sync() { var n = words(); $("count").textContent = "Please tell us in at least 20 words. It helps make Maestro Pro better. " + Math.min(n, 20) + " of 20 words."; $("confirm").disabled = n < 20; }
+$("reason").addEventListener("input", sync);
+function reset() { $("why").hidden = true; $("skipwrap").hidden = true; $("reason").value = ""; sync(); state = null; $("result").hidden = true; $("confirm").hidden = true; $("keep").hidden = true; $("check").hidden = false; $("key").readOnly = false; }
+function err(m) { $("msg").className = "pay__msg err"; $("msg").textContent = m; }
+$("f").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var key = $("key").value.trim();
+  if (!key) return;
+  $("msg").className = "pay__msg"; $("msg").textContent = "Checking..."; $("check").disabled = true;
+  call({ key: key, action: "check" }).then(function (d) {
+    $("msg").textContent = "";
+    $("text").textContent = d.message;
+    $("result").hidden = false;
+    if (d.canConfirm) {
+      state = { key: key, refund: d.refund, fee: d.fee };
+      $("skipwrap").hidden = !d.canSkipReason;
+      $("why").hidden = false; sync(); $("confirm").hidden = false; $("keep").hidden = false; $("check").hidden = true; $("key").readOnly = true;
+    } else { state = null; $("confirm").hidden = true; $("keep").hidden = true; }
+  }).catch(function (x) { $("result").hidden = true; err(x.message); })
+  .then(function () { $("check").disabled = false; });
+});
+$("keep").addEventListener("click", function () { reset(); $("msg").textContent = "Nothing has been changed."; });
+function finish(skip) {
+  if (!state) return;
+  if (!skip && words() < 20) return;
+  var b = $("confirm"); b.disabled = true; $("skip").disabled = true; $("keep").hidden = true;
+  $("msg").className = "pay__msg"; $("msg").textContent = "Cancelling. Please don't close this page...";
+  var body = { key: state.key, action: "confirm", refund: state.refund, fee: state.fee };
+  if (skip) body.skipReason = true; else body.reason = $("reason").value;
+  call(body).then(function (d) {
+    $("text").textContent = d.message; $("msg").textContent = "Done. We have emailed you a confirmation.";
+    b.hidden = true; $("why").hidden = true; $("skipwrap").hidden = true;
+    if (d.offer) {
+      var o = $("offer"), t = document.createElement("p"), st = document.createElement("strong"), c = document.createElement("p"), a = document.createElement("a");
+      st.textContent = d.offer.title; t.appendChild(st); t.appendChild(document.createTextNode(" " + d.offer.text));
+      a.className = "buy"; a.href = d.offer.url; a.rel = "noopener"; a.textContent = d.offer.cta; c.appendChild(a);
+      o.textContent = ""; o.appendChild(t); o.appendChild(c); o.hidden = false;
+    }
+    state = null;
+  }).catch(function (x) { err(x.message); b.disabled = words() < 20; $("skip").disabled = false; $("keep").hidden = false; });
+}
+$("confirm").addEventListener("click", function () { finish(false); });
+$("skip").addEventListener("click", function () { finish(true); });
+</script>
+</body>
+</html>

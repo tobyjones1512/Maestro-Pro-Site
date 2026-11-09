@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <title>Maestro Pro for Students</title>
-<link rel="icon" href="../assets/favicon.png" type="image/png">
-<link rel="stylesheet" href="../assets/maestro.css">
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
 </head>
 <body class="read">
 <header class="top">
-  <a class="top__brand" href="../index.html"><img width="160" height="160" src="../assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="../index.html#features">Features</a><a href="../index.html#plans">Plans</a><a href="../index.html#compatibility">Compatibility</a><a href="../guide/index.html">Guide</a><a href="../education.html">For Education</a><a href="../support.html">Support</a></nav>
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/#features">Features</a><a href="/#plans">Plans</a><a href="/#compatibility">Compatibility</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a></nav>
 </header>
 <main id="main" class="plain">
 <h1>Maestro Pro for Students</h1>
+<p>A student licence works on up to 3 devices.</p>
 <form id="f" class="pay" aria-labelledby="pt">
   <h2 id="pt" class="pay__title">Your details</h2>
   <label class="field">Name<input name="name" type="text" autocomplete="name" required></label>
@@ -24,16 +25,17 @@
     <label class="opt"><input type="radio" name="plan" value="yearly" required><span><b>&pound;48 per year</b><small>Best value, one payment a year</small></span></label>
     <label class="opt"><input type="radio" name="plan" value="monthly"><span><b>&pound;6 per month</b><small>12-month contract</small></span></label>
   </fieldset>
+  <div id="owned" class="notice" role="alert" hidden><p><strong>You already have a Maestro Pro licence.</strong> There is an active licence for this email address, so you don&rsquo;t need to buy another. <a href="/students/key.html">Recover your licence key</a> and we will email it to you.</p></div>
   <button class="pay__btn" type="submit">Continue to payment</button>
   <p class="pay__fine"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg><span>You will be taken to a secure payment page.</span></p>
 </form>
 </main>
 <footer class="foot">
-  <nav aria-label="Footer"><a href="../index.html">Maestro Pro</a><a href="../guide/index.html">Guide</a><a href="../education.html">For Education</a><a href="../support.html">Support</a><a href="../privacy.html">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
-  <p>&copy; <span id="yr">2026</span> Toby Jones T/A The Caffeine Media Company.</p>
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/guide/">Guide</a><a href="/education/">For Education</a><a href="/support/">Support</a><a href="/feedback/">Feedback</a><a href="/privacy/">Privacy</a><a href="https://thecaffeinemediacompany.com/">Caffeine Media</a><a href="https://x.com/tobyj1512" rel="me noopener" target="_blank">X</a><a href="https://truthsocial.com/@tobyjones1512" rel="me noopener" target="_blank">Truth Social</a><a href="https://www.linkedin.com/in/toby-r-jones" rel="me noopener" target="_blank">LinkedIn</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
 </footer>
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
-<script src="../assets/nav.js" defer></script>
+<script src="/assets/nav.js" defer></script>
 <script>
 // Redirect targets.
 var URLS = {
@@ -42,8 +44,20 @@ var URLS = {
 };
 document.getElementById("f").addEventListener("submit", function (e) {
   e.preventDefault();
-  var url = URLS[this.plan.value];
-  if (url) location.href = url;
+  var form = this, url = URLS[form.plan.value], btn = form.querySelector(".pay__btn"), owned = document.getElementById("owned");
+  if (!url) return;
+  owned.hidden = true;
+  btn.disabled = true;
+  // Ask whether this email already has an active licence. If the check itself fails, don't block the sale.
+  var go = function () { location.href = url; };
+  fetch("https://fider-feedback-api.vercel.app/api/student-owns", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: form.email.value })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.owned) { owned.hidden = false; btn.disabled = false; owned.scrollIntoView({ block: "nearest" }); }
+    else go();
+  }).catch(go);
 });
 </script>
 </body>
