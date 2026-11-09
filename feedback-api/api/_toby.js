@@ -13,7 +13,7 @@
 //   TOBY_SENDERS      comma-separated addresses allowed to send replies through reply@ (default toby@ and hello@ thecaffeinemediacompany.com).
 //   TOBY_FROM         the From of the replies (default "Toby Jones <toby@maestro-pro.app>").
 import { send, addr, firstName, esc, buildEmail, headerMap, LINKS } from "./support-inbound.js";
-import { recordMessage, threadId, normSubject, loadThread, saveThread, loadIndex } from "./_threads.js";
+import { recordMessage, threadId, normSubject, loadThread, saveThread, loadIndex, updateThread } from "./_threads.js";
 import { ingestInbound, queueScans, waitForScans, readBuffer, MAX_SENT_TOTAL } from "./_attachments.js";
 
 export const TOBY = "toby@maestro-pro.app";
@@ -61,16 +61,16 @@ export function ownText(e) {
   const at = lines.findIndex((l, i) =>
     /^\s*>/.test(l) || /^\s*On .{3,250} wrote:\s*$/i.test(l) || (/^\s*On .{5,250}$/i.test(l) && /wrote:\s*$/i.test(lines[i + 1] || "")) ||
     /^\s*-{2,}\s*(original message|forwarded message)\s*-{2,}\s*$/i.test(l) || /^\s*_{8,}\s*$/.test(l) || (/^\s*\*?From:\*?\s/.test(l) && /^\s*\*?(Sent|Date):/i.test(lines[i + 1] || "")) ||
-    /\bRef: TB-[a-f0-9]{16}\b/.test(l) || /^\s*New email to toby@maestro-pro\.app\b/i.test(l));
+    /\bRef: (TB|ES)-[a-f0-9]{16}\b/.test(l) || /^\s*New email to toby@maestro-pro\.app\b/i.test(l) || /^\s*An escalation has been raised/i.test(l));
   return stripFraming((at >= 0 ? lines.slice(0, at) : lines).join("\n"));
 }
 /** The chain and customer a reply is about, from the lines the forward carries (they survive in the quoted part of Toby's reply). */
 export function findReference(e) {
   const t = [e.text || "", htmlToText(e.html)].join("\n");
-  const ref = /\bRef: TB-([a-f0-9]{16})\b/.exec(t)?.[1] || null;
+  const m = /\bRef: (TB|ES)-([a-f0-9]{16})\b/.exec(t), ref = m?.[2] || null, kind = m?.[1] || null;   // TB: a forward from toby@, ES: an escalation notice
   const who = /Original sender:[ \t]*(.*)/.exec(t)?.[1] || "";
   const subject = /Original subject:[ \t]*(.*)/.exec(t)?.[1]?.trim() || "";
-  return { ref, customer: who ? addr(who.replace(/^[>\s]+/, "")) : "", name: firstName(who), subject };
+  return { ref, kind, customer: who ? addr(who.replace(/^[>\s]+/, "")) : "", name: firstName(who), subject };
 }
 /** An out-of-office or other robot reply must never be sent on as Toby's answer. */
 export const automated = (headers = {}) => {
@@ -185,6 +185,7 @@ export async function replyInbound(evt) {
   const subjectIn = cleanSubject(evt.data.subject || full.subject);
 
   const refs = findReference(full);
+  if (refs.kind === "ES") return escalationReply({ id, full, refs, subjectIn });
   let thread = refs.ref ? await loadThread(refs.ref).catch(() => null) : null;
   if (thread && thread.kind !== "toby") thread = null;
   if (!thread) {   // no reference: the most recent chain with this subject
@@ -225,6 +226,45 @@ export async function replyInbound(evt) {
     return { ok: true, scanning: true };
   }
   return sendReply(rep, []);
+}
+
+/** The lines an escalation notice carries so that a reply to it can be matched (see noticeOwner in support-inbound.js). */
+export const escRefs = (tid, who, subject) => `\n\n---\nTo answer, just reply to this email. Your reply is sent to them from escalations@maestro-pro.app.\nRef: ES-${tid}\nOriginal sender: ${who}\nOriginal subject: ${subject}`;
+const autolink = (t) => t.replace(/(^|\s)(https:\/\/[^\s<>()\[\]]+?)([.,;:!?]*)(?=\s|$|\))/g, "$1[$2]($2)$3");
+
+/** Toby's answer to an escalation notice: sent from escalations@ exactly as a reply typed on the desk would be (same design, "Escalations" label, case handling),
+ *  and kept on the desk's chain. Files on the reply go through the desk's own VirusTotal hold: the reply is sent once every one is clean. */
+async function escalationReply({ id, full, refs, subjectIn }) {
+  const thread = refs.ref ? await loadThread(refs.ref).catch(() => null) : null;
+  if (!thread || thread.kind === "toby") {
+    await tell(`Couldn't send your reply: ${subjectIn}`, `Your reply to "${subjectIn}" was not sent because I couldn't find that escalation. Reply to the escalation email itself (keeping the Ref line), or use the desk: https://maestro-pro.app/escalations/`, `toby-es-nomatch-${id}`);
+    return { ok: true, ignored: "no-match" };
+  }
+  const text = ownText(full);
+  if (!text) { await tell(`Your reply was empty: ${thread.subject}`, `Nothing was sent to ${thread.customer}: I couldn't find any new text in your reply.`, `toby-es-empty-${id}`); return { ok: true, ignored: "empty" }; }
+  if (text.length > 6000) { await tell(`Your reply was too long: ${thread.subject}`, `Nothing was sent to ${thread.customer}: the reply is over 6,000 characters. Please shorten it.`, `toby-es-long-${id}`); return { ok: true, ignored: "long" }; }
+  const { sendDeskReply } = await import("./support-admin.js");
+  const reply = autolink(text), hasFiles = Array.isArray(full.attachments) ? full.attachments.length > 0 : false;
+  try {
+    if (!hasFiles) { await sendDeskReply(thread, { text: reply }); return { ok: true, replied: true }; }
+    const metas = await ingestInbound(id, thread.id);
+    if (!metas.length) throw new Error("the files could not be fetched");
+    const ids = metas.map((m) => m.id);
+    await updateThread(thread.id, (t) => { t.drafts = [...(t.drafts || []), ...metas]; t.heldReply = { id: `mail-${id}`, text: reply, close: false, guides: [], attachments: ids, at: new Date().toISOString() }; return true; });
+    await queueScans(thread.id, metas);
+    const t = await waitForScans(thread.id, ids, 40000);   // sends the held reply as soon as every file is clean
+    const h = t?.heldReply;
+    if (h?.blocked) {   // a file was flagged or could not be scanned: nothing goes out
+      await updateThread(thread.id, (x) => { x.heldReply = null; return true; }).catch(() => {});
+      await tell(`Your reply was not sent: ${thread.subject}`, `Your reply to ${thread.customer} was NOT sent. ${h.blocked}\n\nRemove or replace the file and reply again.`, `toby-es-blocked-${id}`);
+      return { ok: true, blocked: true };
+    }
+    return { ok: true, replied: !h, scanning: Boolean(h) };   // still scanning: it goes out on its own when the scans finish
+  } catch (e) {
+    console.error("toby escalation reply", e?.message);
+    await tell(`Your reply could not be sent: ${thread.subject}`, `Your reply to ${thread.customer} could not be sent (${String(e?.message).slice(0, 200)}). Try again, or use the desk: https://maestro-pro.app/escalations/`, `toby-es-fail-${id}`);
+    return { ok: false };
+  }
 }
 
 /** Builds and sends the answer in the support email design, from toby@, with the given clean files attached. Called straight away, or once the scans of a reply's files are done. */

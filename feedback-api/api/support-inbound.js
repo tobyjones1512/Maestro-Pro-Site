@@ -599,6 +599,11 @@ async function attachmentBlock(tid, id) {
 export async function noticeOwner({ tid, msgKey, payload, idem, fwd, rep }) {
   let t = null;
   try { t = await loadThread(tid); } catch { /* no store: send straight away */ }
+  // An escalation email to the owner is answered by replying to it: the reply goes to reply@ and is sent to the customer from escalations@ (see _toby.js).
+  if (!fwd && !rep && payload.reply_to) {
+    const { escRefs, REPLY } = await import("./_toby.js");
+    payload = { ...payload, reply_to: REPLY, text: payload.text + escRefs(tid, payload.reply_to, t?.subject || String(payload.subject).replace(/^.*?:\s*/, "")) };
+  }
   const files = t?.messages.find((m) => m.key === msgKey)?.attachments || [];
   if (!files.length) {
     if (rep) return (await import("./_toby.js")).sendReply(rep, []);
