@@ -78,6 +78,19 @@ button,input,select,textarea{font:inherit;color:inherit}
 .att small{color:var(--brass-dim)}
 .att a{color:var(--brass)}
 .files{display:grid;gap:6px;padding:8px 0}
+dialog.viewer{width:min(920px,94vw);max-height:92vh;padding:0;border:1px solid var(--rule);border-radius:14px;background:var(--walnut-2);color:var(--cream);overflow:hidden}
+dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
+.viewer__in{display:grid;grid-template-rows:auto auto 1fr;max-height:92vh}
+.viewer__head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.viewer__head h3{margin:0;font:700 16px var(--serif);overflow-wrap:anywhere;flex:1 1 220px}
+.viewer__head a{color:var(--brass)}
+.viewer__tabs{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--rule)}
+.viewer__tabs button[aria-current=true]{border-color:var(--amber);color:var(--amber)}
+.viewer__body{overflow:auto;padding:16px;min-height:200px;display:grid;place-items:center;background:var(--walnut)}
+.viewer__body img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:6px}
+.viewer__body iframe{width:100%;height:70vh;border:0;background:#fff;border-radius:6px}
+.viewer__body pre{margin:0;width:100%;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.5 ui-monospace,Menlo,monospace;align-self:start}
+.viewer__body p{margin:0;color:var(--brass);text-align:center;max-width:46ch}
 .composer{max-width:760px;margin-top:22px;border-top:1px solid var(--rule);padding-top:18px;display:grid;gap:12px}
 .composer h3{margin:0;font:700 17px var(--serif)}
 .composer textarea{min-height:170px;resize:vertical}
@@ -311,16 +324,54 @@ function scanPill(s){
   var p=el("span","pill"+(st==="clean"?" pill--answered":st==="flagged"?" pill--open":st==="pending"||st==="queued"?" pill--wait":""),txt);if(s&&s.note)p.title=s.note;return p;
 }
 var VIEW=/^(image\/(png|jpe?g|gif|webp|heic|heif)|application\/pdf|text\/plain)$/i;
-function openFile(t,m){
-  var view=VIEW.test(m.type||"");
-  fetch(API+"?id="+encodeURIComponent(t.id)+"&file="+encodeURIComponent(m.id)+(view?"&open=1":""),{headers:{Authorization:"Bearer "+state.pw}})
-   .then(function(r){if(!r.ok)return r.json().catch(function(){return {}}).then(function(j){throw new Error(j.error||"Couldn't fetch the file.")});return r.blob()})
-   .then(function(b){var u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;if(view){a.target="_blank";a.rel="noopener"}else a.download=m.name;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},60000)})
-   .catch(showErr);
+function fetchFile(t,m,view){
+  return fetch(API+"?id="+encodeURIComponent(t.id)+"&file="+encodeURIComponent(m.id)+(view?"&open=1":""),{headers:{Authorization:"Bearer "+state.pw}})
+   .then(function(r){if(!r.ok)return r.json().catch(function(){return {}}).then(function(j){throw new Error(j.error||"Couldn't fetch the file.")});return r.blob()});
 }
-function fileRow(t,m,draft){
+function downloadFile(t,m){
+  fetchFile(t,m,false).then(function(b){var u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=m.name;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},60000)}).catch(showErr);
+}
+var viewerUrl="";
+function openViewer(t,files,idx){
+  var dlg=document.getElementById("viewer");
+  if(!dlg){
+    dlg=document.createElement("dialog");dlg.id="viewer";dlg.className="viewer";dlg.setAttribute("aria-label","Attachment");document.body.append(dlg);
+    dlg.addEventListener("click",function(e){if(e.target===dlg)dlg.close()});
+    dlg.addEventListener("close",function(){if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=""}dlg.replaceChildren()});
+  }
+  function draw(i){
+    var m=files[i];if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=""}
+    var inn=el("div","viewer__in"),head=el("div","viewer__head");
+    head.append(el("h3",null,m.name),scanPill(m.scan),el("small",null,fmtSize(m.size)));
+    if(m.scan&&m.scan.link&&(m.scan.status==="clean"||m.scan.status==="flagged")){var a=el("a",null,"VirusTotal report");a.href=m.scan.link;a.target="_blank";a.rel="noopener noreferrer";head.append(a)}
+    var ok=m.path&&m.scan&&m.scan.status==="clean";
+    if(ok){var dl=el("button","btn btn--sm","Download");dl.type="button";dl.addEventListener("click",function(){downloadFile(t,m)});head.append(dl)}
+    var cl=el("button","btn btn--ghost btn--sm","Close");cl.type="button";cl.addEventListener("click",function(){dlg.close()});head.append(cl);
+    inn.append(head);
+    var tabs=el("div","viewer__tabs");
+    if(files.length>1){files.forEach(function(f,k){var b=el("button","btn btn--ghost btn--sm",f.name);b.type="button";if(k===i)b.setAttribute("aria-current","true");b.addEventListener("click",function(){draw(k)});tabs.append(b)})}
+    else tabs.hidden=true;
+    inn.append(tabs);
+    var body=el("div","viewer__body");inn.append(body);
+    dlg.replaceChildren(inn);
+    if(!dlg.open)dlg.showModal();
+    if(!ok){body.append(el("p",null,m.scan&&m.scan.status==="flagged"?"VirusTotal flagged this file, so it can't be opened here.":m.scan&&(m.scan.status==="queued"||m.scan.status==="pending")?"This file is still waiting for its virus scan. It will open here once it comes back clean.":"This file hasn't passed a virus scan, so it can't be opened here."));return}
+    var type=m.type||"";
+    if(!VIEW.test(type)){body.append(el("p",null,"There's no preview for this kind of file. Use Download to open it on your computer."));return}
+    body.append(el("p",null,"Loading..."));
+    fetchFile(t,m,true).then(function(b){
+      body.replaceChildren();
+      if(/^text\//i.test(type)){return b.text().then(function(x){body.append(el("pre",null,x.length>200000?x.slice(0,200000)+"\n\n[Shortened. Download the file to see all of it.]":x))})}
+      viewerUrl=URL.createObjectURL(b);
+      if(/^image\//i.test(type)){var im=document.createElement("img");im.alt=m.name;im.src=viewerUrl;im.addEventListener("error",function(){body.replaceChildren(el("p",null,"This browser can't show that image. Use Download to open it."))});body.append(im)}
+      else{var fr=document.createElement("iframe");fr.title=m.name;fr.src=viewerUrl;body.append(fr)}
+    }).catch(function(e){body.replaceChildren(el("p",null,e.message))});
+  }
+  draw(idx||0);
+}
+function fileRow(t,m,draft,group){
   var r=el("div","att"),ok=m.path&&m.scan&&m.scan.status==="clean";
-  if(ok){var b=el("button","name",m.name);b.type="button";b.title=VIEW.test(m.type||"")?"Open":"Download";b.addEventListener("click",function(){openFile(t,m)});r.append(b)}
+  if(ok){var b=el("button","name",m.name);b.type="button";b.title="Open";b.addEventListener("click",function(){var g=group||[m];openViewer(t,g,Math.max(0,g.indexOf(m)))});r.append(b)}
   else r.append(el("span","name",m.name));
   r.append(scanPill(m.scan),el("small",null,fmtSize(m.size)+(m.type?" - "+m.type:"")));
   if(m.scan&&m.scan.link&&(m.scan.status==="clean"||m.scan.status==="flagged")){var a=el("a",null,m.scan.status==="flagged"?"VirusTotal report ("+(m.scan.malicious+m.scan.suspicious)+" of "+m.scan.total+" engines flagged it)":"VirusTotal report");a.href=m.scan.link;a.target="_blank";a.rel="noopener noreferrer";r.append(a)}
@@ -361,7 +412,7 @@ function renderThread(){
     if(m.delivery){var bad=/bounce|fail|complain|suppress|reject/.test(m.delivery),dp=el("span","pill"+(bad?" pill--open":m.delivery==="delivered"||m.delivery==="opened"||m.delivery==="clicked"?" pill--answered":""),m.delivery.replace(/_/g," "));dp.title="What the email service reports for this email";h.firstChild.append(" ",dp)}
     box.append(h,el("div","msg__b",m.text));
     if(m.guides&&m.guides.length)box.append(el("div","msg__g","Guides sent: "+m.guides.join(", ")));
-    if(m.attachments&&m.attachments.length){var al=el("div","atts");m.attachments.forEach(function(f){al.append(fileRow(t,f,false))});box.append(al)}
+    if(m.attachments&&m.attachments.length){var al=el("div","atts");m.attachments.forEach(function(f){al.append(fileRow(t,f,false,m.attachments))});box.append(al)}
     v.append(box);
   });
   clearTimeout(state.scanT);
@@ -458,7 +509,7 @@ function composer(draft){
   var chips=el("div","chips");chips.id="chips";c.append(chips);
   var drafts=(state.thread&&state.thread.drafts)||[],fl=el("div","files"),fpick=document.createElement("input");fpick.type="file";fpick.multiple=true;fpick.hidden=true;
   var addf=el("button","btn btn--ghost btn--sm","Attach files...");addf.type="button";addf.addEventListener("click",function(){fpick.click()});
-  drafts.forEach(function(d){fl.append(fileRow(state.thread,d,true))});
+  drafts.forEach(function(d){fl.append(fileRow(state.thread,d,true,drafts))});
   c.append(addf,fpick,fl,el("p","hint","Files up to 3 MB each. Every file is checked with VirusTotal first and can only be sent once it comes back clean."));
   fpick.addEventListener("change",function(){
     var list=Array.prototype.slice.call(fpick.files||[]);fpick.value="";if(!list.length)return;
