@@ -46,7 +46,7 @@ export async function addDelivery(thread) {
 export async function settingsView() {
   const s = await loadSettings();
   const delay = s.delay || { enabled: process.env.REPLY_DELAY === "on", minMinutes: 10, maxMinutes: 45 };
-  return { prompt: s.prompt || DEFAULT_PROMPT, defaultPrompt: DEFAULT_PROMPT, custom: Boolean(s.prompt), delay, delayFromPage: Boolean(s.delay) };
+  return { prompt: s.prompt || DEFAULT_PROMPT, defaultPrompt: DEFAULT_PROMPT, custom: Boolean(s.prompt), delay, delayFromPage: Boolean(s.delay), delayExempt: Array.isArray(s.delayExempt) ? s.delayExempt : [] };
 }
 /** Checks a prompt before it is saved: the bot's code needs a JSON reply, and the model's context is small. Returns an error message or null. */
 export function promptProblem(p) {
@@ -164,6 +164,13 @@ export default async function handler(req, res) {
         const min = Math.round(Number(b.delay.minMinutes)), max = Math.round(Number(b.delay.maxMinutes));
         if (!(min >= 0 && max >= min && max <= 720)) return res.status(400).json({ error: "Use whole minutes, with the longest at least the shortest and no more than 720." });
         patch.delay = { enabled: b.delay.enabled === true, minMinutes: min, maxMinutes: max };
+      }
+      if ("delayExempt" in b) {   // addresses and domains that never wait for the reply delay
+        const list = [...new Set([].concat(b.delayExempt || []).flatMap((x) => String(x).split(/[\s,;]+/)).map((x) => x.trim().toLowerCase().replace(/^<|>$/g, "")).filter(Boolean))];
+        const bad = list.find((x) => !/^(@?[a-z0-9-]+(\.[a-z0-9-]+)+|[^\s@<>,;]+@[a-z0-9-]+(\.[a-z0-9-]+)+)$/.test(x));
+        if (bad) return res.status(400).json({ error: `"${bad.slice(0, 60)}" is not an email address or a domain.` });
+        if (list.length > 200) return res.status(400).json({ error: "At most 200 entries." });
+        patch.delayExempt = list;
       }
       await saveSettings(patch);
       return res.status(200).json({ ok: true, settings: await settingsView() });
