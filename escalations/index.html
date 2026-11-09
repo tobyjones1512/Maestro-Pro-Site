@@ -71,6 +71,13 @@ button,input,select,textarea{font:inherit;color:inherit}
 .msg__h b{color:var(--cream);letter-spacing:.04em;text-transform:uppercase}
 .msg__b{padding:12px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
 .msg__g{padding:0 14px 12px;font-size:13px;color:var(--brass)}
+.atts{display:grid;gap:6px;padding:0 14px 12px}
+.att{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.att .name{font-weight:700;overflow-wrap:anywhere}
+.att button.name{background:none;border:0;padding:0;color:var(--cream);text-decoration:underline;cursor:pointer;font:inherit;font-weight:700;text-align:left}
+.att small{color:var(--brass-dim)}
+.att a{color:var(--brass)}
+.files{display:grid;gap:6px;padding:8px 0}
 .composer{max-width:760px;margin-top:22px;border-top:1px solid var(--rule);padding-top:18px;display:grid;gap:12px}
 .composer h3{margin:0;font:700 17px var(--serif)}
 .composer textarea{min-height:170px;resize:vertical}
@@ -298,6 +305,30 @@ function refundPanel(t){
   return d;
 }
 var LABEL={customer:"Customer",bot:"Support bot",toby:"You"};
+function fmtSize(n){return n<1024?n+" B":n<1048576?Math.round(n/1024)+" KB":(n/1048576).toFixed(1)+" MB"}
+function scanPill(s){
+  var st=s&&s.status,txt={clean:"virus-free",pending:"scanning...",flagged:"flagged",unscanned:"not scanned",error:"scan failed",toolarge:"too large"}[st]||st||"unknown";
+  var p=el("span","pill"+(st==="clean"?" pill--answered":st==="flagged"?" pill--open":st==="pending"?" pill--wait":""),txt);if(s&&s.note)p.title=s.note;return p;
+}
+var VIEW=/^(image\/(png|jpe?g|gif|webp|heic|heif)|application\/pdf|text\/plain)$/i;
+function openFile(t,m){
+  var view=VIEW.test(m.type||"");
+  fetch(API+"?id="+encodeURIComponent(t.id)+"&file="+encodeURIComponent(m.id)+(view?"&open=1":""),{headers:{Authorization:"Bearer "+state.pw}})
+   .then(function(r){if(!r.ok)return r.json().catch(function(){return {}}).then(function(j){throw new Error(j.error||"Couldn't fetch the file.")});return r.blob()})
+   .then(function(b){var u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;if(view){a.target="_blank";a.rel="noopener"}else a.download=m.name;document.body.append(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},60000)})
+   .catch(showErr);
+}
+function fileRow(t,m,draft){
+  var r=el("div","att"),ok=m.path&&m.scan&&m.scan.status==="clean";
+  if(ok){var b=el("button","name",m.name);b.type="button";b.title=VIEW.test(m.type||"")?"Open":"Download";b.addEventListener("click",function(){openFile(t,m)});r.append(b)}
+  else r.append(el("span","name",m.name));
+  r.append(scanPill(m.scan),el("small",null,fmtSize(m.size)+(m.type?" - "+m.type:"")));
+  if(m.scan&&m.scan.link&&(m.scan.status==="clean"||m.scan.status==="flagged")){var a=el("a",null,m.scan.status==="flagged"?"VirusTotal report ("+(m.scan.malicious+m.scan.suspicious)+" of "+m.scan.total+" engines flagged it)":"VirusTotal report");a.href=m.scan.link;a.target="_blank";a.rel="noopener noreferrer";r.append(a)}
+  if(m.scan&&m.scan.note&&m.scan.status!=="pending")r.append(el("small",null,m.scan.note));
+  if(m.path&&m.scan&&(m.scan.status==="error"||m.scan.status==="unscanned")){var s=el("button","btn btn--ghost btn--sm","Scan again");s.type="button";s.addEventListener("click",function(){s.disabled=true;call("POST","",{action:"rescan",id:t.id,file:m.id}).then(function(j){state.thread=j.thread;renderThread()}).catch(function(e){s.disabled=false;showErr(e)})});r.append(s)}
+  if(draft){var x=el("button","btn btn--ghost btn--sm","Remove");x.type="button";x.addEventListener("click",function(){x.disabled=true;call("POST","",{action:"remove-draft",id:t.id,file:m.id}).then(function(j){state.thread=j.thread;renderThread()}).catch(function(e){x.disabled=false;showErr(e)})});r.append(x)}
+  return r;
+}
 function renderThread(){
   var t=state.thread,v=$("view");if(!t)return;
   var draft=document.getElementById("reply")?document.getElementById("reply").value:"";
@@ -330,8 +361,12 @@ function renderThread(){
     if(m.delivery){var bad=/bounce|fail|complain|suppress|reject/.test(m.delivery),dp=el("span","pill"+(bad?" pill--open":m.delivery==="delivered"||m.delivery==="opened"||m.delivery==="clicked"?" pill--answered":""),m.delivery.replace(/_/g," "));dp.title="What the email service reports for this email";h.firstChild.append(" ",dp)}
     box.append(h,el("div","msg__b",m.text));
     if(m.guides&&m.guides.length)box.append(el("div","msg__g","Guides sent: "+m.guides.join(", ")));
+    if(m.attachments&&m.attachments.length){var al=el("div","atts");m.attachments.forEach(function(f){al.append(fileRow(t,f,false))});box.append(al)}
     v.append(box);
   });
+  clearTimeout(state.scanT);
+  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&f.scan.status==="pending"})})||(t.drafts||[]).some(function(f){return f.scan&&f.scan.status==="pending"});
+  if(scanning)state.scanT=setTimeout(function(){if(state.cur===t.id)openThread(t.id,true)},6000);
   if(t.escalated)v.append(composer(draft));
   else v.append(el("p","hint","This chain was answered by the bot and has not been escalated. Use Escalate to me to take it over."));
 }
@@ -421,14 +456,35 @@ function composer(draft){
   });
   gi.addEventListener("blur",function(){setTimeout(function(){box.hidden=true},120)});
   var chips=el("div","chips");chips.id="chips";c.append(chips);
+  var drafts=(state.thread&&state.thread.drafts)||[],fl=el("div","files"),fpick=document.createElement("input");fpick.type="file";fpick.multiple=true;fpick.hidden=true;
+  var addf=el("button","btn btn--ghost btn--sm","Attach files...");addf.type="button";addf.addEventListener("click",function(){fpick.click()});
+  drafts.forEach(function(d){fl.append(fileRow(state.thread,d,true))});
+  c.append(addf,fpick,fl,el("p","hint","Files up to 3 MB each. Every file is checked with VirusTotal first and can only be sent once it comes back clean."));
+  fpick.addEventListener("change",function(){
+    var list=Array.prototype.slice.call(fpick.files||[]);fpick.value="";if(!list.length)return;
+    var m=document.getElementById("sendMsg");addf.disabled=true;
+    (function next(i){
+      if(i>=list.length){addf.disabled=false;return}
+      var f=list[i];if(f.size>3*1048576){m.style.color="";m.textContent=f.name+" is over 3 MB, so it can't be attached.";return next(i+1)}
+      m.style.color="";m.textContent="Uploading "+f.name+"...";
+      var rd=new FileReader();
+      rd.onload=function(){
+        call("POST","",{action:"upload",id:state.cur,name:f.name,type:f.type,data:String(rd.result).split(",")[1]||""}).then(function(j){state.thread=j.thread;renderThread();var m2=document.getElementById("sendMsg");if(m2){m2.style.color="";m2.textContent="Uploaded "+f.name+". Waiting for the virus scan."}}).catch(function(e){m.textContent=e.message}).then(function(){next(i+1)});
+      };
+      rd.onerror=function(){m.textContent="Couldn't read "+f.name+".";next(i+1)};
+      rd.readAsDataURL(f);
+    })(0);
+  });
   var row=el("div","send"),send=el("button","btn","Send reply"),done=el("button","btn btn--done","Send & mark as done"),msg=el("span","err");
   send.type="submit";done.type="button";msg.id="sendMsg";msg.setAttribute("role","status");row.append(send,done,msg);c.append(row);
   c.append(el("p","hint","Send & mark as done closes the case: it gets a case number, replies to that email will not be received, and the email says to contact support to re-open it."));
   function go(close){
     var text=ta.value.trim();if(!text){msg.textContent="Write a reply first.";return}
+    var waitingScan=drafts.filter(function(d){return !(d.scan&&d.scan.status==="clean")});
+    if(waitingScan.length){msg.style.color="";msg.textContent=waitingScan[0].name+" hasn't passed the virus scan yet. Wait for it, or remove it.";return}
     if(close&&!confirm("Send this reply and close the case? The customer will be given a case number, and replies to the email will not be received."))return;
     send.disabled=done.disabled=true;msg.style.color="";msg.textContent="Sending...";
-    call("POST","",{action:"reply",id:state.cur,text:text,close:close,guides:state.picked.map(function(p){return p.slug})}).then(function(j){
+    call("POST","",{action:"reply",id:state.cur,text:text,close:close,guides:state.picked.map(function(p){return p.slug}),attachments:drafts.map(function(d){return d.id})}).then(function(j){
       state.picked=[];ta.value="";state.thread=j.thread;renderThread();loadList();
       var m=document.getElementById("sendMsg");if(m){m.style.color="var(--ok)";m.textContent=close?"Sent and closed, case "+j.thread.caseNumber+".":"Sent."}
     }).catch(function(err){send.disabled=done.disabled=false;msg.style.color="";msg.textContent=err.message});

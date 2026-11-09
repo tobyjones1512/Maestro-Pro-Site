@@ -2,11 +2,13 @@
 // environment variable on Vercel, sent as "Authorization: Bearer <password>". Lists the stored email chains, opens one, sends the owner's reply
 // from escalations@maestro-pro.app in the same email design as the support bot, and sets a chain's status.
 import crypto from "node:crypto";
+import { Readable } from "node:stream";
 import { buildEmail, guideTree, LINKS, send, firstSentence, ESCALATIONS, DEFAULT_PROMPT } from "./support-inbound.js";
 import { OFFER_P, OFFER_FINAL } from "./student-cancel.js";
 import { buildKeyEmail, KEY_FROM, KEY_SUBJECT } from "./_key-email.js";
 import { listPayments, forceRefund } from "./_force-refund.js";
 import { loadActivity, seedActivity, TEST_EMAIL } from "./_activity.js";
+import { MAX_FILES, MAX_UPLOAD, MAX_SENT_TOTAL, VIEWABLE, isClean, findMeta, makeMeta, startScan, refreshScan, refreshThreadScans, readStream, readBuffer, removeFile } from "./_attachments.js";
 import { loadIndex, loadThread, recordMessage, saveThread, storeReady, loadSettings, saveSettings, assignCase } from "./_threads.js";
 
 const NOREPLY = "noreply@maestro-pro.app";
@@ -90,7 +92,22 @@ export default async function handler(req, res) {
         try { return res.status(200).json({ ok: true, email: t.customer, payments: await listPayments(t.customer) }); }
         catch (e) { console.error(e); return res.status(502).json({ error: "Couldn't reach GoCardless to list the payments." }); }
       }
-      if (req.query.id) { const thread = await loadThread(req.query.id); let activity = []; if (thread) { await addDelivery(thread); activity = await loadActivity(thread.customer).catch(() => []); } return thread ? res.status(200).json({ storage: true, thread, activity }) : res.status(404).json({ error: "No such chain." }); }
+      if (req.query.id && req.query.file) {
+        // Open or download an attachment. Only a file VirusTotal calls clean is ever served, and always from a sandboxed, non-sniffed response.
+        const t = await loadThread(req.query.id), m = t && findMeta(t, String(req.query.file));
+        if (!m) return res.status(404).json({ error: "No such file." });
+        if (m.scan?.status === "pending") { m.scan = await refreshScan(m); await saveThread(t); }
+        if (!isClean(m)) return res.status(403).json({ error: m.scan?.status === "flagged" ? "VirusTotal flagged this file, so it can't be opened here." : m.scan?.status === "pending" ? "VirusTotal is still scanning this file. Try again in a minute." : "This file hasn't passed a virus scan, so it can't be opened here." });
+        const stream = await readStream(m.path);
+        if (!stream) return res.status(404).json({ error: "The stored file is missing." });
+        const view = VIEWABLE.test(m.type), ascii = m.name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");
+        res.setHeader("Content-Type", view ? m.type : "application/octet-stream");
+        res.setHeader("Content-Disposition", `${view && req.query.open === "1" ? "inline" : "attachment"}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(m.name)}`);
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        res.setHeader("Content-Security-Policy", "sandbox; default-src 'none'");
+        return Readable.fromWeb(stream).pipe(res);
+      }
+      if (req.query.id) { const thread = await loadThread(req.query.id); let activity = []; if (thread) { try { if (await refreshThreadScans(thread)) await saveThread(thread); } catch (e) { console.error("scan refresh", e?.message); } await addDelivery(thread); activity = await loadActivity(thread.customer).catch(() => []); } return thread ? res.status(200).json({ storage: true, thread, activity }) : res.status(404).json({ error: "No such chain." }); }
       return res.status(200).json({ storage: true, threads: await loadIndex() });
     }
     if (req.method !== "POST") return res.status(405).json({ error: "GET or POST only." });
@@ -159,6 +176,36 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, thread });
     }
 
+    if (b.action === "upload") {
+      // A file to attach to the next reply. It is stored and sent to VirusTotal now, and can only be sent once it comes back clean.
+      const drafts = thread.drafts || [];
+      if (drafts.length >= MAX_FILES) return res.status(400).json({ error: `At most ${MAX_FILES} files per reply.` });
+      const buf = Buffer.from(String(b.data || ""), "base64");
+      if (!buf.length) return res.status(400).json({ error: "That file is empty." });
+      if (buf.length > MAX_UPLOAD) return res.status(413).json({ error: `That file is over ${MAX_UPLOAD / 1048576} MB, which is the most that can be attached here.` });
+      if (drafts.reduce((n, d) => n + d.size, 0) + buf.length > MAX_SENT_TOTAL) return res.status(400).json({ error: "Those files add up to too much for one email." });
+      thread.drafts = [...drafts, await makeMeta(thread.id, { name: b.name, type: b.type, buf })];
+      await saveThread(thread);
+      return res.status(200).json({ ok: true, thread });
+    }
+
+    if (b.action === "remove-draft") {
+      const gone = (thread.drafts || []).find((d) => d.id === String(b.file));
+      if (gone) { thread.drafts = thread.drafts.filter((d) => d !== gone); await saveThread(thread); await removeFile(gone.path); }
+      return res.status(200).json({ ok: true, thread });
+    }
+
+    if (b.action === "rescan") {
+      // Try the scan again for a file whose scan failed or never ran.
+      const m = findMeta(thread, String(b.file));
+      if (!m || !m.path) return res.status(404).json({ error: "No such file." });
+      const buf = await readBuffer(m.path);
+      if (!buf) return res.status(404).json({ error: "The stored file is missing." });
+      m.scan = await startScan(buf, m.name);
+      await saveThread(thread);
+      return res.status(200).json({ ok: true, thread });
+    }
+
     if (b.action === "escalate") {
       // Take a chain over by hand. A bot reply still waiting out its delay is cancelled at Resend and marked deleted, so the customer never gets it.
       const waiting = thread.messages.filter((m) => m.by === "bot" && m.resendId && m.scheduledAt && !m.cancelled && Date.parse(m.scheduledAt) > Date.now());
@@ -192,16 +239,32 @@ export default async function handler(req, res) {
       const close = b.close === true, caseNumber = close ? await assignCase(thread) : "";
       if (close) await saveThread(thread);
       const { html, text: plain } = buildEmail({ name: thread.name, reply: text, guides, resolve: makeResolve(known), label: "Escalations", contact: close ? SUPPORT : ESCALATIONS, signoff: "Maestro Pro Escalations Team", caseNumber });
+      // Attached files: each must be one of this chain's drafts and clean on VirusTotal right now.
+      const ids = [...new Set([].concat(b.attachments || []).map(String))];
+      const files = [];
+      if (ids.length) {
+        try { if (await refreshThreadScans(thread, 10)) await saveThread(thread); } catch (e) { console.error("scan refresh", e?.message); }
+        for (const id of ids) {
+          const m = (thread.drafts || []).find((d) => d.id === id);
+          if (!m) return res.status(400).json({ error: "One of the attached files is no longer there. Refresh and attach it again." });
+          if (!isClean(m)) return res.status(409).json({ error: `${m.name} hasn't passed the virus scan (${m.scan?.status === "flagged" ? "VirusTotal flagged it" : m.scan?.status || "not scanned"}). Remove it or wait for the scan.` });
+          const buf = await readBuffer(m.path);
+          if (!buf) return res.status(400).json({ error: `${m.name} is missing from storage. Remove it and attach it again.` });
+          files.push({ meta: m, buf });
+        }
+      }
       const lastIn = [...thread.messages].reverse().find((m) => m.dir === "in" && m.msgId)?.msgId;
       const r = await send({
         from: FROM(), to: [thread.customer], reply_to: close ? NOREPLY : ESCALATIONS,
         subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,
         text: plain, html,
+        ...(files.length && { attachments: files.map((f) => ({ filename: f.meta.name, content: f.buf.toString("base64"), ...(f.meta.type && { content_type: f.meta.type }) })) }),
         ...(lastIn && { headers: { "In-Reply-To": lastIn, References: lastIn } }),
       }, `desk-${thread.id}-${crypto.randomUUID()}`);
       const out = await r.json().catch(() => ({}));
       if (!r.ok) return res.status(502).json({ error: `The email could not be sent: ${String(out.message || out.error || "Resend " + r.status).slice(0, 200)}` });
-      const sent = await recordMessage({ threadKey: thread.id, customer: thread.customer, name: thread.name, subject: thread.subject, message: { key: `desk-${crypto.randomUUID()}`, dir: "out", by: "toby", text: plain, guides: guides.map((g) => g.title), ...(out.id && { resendId: out.id }), ...(offerIn(text) && { offer: offerIn(text) }), ...(close && { closed: caseNumber }) }, status: close ? "done" : "answered" });
+      const sent = await recordMessage({ threadKey: thread.id, customer: thread.customer, name: thread.name, subject: thread.subject, message: { key: `desk-${crypto.randomUUID()}`, dir: "out", by: "toby", text: plain, guides: guides.map((g) => g.title), ...(files.length && { attachments: files.map((f) => f.meta) }), ...(out.id && { resendId: out.id }), ...(offerIn(text) && { offer: offerIn(text) }), ...(close && { closed: caseNumber }) }, status: close ? "done" : "answered" });
+      if (files.length) { sent.drafts = (sent.drafts || []).filter((d) => !ids.includes(d.id)); await saveThread(sent); }
       return res.status(200).json({ ok: true, thread: sent });
     }
     return res.status(400).json({ error: "Unknown action." });
