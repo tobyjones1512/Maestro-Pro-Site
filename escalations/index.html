@@ -161,6 +161,7 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
       <button class="tab" role="tab" id="tab-set" aria-selected="false" data-tab="settings">Settings</button>
     </div>
     <span class="sp"></span>
+    <button class="btn btn--sm" id="compose" type="button">New email</button>
     <button class="btn btn--ghost btn--sm" id="refresh" type="button">Refresh</button>
     <button class="btn btn--ghost btn--sm" id="signout" type="button">Sign out</button>
   </header>
@@ -200,6 +201,7 @@ $("loginForm").addEventListener("submit",function(e){
   loadList().then(function(){try{sessionStorage.setItem(KEY,state.pw)}catch(e){}start()}).catch(function(err){$("loginErr").textContent=err.message;state.pw=""});
 });
 $("signout").addEventListener("click",function(){signOut(false)});
+$("compose").addEventListener("click",function(){state.cur=null;state.thread=null;$("app").setAttribute("data-open","true");renderCompose()});
 $("refresh").addEventListener("click",function(){loadList().then(function(){if(state.cur)openThread(state.cur,true)}).catch(showErr)});
 $("q").addEventListener("input",renderList);$("statusFilter").addEventListener("change",renderList);
 document.querySelectorAll(".tab").forEach(function(b){b.addEventListener("click",function(){setTab(b.dataset.tab)})});
@@ -478,8 +480,25 @@ function searchGuides(q){
     return {g:g,sc:ok?sc:0};
   }).filter(function(x){return x.sc>0}).sort(function(a,b){return b.sc-a.sc}).slice(0,8).map(function(x){return x.g});
 }
+var FROMS=[["escalations","escalations@maestro-pro.app"],["support","support@maestro-pro.app"],["toby","toby@maestro-pro.app (signed Toby Jones)"],["noreply","noreply@maestro-pro.app (replies go nowhere)"]];
+function fromSelect(cur){var s=el("select","field");s.setAttribute("aria-label","Send from");s.style.maxWidth="360px";FROMS.forEach(function(f){var o=el("option",null,f[1]);o.value=f[0];if(f[0]===cur)o.selected=true;s.append(o)});return s}
+function renderCompose(){
+  var v=$("view"),w=el("div","set"),f=el("form","composer");v.replaceChildren(w);w.append(f);
+  f.append(el("h3",null,"New email"));
+  var to=el("input","field"),nm=el("input","field"),sb=el("input","field"),fr=fromSelect("escalations");
+  to.type="email";to.required=true;to.placeholder="To (one email address)";to.setAttribute("aria-label","To");to.autocomplete="off";
+  nm.placeholder="Their first name (optional, used in the greeting)";nm.setAttribute("aria-label","First name");
+  sb.required=true;sb.placeholder="Subject";sb.setAttribute("aria-label","Subject");
+  var go=el("button","btn","Write the email"),msg=el("span","err");go.type="submit";msg.setAttribute("role","status");
+  f.append(el("label",null,"From"),fr,to,nm,sb,go,msg,el("p","hint","Next you write the message, attach guides or files (every file is checked with VirusTotal) and send it in the same design as the support emails. Their reply comes back to the address you send from."));
+  f.addEventListener("submit",function(e){
+    e.preventDefault();go.disabled=true;msg.style.color="";msg.textContent="Starting...";
+    call("POST","",{action:"compose",to:to.value,name:nm.value,subject:sb.value,sender:fr.value}).then(function(j){state.picked=[];return loadList().then(function(){return openThread(j.id)})}).catch(function(err){go.disabled=false;msg.textContent=err.message});
+  });
+  to.focus();
+}
 function composer(draft){
-  var c=el("form","composer");c.append(el("h3",null,"Reply from escalations@maestro-pro.app"));
+  var c=el("form","composer");c.append(el("h3",null,"Send from"));var fsel=fromSelect((state.thread&&state.thread.sender)||"escalations");c.append(fsel);
   var tools=el("div","tools"),tsel=el("select","field");tsel.setAttribute("aria-label","Insert a template");
   var o0=el("option",null,"Insert a template...");o0.value="";tsel.append(o0);
   TEMPLATES.forEach(function(t,i){var o=el("option",null,t[0]);o.value=i;tsel.append(o)});
@@ -555,7 +574,7 @@ function composer(draft){
     if(state.thread&&state.thread.heldReply){msg.style.color="";msg.textContent="A reply is already queued. Cancel it first.";return}
     if(close&&!confirm("Send this reply and close the case? The customer will be given a case number, and replies to the email will not be received."))return;
     send.disabled=done.disabled=true;msg.style.color="";msg.textContent="Sending...";
-    call("POST","",{action:"reply",id:state.cur,text:text,close:close,guides:state.picked.map(function(p){return p.slug}),attachments:drafts.map(function(d){return d.id})}).then(function(j){
+    call("POST","",{action:"reply",id:state.cur,sender:fsel.value,text:text,close:close,guides:state.picked.map(function(p){return p.slug}),attachments:drafts.map(function(d){return d.id})}).then(function(j){
       state.picked=[];ta.value="";state.thread=j.thread;renderThread();loadList();
       var m=document.getElementById("sendMsg");if(m){m.style.color="var(--ok)";m.textContent=j.held?"Queued. It sends by itself once every file is virus-free.":close?"Sent and closed, case "+j.thread.caseNumber+".":"Sent."}
     }).catch(function(err){send.disabled=done.disabled=false;msg.style.color="";msg.textContent=err.message});

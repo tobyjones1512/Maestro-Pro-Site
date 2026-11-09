@@ -3,13 +3,13 @@
 // from escalations@maestro-pro.app in the same email design as the support bot, and sets a chain's status.
 import crypto from "node:crypto";
 import { Readable } from "node:stream";
-import { buildEmail, guideTree, LINKS, send, firstSentence, ESCALATIONS, DEFAULT_PROMPT } from "./support-inbound.js";
+import { buildEmail, guideTree, LINKS, send, firstSentence, ESCALATIONS, DEFAULT_PROMPT, FROM as SUPPORT_FROM } from "./support-inbound.js";
 import { OFFER_P, OFFER_FINAL } from "./student-cancel.js";
 import { buildKeyEmail, KEY_FROM, KEY_SUBJECT } from "./_key-email.js";
 import { listPayments, forceRefund } from "./_force-refund.js";
 import { loadActivity, seedActivity, TEST_EMAIL } from "./_activity.js";
 import { newId, setReplySender, MAX_FILES, MAX_UPLOAD, MAX_SENT_TOTAL, VIEWABLE, isClean, findMeta, makeMeta, queueScans, processQueue, refreshScan, refreshThreadScans, readStream, readBuffer, removeFile } from "./_attachments.js";
-import { loadIndex, loadThread, recordMessage, saveThread, storeReady, loadSettings, saveSettings, assignCase } from "./_threads.js";
+import { loadIndex, loadThread, recordMessage, saveThread, storeReady, loadSettings, saveSettings, assignCase, threadId } from "./_threads.js";
 
 const NOREPLY = "noreply@maestro-pro.app";
 const SUPPORT = "support@maestro-pro.app";
@@ -56,6 +56,14 @@ export function promptProblem(p) {
   return null;
 }
 
+const TOBY = "toby@maestro-pro.app";
+/** The addresses the desk can write from. Each has its own From, label in the email's header, sign-off, contact address and where replies go. */
+export const SENDERS = {
+  escalations: { from: () => process.env.ESCALATIONS_FROM || `Maestro Pro Escalations <${ESCALATIONS}>`, reply: ESCALATIONS, label: "Escalations", signoff: "Maestro Pro Escalations Team", contact: ESCALATIONS },
+  support: { from: () => SUPPORT_FROM(), reply: SUPPORT, label: "Support", signoff: "Maestro Pro Support", contact: SUPPORT },
+  toby: { from: () => process.env.TOBY_FROM || `Toby Jones <${TOBY}>`, reply: TOBY, label: "", signoff: "Toby Jones", contact: TOBY },
+  noreply: { from: () => `Maestro Pro <${NOREPLY}>`, reply: NOREPLY, label: "", signoff: "Maestro Pro", contact: SUPPORT },
+};
 const ORIGINS = ["https://maestro-pro.app", "https://www.maestro-pro.app"];
 const FROM = () => process.env.ESCALATIONS_FROM || `Maestro Pro Escalations <${ESCALATIONS}>`;
 const sha = (x) => crypto.createHash("sha256").update(String(x)).digest();
@@ -93,11 +101,12 @@ export async function sendDeskReply(thread, { id, text, close = false, guides: s
     if (!buf) throw fail(400, `${m.name} is missing from storage. Remove it and attach it again.`);
     files.push({ meta: m, buf });
   }
-  const { html, text: plain } = buildEmail({ name: thread.name, reply: text, guides, attachments: files.map((f) => ({ name: f.meta.name, size: f.meta.size })), resolve: makeResolve(known), label: "Escalations", contact: close ? SUPPORT : ESCALATIONS, signoff: "Maestro Pro Escalations Team", caseNumber });
+  const sd = SENDERS[thread.sender] || SENDERS.escalations;   // the address this chain is written from (escalations@ unless chosen otherwise)
+  const { html, text: plain } = buildEmail({ name: thread.name, reply: text, guides, attachments: files.map((f) => ({ name: f.meta.name, size: f.meta.size })), resolve: makeResolve(known), label: sd.label, contact: close ? SUPPORT : sd.contact, signoff: sd.signoff, caseNumber });
   const lastIn = [...thread.messages].reverse().find((m) => m.dir === "in" && m.msgId)?.msgId;
   const r = await send({
-    from: FROM(), to: [thread.customer], reply_to: close ? NOREPLY : ESCALATIONS,
-    subject: /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,
+    from: sd.from(), to: [thread.customer], reply_to: close ? NOREPLY : sd.reply,
+    subject: !thread.messages.length || /^re:/i.test(thread.subject) ? thread.subject : `Re: ${thread.subject}`,   // the first message of a new email has no "Re:"
     text: plain, html,
     ...(files.length && { attachments: files.map((f) => ({ filename: f.meta.name, content: f.buf.toString("base64"), ...(f.meta.type && { content_type: f.meta.type }) })) }),
     ...(lastIn && { headers: { "In-Reply-To": lastIn, References: lastIn } }),
@@ -203,6 +212,20 @@ export default async function handler(req, res) {
       }
     }
 
+    if (b.action === "compose") {
+      // A new email to anyone, from any of the desk's addresses. It starts a chain (so files, guides and the virus scan work as for a reply, and their answer lands on it).
+      const to = String(b.to ?? "").trim().toLowerCase().replace(/^.*<([^>]+)>$/, "$1"), subject = String(b.subject ?? "").replace(/[\r\n]+/g, " ").trim().slice(0, 200), sender = SENDERS[b.sender] ? b.sender : "escalations";
+      if (!/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(to) || to.length > 200) return res.status(400).json({ error: "Enter one valid email address to send to." });
+      if (!subject) return res.status(400).json({ error: "Add a subject." });
+      const name = String(b.name ?? "").replace(/[^\p{L}'’ -]/gu, "").trim().split(/\s+/)[0]?.slice(0, 30) || null, id = threadId(to, subject), now = new Date().toISOString();
+      const t = (await loadThread(id)) || { id, customer: to, name, subject, escalated: false, status: "answered", createdAt: now, updatedAt: now, messages: [] };
+      if (name && !t.name) t.name = name;
+      if (!t.escalated) { t.escalated = true; t.escalatedAt = now; t.reason = "Written by you"; }
+      t.sender = sender; t.updatedAt = now;
+      await saveThread(t);
+      return res.status(200).json({ ok: true, id, thread: t });
+    }
+
     const thread = await loadThread(b.id);
     if (!thread) return res.status(404).json({ error: "No such chain." });
 
@@ -290,6 +313,7 @@ export default async function handler(req, res) {
       if (text.length > 6000) return res.status(400).json({ error: "That reply is too long." });
       if (!thread.escalated) return res.status(400).json({ error: "Only escalated chains can be answered here." });
       if (thread.heldReply) return res.status(409).json({ error: "A reply is already waiting for its files to be scanned. Cancel it first." });
+      if (SENDERS[b.sender] && thread.sender !== b.sender) { thread.sender = b.sender; await saveThread(thread); }   // which address this reply is sent from
       const ids = [...new Set([].concat(b.attachments || []).map(String))], slugs = [].concat(b.guides || []).map(String), close = b.close === true;
       if (ids.length) {
         try { if (await refreshThreadScans(thread, 10)) await saveThread(thread); } catch (e) { console.error("scan refresh", e?.message); }
