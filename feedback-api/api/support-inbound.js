@@ -50,6 +50,7 @@ Facts you may use, and nothing else about the product:
 - The app is installed with TestFlight. The guide covers every feature.
 - A licence bought on the website works on up to 3 devices (Education licences, bought for a whole organisation, have no limit). If the app says the limit is reached, the customer removes a device on the devices page (guide page: remove-a-device) and enters the key again.
 - Not available right now: scanning paper music with the camera.
+- Free trials: you have no confirmed information about a free trial. If asked, say you can't confirm one, mention the 14-day money-back guarantee on licences bought on the website, and point to the buy page (links: ["buy"]). This is a normal question, so do NOT escalate.
 Rules:
 - CHECK BEFORE YOU ANSWER. Every answer about the app must come from, in this order: (1) the <guide_page> blocks and the <guide_tree>, where every feature of the app has a page; (2) failing that, the <app_code> excerpts; (3) the facts above. Read them first, then write your reply. If a page in the tree is about something, the app does it.
 - NEVER tell a customer that the app lacks a feature, setting or ability, or that it "doesn't support" or "isn't available", unless a guide page, the code or the facts above explicitly say so. If you cannot find it in any of them, do not guess and do not deny it: say you can't confirm it from what you have and ask one or two clarifying questions. Do not escalate for this reason.
@@ -473,12 +474,15 @@ async function draft(subject, body, guide = { top: [], outline: "" }, code = [],
     }),
   });
   if (!r.ok) throw new Error("LLM " + r.status);
-  // Open models sometimes wrap the JSON in prose or code fences: take the first {...}. Anything unparseable escalates to the owner.
+  // Open models sometimes wrap the JSON in prose or code fences: take the first {...}. Anything unparseable or empty gets a clarifying reply, NOT an escalation (policy: only a complaint or a second customer reply escalates).
   const content = (await r.json()).choices?.[0]?.message?.content || "";
   let j = {};
   try { j = JSON.parse(/\{[\s\S]*\}/.exec(content)?.[0] || "{}"); } catch { /* escalate below */ }
-  return { reply: String(j.reply || "").trim(), links: Array.isArray(j.links) ? j.links.filter((k) => LINKS[k]) : [], pages: Array.isArray(j.pages) ? j.pages.map(String) : [], escalate: j.escalate === true || !j.reply, refundProblem: j.refund_problem === true, evidence: String(j.evidence || ""), issue: String(j.issue || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").replace(/[.!]+$/, "").trim().slice(0, 100) };
+  return { reply: String(j.reply || "").trim() || NO_ANSWER, links: Array.isArray(j.links) ? j.links.filter((k) => LINKS[k]) : [], pages: Array.isArray(j.pages) ? j.pages.map(String) : [], escalate: j.escalate === true, refundProblem: j.refund_problem === true, evidence: String(j.evidence || ""), issue: String(j.issue || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").replace(/[.!]+$/, "").trim().slice(0, 100) };
 }
+
+/** Used when the model gives no usable reply. A missing answer is never a reason to escalate; ask the customer for detail instead. */
+const NO_ANSWER = "Thanks for getting in touch. Could you tell us a little more about what you would like to know, such as which device you are using and what you see on screen, so we can point you the right way?";
 
 export const send = (payload, idem) =>
   fetch("https://api.resend.com/emails", {
