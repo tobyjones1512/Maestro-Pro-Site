@@ -4,7 +4,6 @@
 // account (Mollie Connect) with a 30% application fee that Mollie moves to the platform.
 import { Readable } from "node:stream";
 import { get } from "@vercel/blob";
-import { handleUpload } from "@vercel/blob/client";
 import { readVersioned, writeVersioned, writeRaw } from "./_threads.js";
 import { SITE, API, CUT, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, wholePrice, live, mollie, oauth } from "./_mp.js";
 
@@ -157,6 +156,7 @@ async function download(req, res) {
 // ---- Selling (the site owner with the admin key, or a connected seller with their seller key)
 async function upload(req, res) {
   const me = await who(req).catch(() => null);
+  const { handleUpload } = await import("@vercel/blob/client");   // loaded only here, so the other routes never depend on it
   const json = await handleUpload({
     body: req.body, request: req,
     onBeforeGenerateToken: async (pathname, payload) => {
