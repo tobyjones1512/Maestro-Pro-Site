@@ -329,7 +329,7 @@ export function buildEmail({ name, reply, buttons = [], guides = [], attachments
   // The files attached to this email, in the same card style as the guides.
   const attachHtml = attachments.length ? `<div style="margin:10px 0 6px;font:700 11px ${FONT};letter-spacing:.09em;text-transform:uppercase;color:${C.muted}" class="muted">Attachments</div><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="guide" style="margin:0 0 10px;border:1px solid ${C.rule};border-radius:10px;background:${C.card}"><tr><td style="padding:12px 16px"><div class="muted" style="font:700 10px ${FONT};letter-spacing:.09em;text-transform:uppercase;color:${C.muted}">${attachments.length === 1 ? "1 file attached" : attachments.length + " files attached"}</div>${attachments.map((a) => `<div style="margin-top:4px;font:700 16px/1.3 ${SERIF};color:${C.deep}">${esc(a.name)} <span class="muted" style="font:14px ${FONT};color:${C.muted}">${esc(sizeOf(a.size))}</span></div>`).join("")}</td></tr></table>` : "";
   const preheader = esc(String(reply).replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\*\*/g, "").replace(/\s+/g, " ").slice(0, 110));
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>Maestro Pro ${label}</title>
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark"><title>Maestro Pro${label ? " " + label : ""}</title>
 <style>@media (max-width:620px){.card{padding:24px 20px !important}.wrap{padding:12px 6px !important}}@media (prefers-color-scheme:dark){.bg{background:#0F0B07 !important}.card{background:#1E1710 !important}.ink,.card p,.card li,.card td{color:#F3EBDA !important}.muted{color:#CDB991 !important}.lnk{color:#F6A828 !important}.guide{background:#2A2017 !important;border-color:#4A3B2B !important}.foot{background:#15100B !important;color:#9C8B6C !important}.foot a,.foot div{color:#9C8B6C !important}}</style></head>
 <body class="bg" style="margin:0;padding:0;background:${C.cream}"><div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${preheader}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg" style="background:${C.cream}"><tr><td align="center" class="wrap" style="padding:28px 12px">
@@ -465,7 +465,7 @@ async function repairReply({ subject, body, reply, problems, allowed, system }) 
 }
 
 /** Header names to values, lower-cased, whatever shape the API returns them in (an object, or a list of {name, value}). */
-const headerMap = (headers) => {
+export const headerMap = (headers) => {
   if (Array.isArray(headers)) return Object.fromEntries(headers.filter((h) => h?.name).map((h) => [String(h.name).toLowerCase(), String(h.value ?? "")]));
   return Object.fromEntries(Object.entries(headers || {}).map(([k, v]) => [k.toLowerCase(), Array.isArray(v) ? v.join(" ") : String(v)]));
 };
@@ -551,6 +551,12 @@ export const send = (payload, idem) =>
 // (see releaseNotice in _attachments.js) and then includes those results.
 const scanWord = (f) => ({ clean: "virus-free", flagged: `FLAGGED by ${(f.scan.malicious || 0) + (f.scan.suspicious || 0)} VirusTotal engine(s), do not open`, unscanned: "not scanned", error: "scan failed", toolarge: "too large to scan" }[f.scan?.status] || "unknown");
 setNoticeSender(async (n, files) => {
+  if (n.fwd) {   // a forward from toby@ (see _toby.js): the original email, with the clean files attached
+    const { fwdPayload } = await import("./_toby.js");
+    const r = await send(await fwdPayload(n, files), n.idem);
+    if (!r.ok) throw new Error("Resend " + r.status);
+    return;
+  }
   const list = files.length ? `\n\nAttachments (${files.length}), checked with VirusTotal:\n${files.map((f) => `- ${f.name} (${Math.max(1, Math.round((f.size || 0) / 1024))} KB): ${scanWord(f)}`).join("\n")}` : "";
   const r = await send({ from: FROM(), to: [OWNER], ...n.payload, text: n.payload.text + list }, n.idem);
   if (!r.ok) throw new Error("Resend " + r.status);
@@ -585,12 +591,18 @@ async function attachmentBlock(tid, id) {
 }
 
 /** Emails the owner now, or holds the email (on the thread) if the message has files still to be scanned. payload: { reply_to, subject, text }. */
-async function noticeOwner({ tid, msgKey, payload, idem }) {
+export async function noticeOwner({ tid, msgKey, payload, idem, fwd }) {
   let t = null;
   try { t = await loadThread(tid); } catch { /* no store: send straight away */ }
   const files = t?.messages.find((m) => m.key === msgKey)?.attachments || [];
-  if (!files.length) return send({ from: FROM(), to: [OWNER], ...payload }, idem);
-  t.pendingNotice = { msgKey, payload, idem, at: new Date().toISOString() };
+  if (!files.length) {
+    if (!fwd) return send({ from: FROM(), to: [OWNER], ...payload }, idem);
+    const { fwdPayload } = await import("./_toby.js");
+    const r = await send(await fwdPayload({ payload, fwd }, []), idem);
+    if (!r.ok) throw new Error("Resend " + r.status);
+    return r;
+  }
+  t.pendingNotice = { msgKey, payload, idem, ...(fwd && { fwd }), at: new Date().toISOString() };
   await saveThread(t);
   await settleScans(tid, 6000);   // files VirusTotal already knows are done within seconds; the rest go out when their scans finish
 }
@@ -722,6 +734,16 @@ export default async function handler(req, res) {
   const id = evt.data.email_id;
   const to = [].concat(evt.data.to || []).map(addr);
   if (to.includes(ESCALATIONS) && !to.includes(SUPPORT)) return deskInbound(evt, res);
+  // toby@ is forwarded to the owner (after a virus scan of any files) and reply@ sends the owner's answer on; see _toby.js.
+  if (to.includes("reply@maestro-pro.app") && !to.includes(SUPPORT)) {
+    try { return res.status(200).json(await (await import("./_toby.js")).replyInbound(evt)); } catch (e) { console.error("toby reply", e); return res.status(200).json({ ok: false }); }
+  }
+  if (to.includes("toby@maestro-pro.app")) {
+    let out = { ok: false };
+    try { out = await (await import("./_toby.js")).forwardInbound(evt); }
+    catch (e) { console.error("toby forward", e); await send({ from: FROM(), to: [OWNER], subject: `Email to toby@ could not be forwarded`, text: `An email to toby@maestro-pro.app could not be forwarded (${String(e?.message).slice(0, 100)}). Open it in the Resend dashboard: email ${id}.\n\nFrom: ${evt.data.from || ""}\nSubject: ${evt.data.subject || ""}` }, `toby-fwd-fail-${id}`).catch(() => {}); }
+    if (!to.includes(SUPPORT)) return res.status(200).json(out);
+  }
   if (!to.includes(SUPPORT)) return res.status(200).json({ ok: true, ignored: "recipient" });
 
   const ctx = { from: evt.data.from || "", subject: evt.data.subject || "(no subject)", body: "" }; // what we can forward if anything fails

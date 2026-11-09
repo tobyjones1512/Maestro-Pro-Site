@@ -59,7 +59,7 @@ const clip = (t, n) => String(t ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 export function summary(t) {
   const last = t.messages[t.messages.length - 1] || {};
   const waiting = t.messages.filter((m) => m.scheduledAt && !m.cancelled).map((m) => m.scheduledAt).sort().pop() || null;   // latest reply that has a send time and was not deleted
-  return { scheduledAt: waiting, id: t.id, customer: t.customer, name: t.name || null, subject: t.subject, escalated: !!t.escalated, pendingNotice: !!t.pendingNotice, heldReply: !!t.heldReply, pendingBot: !!t.pendingBot, files: t.messages.reduce((n, m) => n + (m.attachments?.length || 0), 0), escalatedAt: t.escalatedAt || null, reason: t.reason || null, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt, count: t.messages.length, preview: clip(last.text, 140), lastBy: last.by || null };
+  return { scheduledAt: waiting, kind: t.kind || null, id: t.id, customer: t.customer, name: t.name || null, subject: t.subject, escalated: !!t.escalated, pendingNotice: !!t.pendingNotice, heldReply: !!t.heldReply, pendingBot: !!t.pendingBot, files: t.messages.reduce((n, m) => n + (m.attachments?.length || 0), 0), escalatedAt: t.escalatedAt || null, reason: t.reason || null, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt, count: t.messages.length, preview: clip(last.text, 140), lastBy: last.by || null };
 }
 
 /** Changes a thread safely when something else may be changing it too: reads it with its ETag, lets `fn` edit it (return false to leave it alone) and writes it only if nobody
