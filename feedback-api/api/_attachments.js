@@ -90,6 +90,7 @@ export async function refreshThreadScans(thread, max = 4) {
     const next = await refreshScan(m);
     if (JSON.stringify(next) !== JSON.stringify(m.scan)) { m.scan = next; changed = true; }
   }
+  if (await releaseNotice(thread)) changed = true;
   return changed;
 }
 
@@ -178,19 +179,51 @@ export async function processQueue() {
     for (let i = 0; i < take.length; i++) q.starts.push(new Date(now).toISOString());
     return { take, waiting: q.items.length };
   });
-  await Promise.all(taken.take.map(async (it) => {
+  for (const it of taken.take) {   // one at a time: they may share a thread, and each saves it
     try {
       const thread = await loadThread(it.threadId), m = thread && findMeta(thread, it.fileId);
-      if (!m || m.scan?.status !== "queued") return;
+      if (!m || m.scan?.status !== "queued") continue;
       const buf = await readBuffer(m.path);
       m.scan = buf ? await startScan(buf, m.name) : { ...m.scan, status: "error", note: "The stored file is missing." };
+      await releaseNotice(thread);
       await saveThread(thread);
     } catch (e) { console.error("scan queue", e?.message); }
-  }));
+  }
   return { started: taken.take.length, waiting: taken.waiting };
 }
 
 /** Queue freshly saved files and run the queue. Never throws. */
 export async function queueScans(threadId, metas) {
   try { await enqueueScans(threadId, metas); await processQueue(); } catch (e) { console.error("queue scans", e?.message); }
+}
+
+// ---- Held escalation emails. An escalation email about a message with attachments is not sent straight away: it is kept on the thread
+// (thread.pendingNotice) and sent once every file on that message has a scan result (clean, flagged, failed or too large), with the results in it.
+let noticeSender = null;
+/** support-inbound.js registers the function that emails the owner: (notice, files) => Promise, throwing if the email could not be sent. */
+export const setNoticeSender = (fn) => { noticeSender = fn; };
+const SETTLED = new Set(["clean", "flagged", "unscanned", "error", "toolarge"]);
+/** If this thread holds a held escalation email and every file on its message has a result, sends it and clears it. Returns true if the thread changed (the caller saves it).
+ *  A failed send leaves it held to try again; Resend's idempotency key stops a double send. */
+export async function releaseNotice(thread) {
+  const n = thread.pendingNotice;
+  if (!n || !noticeSender) return false;
+  const files = (thread.messages || []).find((m) => m.key === n.msgKey)?.attachments || [];
+  if (files.some((f) => !SETTLED.has(f.scan?.status))) return false;
+  try { await noticeSender(n, files); } catch (e) { console.error("held notice", e?.message); return false; }
+  thread.pendingNotice = null;
+  return true;
+}
+
+/** Runs the queue and checks the thread's scans, a few times over `waitMs`, until its held email has gone out. Always returns; the email may still be held. */
+export async function settleScans(threadId, waitMs = 0) {
+  const end = Date.now() + waitMs;
+  for (;;) {
+    await processQueue().catch(() => {});
+    const t = await loadThread(threadId);
+    if (!t || !t.pendingNotice) return;
+    if (await refreshThreadScans(t)) await saveThread(t);
+    if (!t.pendingNotice || Date.now() + 5000 > end) return;
+    await new Promise((r) => setTimeout(r, 4000));
+  }
 }
