@@ -219,6 +219,7 @@ function loadList(){
 function visible(){
   var q=$("q").value.trim().toLowerCase(),f=$("statusFilter").value;
   return state.threads.filter(function(t){
+    if(t.kind==="toby")return false;
     if(state.tab==="esc"){
       if(!t.escalated)return false;
       if(f==="active"&&t.status==="done")return false;
