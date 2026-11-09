@@ -551,6 +551,11 @@ export const send = (payload, idem) =>
 // (see releaseNotice in _attachments.js) and then includes those results.
 const scanWord = (f) => ({ clean: "virus-free", flagged: `FLAGGED by ${(f.scan.malicious || 0) + (f.scan.suspicious || 0)} VirusTotal engine(s), do not open`, unscanned: "not scanned", error: "scan failed", toolarge: "too large to scan" }[f.scan?.status] || "unknown");
 setNoticeSender(async (n, files) => {
+  if (n.rep) {   // Toby's reply from reply@ (see _toby.js), waiting for the scans of its files
+    const { sendReply } = await import("./_toby.js");
+    await sendReply(n.rep, files);
+    return;
+  }
   if (n.fwd) {   // a forward from toby@ (see _toby.js): the original email, with the clean files attached
     const { fwdPayload } = await import("./_toby.js");
     const r = await send(await fwdPayload(n, files), n.idem);
@@ -591,18 +596,19 @@ async function attachmentBlock(tid, id) {
 }
 
 /** Emails the owner now, or holds the email (on the thread) if the message has files still to be scanned. payload: { reply_to, subject, text }. */
-export async function noticeOwner({ tid, msgKey, payload, idem, fwd }) {
+export async function noticeOwner({ tid, msgKey, payload, idem, fwd, rep }) {
   let t = null;
   try { t = await loadThread(tid); } catch { /* no store: send straight away */ }
   const files = t?.messages.find((m) => m.key === msgKey)?.attachments || [];
   if (!files.length) {
+    if (rep) return (await import("./_toby.js")).sendReply(rep, []);
     if (!fwd) return send({ from: FROM(), to: [OWNER], ...payload }, idem);
     const { fwdPayload } = await import("./_toby.js");
     const r = await send(await fwdPayload({ payload, fwd }, []), idem);
     if (!r.ok) throw new Error("Resend " + r.status);
     return r;
   }
-  t.pendingNotice = { msgKey, payload, idem, ...(fwd && { fwd }), at: new Date().toISOString() };
+  t.pendingNotice = { msgKey, payload, idem, ...(fwd && { fwd }), ...(rep && { rep }), at: new Date().toISOString() };
   await saveThread(t);
   await settleScans(tid, 6000);   // files VirusTotal already knows are done within seconds; the rest go out when their scans finish
 }

@@ -196,25 +196,62 @@ export async function replyInbound(evt) {
     await tell(`Couldn't send your reply: ${subjectIn}`, `Your reply to "${subjectIn}" was not sent because I couldn't tell who it is for. Reply to the forwarded email itself (so the lines at the bottom that start with Ref and Original sender are kept), or write to them directly.`, `toby-nomatch-${id}`);
     return { ok: true, ignored: "no-match" };
   }
-  if (Array.isArray(full.attachments) ? full.attachments.length > 0 : false) {
-    await tell(`Your reply was not sent: ${subjectIn}`, `Your reply to ${customer} was NOT sent because it has attachments, and replies sent from reply@ can't carry files. Send it again without the attachments, or write to them directly.`, `toby-attach-${id}`);
-    return { ok: true, ignored: "attachments" };
-  }
   const text = ownText(full);
   if (!text) { await tell(`Your reply was empty: ${subjectIn}`, `Nothing was sent to ${customer}: I couldn't find any new text in your reply.`, `toby-empty-${id}`); return { ok: true, ignored: "empty" }; }
   if (text.length > 6000) { await tell(`Your reply was too long: ${subjectIn}`, `Nothing was sent to ${customer}: the reply is over 6,000 characters. Please shorten it.`, `toby-long-${id}`); return { ok: true, ignored: "long" }; }
 
   const name = thread?.name || refs.name || null;
   const subject = refs.subject || thread?.subject || subjectIn.replace(/^\s*(re|fwd?)\s*:\s*/gi, "");
+  const lastIn = thread && [...thread.messages].reverse().find((m) => m.dir === "in" && m.msgId)?.msgId;
+  const rep = { emailId: id, customer, name, subject, text, lastIn: lastIn || null, tid: thread?.id || null };
+  // Files on your reply are stored and virus-scanned like any others; the reply goes out when every one has a result (see sendReply).
+  if (Array.isArray(full.attachments) ? full.attachments.length > 0 : false) {
+    let held = false;
+    try {
+      const tid = thread?.id || (await ensureThread(customer, name, subject));
+      rep.tid = tid;
+      const metas = await ingestInbound(id, tid);
+      if (!metas.length) throw new Error("the files could not be fetched");
+      await recordMessage({ threadKey: tid, customer, name, subject, message: { key: `toby-${id}`, dir: "out", by: "toby", at: new Date().toISOString(), text, attachments: metas } });
+      await queueScans(tid, metas);
+      await waitForScans(tid, metas.map((m) => m.id), 40000);
+      const { noticeOwner } = await import("./support-inbound.js");
+      await noticeOwner({ tid, msgKey: `toby-${id}`, idem: `toby-reply-${id}`, payload: {}, rep });
+      held = true;
+    } catch (e) {
+      console.error("toby reply files", e?.message);
+      if (!held) await tell(`Your reply was not sent: ${subjectIn}`, `Your reply to ${customer} was NOT sent: its attachments could not be stored and virus-scanned (${String(e?.message).slice(0, 100)}). Try again, or write to them directly.`, `toby-attach-${id}`);
+    }
+    return { ok: true, scanning: true };
+  }
+  return sendReply(rep, []);
+}
+
+/** Builds and sends the answer in the support email design, from toby@, with the given clean files attached. Called straight away, or once the scans of a reply's files are done. */
+export async function sendReply(rep, files = []) {
+  const { emailId: id, customer, name, subject, text, lastIn, tid } = rep;
+  const bad = files.filter((f) => f.scan?.status !== "clean" || !f.path);
+  if (bad.length) {
+    await tell(`Your reply was not sent: ${subject}`, `Your reply to ${customer} was NOT sent because VirusTotal did not clear every file:\n${bad.map((f) => `- ${f.name}: ${verdict(f, false)}`).join("\n")}\n\nRemove or replace those files and reply to the forwarded email again.`, `toby-blocked-${id}`);
+    return { ok: true, blocked: true };
+  }
+  const loaded = [];
+  let total = 0;
+  for (const f of files) {
+    const buf = await readBuffer(f.path).catch(() => null);
+    total += buf?.length || 0;
+    if (!buf || total > MAX_SENT_TOTAL) { await tell(`Your reply was not sent: ${subject}`, `Your reply to ${customer} was NOT sent: ${f.name} ${buf ? "and the other files add up to too much for one email" : "is missing from storage"}.`, `toby-size-${id}`); return { ok: true, blocked: true }; }
+    loaded.push({ f, buf });
+  }
   const resolve = (t) => { const x = String(t).trim(); return /^https:\/\/[^\s"<>]+$/.test(x) ? x : LINKS[x]?.[1] || null; };
   const linked = text.replace(/(^|\s)(https:\/\/[^\s<>()\[\]]+?)([.,;:!?]*)(?=\s|$|\))/g, "$1[$2]($2)$3");   // a web address typed on its own becomes a link
-  const built = buildEmail({ name, reply: linked, resolve, label: "", contact: TOBY, signoff: "Toby Jones" });
+  const built = buildEmail({ name, reply: linked, resolve, label: "", contact: TOBY, signoff: "Toby Jones", attachments: loaded.map(({ f }) => ({ name: f.name, size: f.size })) });
   const html = built.html, plain = built.text.replace(/(https?:\/\/\S+) \(\1\)/g, "$1");
-  const lastIn = thread && [...thread.messages].reverse().find((m) => m.dir === "in" && m.msgId)?.msgId;
   const r = await send({
-    from: REPLY_FROM(), to: [customer], reply_to: TOBY,   // their answer comes back to toby@, is forwarded to you again, and so on
+    from: REPLY_FROM(), to: [customer], reply_to: TOBY,   // sent from toby@; their answer comes back to toby@, is forwarded to you again, and so on
     subject: /^re:/i.test(subject) ? subject : `Re: ${subject}`,
     text: plain, html,
+    ...(loaded.length && { attachments: loaded.map(({ f, buf }) => ({ filename: f.name, content: buf.toString("base64"), ...(f.type && { content_type: f.type }) })) }),
     ...(lastIn && { headers: { "In-Reply-To": lastIn, References: lastIn } }),
   }, `toby-reply-${id}`);
   const out = await r.json().catch(() => ({}));
@@ -222,8 +259,8 @@ export async function replyInbound(evt) {
     await tell(`Your reply could not be sent: ${subject}`, `Your reply to ${customer} could not be sent (${String(out.message || out.error || "Resend " + r.status).slice(0, 200)}). Reply to the forwarded email again to retry.`, `toby-fail-${id}`);
     return { ok: false };
   }
-  if (thread) {
-    try { await recordMessage({ threadKey: thread.id, customer, name, subject, message: { key: `toby-${id}`, dir: "out", by: "toby", at: new Date().toISOString(), text: plain, ...(out.id && { resendId: out.id }) }, status: "answered" }); }
+  if (tid) {
+    try { await recordMessage({ threadKey: tid, customer, name, subject, message: { key: `toby-${id}`, dir: "out", by: "toby", at: new Date().toISOString(), text: plain, ...(out.id && { resendId: out.id }) }, status: "answered" }); }
     catch (e) { console.error("toby record", e?.message); }
   }
   return { ok: true, replied: true };
