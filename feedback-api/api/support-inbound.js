@@ -17,6 +17,7 @@
 import crypto from "node:crypto";
 import { gc, customersByEmail } from "./_gc.js";
 import { recordMessage, threadId, loadSettings, findCase } from "./_threads.js";
+import { ingestInbound } from "./_attachments.js";
 
 export const config = { api: { bodyParser: false } }; // the signature is over the exact bytes Resend sent
 
@@ -49,8 +50,13 @@ Facts you may use, and nothing else about the product:
 - Subscriptions bought inside the app through the App Store are paid to Apple, so Apple handles their refunds: the customer requests one from Apple (links: ["appstore"]), and stops renewals in their Apple Account settings. Neither we nor the cancellation page can refund or find them.
 - The app is installed with TestFlight. The guide covers every feature.
 - A licence bought on the website works on up to 3 devices (Education licences, bought for a whole organisation, have no limit). If the app says the limit is reached, the customer removes a device on the devices page (guide page: remove-a-device) and enters the key again.
-- Not available right now: scanning paper music with the camera.
-- Free trials: a 3-day free trial is offered ONLY on the weekly plans bought inside the app through the App Store (managed and cancelled in the customer's Apple Account). There is NO free trial on licences bought on the website; those have the 14-day money-back guarantee instead (links: ["refund"] to cancel, ["buy"] to buy). Never offer a trial on any other plan. This is a normal question, so do NOT escalate.
+- Plans bought inside the app through the App Store: Performer and Professional, each weekly or yearly. Professional is £119 a year in the app, but £89 a year (or £10 a month on a 12-month contract) on the website, so the website is cheaper.
+- Free trials: a 3-day free trial is offered ONLY on the WEEKLY plans (Performer weekly and Professional weekly) bought inside the app through the App Store. It is one trial per Apple Account. When the trial ends, the customer drops to the Free plan automatically unless they subscribe. There is NO free trial on licences bought on the website; those have the 14-day money-back guarantee instead (links: ["refund"] to cancel, ["buy"] to buy). Never offer a trial on any other plan. This is a normal question, so do NOT escalate.
+- Payments on the website are by direct debit only; there are no card payments. Refunds under the 14-day guarantee can only be made once the payment has cleared (about a week), so from day 8 to day 14.
+- Ending a monthly licence early after the 14 days costs one month plus half of the remaining term. The cancellation page shows the exact amount before the customer confirms.
+- A licence cannot be moved to another email address or transferred to someone else. If a customer has lost access to the email address they paid with, they must email support explaining their situation and show the direct debit on their bank statement.
+- Education: one licence for a whole organisation is a flat £499 a year, with no minimum organisation size and no device limit.
+- Scanning paper music with the camera is simply not available. Never describe it as coming soon or planned. Apart from that, do not claim any other missing platform or feature unless the guide says so.
 Rules:
 - CHECK BEFORE YOU ANSWER. Every answer about the app must come from, in this order: (1) the <guide_page> blocks and the <guide_tree>, where every feature of the app has a page; (2) failing that, the <app_code> excerpts; (3) the facts above. Read them first, then write your reply. If a page in the tree is about something, the app does it.
 - NEVER tell a customer that the app lacks a feature, setting or ability, or that it "doesn't support" or "isn't available", unless a guide page, the code or the facts above explicitly say so. If you cannot find it in any of them, do not guess and do not deny it: say you can't confirm it from what you have and ask one or two clarifying questions. Do not escalate for this reason.
@@ -576,7 +582,8 @@ export default async function handler(req, res) {
     // Keep the chain for the desk (the page at /escalations/). A storage problem must never stop the reply or the escalation notice.
     const at = new Date().toISOString(), tid = threadId(addr(from), subject);
     try {
-      await recordMessage({ customer: addr(from), name, subject, message: { key: id, dir: "in", by: "customer", at, text: body, msgId } });
+      const attachments = await ingestInbound(id, tid).catch(() => []);   // files the customer attached: stored and virus-scanned for the desk
+      await recordMessage({ customer: addr(from), name, subject, message: { key: id, dir: "in", by: "customer", at, text: body, msgId, ...(attachments.length && { attachments }) } });
       await recordMessage({ customer: addr(from), name, subject, message: { key: `bot-${id}`, dir: "out", by: "bot", at: new Date().toISOString(), text, ...(resendId && { resendId }), ...(scheduledAt && { scheduledAt }) }, escalate: escalate ? { reason: verdict.reason } : undefined });
     } catch (e) { console.error("thread store", e?.message); }
 
@@ -607,7 +614,7 @@ export default async function handler(req, res) {
 async function reopenCase({ res, id, from, subject, body, msgId, hit }) {
   const tid = hit.id, text = `I’m sorry the issue has not been resolved. I have re-opened case ${hit.caseNumber} and escalated it, and someone will get back to you shortly.`;
   try {
-    try { await recordMessage({ threadKey: tid, customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", from: addr(from), text: body, msgId, reopen: hit.caseNumber }, escalate: { reason: `Case ${hit.caseNumber} re-opened by the customer` } }); }
+    try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ threadKey: tid, customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", from: addr(from), text: body, msgId, reopen: hit.caseNumber, ...(attachments.length && { attachments }) }, escalate: { reason: `Case ${hit.caseNumber} re-opened by the customer` } }); }
     catch (e) { console.error("thread store", e?.message); }
     const mail = buildEmail({ name: firstName(from), reply: text, contact: ESCALATIONS, aiNotice: false });
     await send({ from: FROM(), to: [addr(from)], reply_to: ESCALATIONS, subject: /^re:/i.test(subject) ? subject : `Re: ${subject}`, text: mail.text, html: mail.html, ...(msgId && { headers: { "In-Reply-To": msgId, References: msgId } }) }, `support-reopen-${id}`);
@@ -630,7 +637,7 @@ async function deskInbound(evt, res) {
     if (shouldIgnore(from, full.headers)) return res.status(200).json({ ok: true, ignored: "automated" });
     const subject = String(evt.data.subject || full.subject || "(no subject)").replace(/[\r\n]+/g, " ").slice(0, 200), body = plain(full);
     const tid = threadId(addr(from), subject);
-    try { await recordMessage({ customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", text: body, msgId: evt.data.message_id || full.message_id }, escalate: { reason: "Customer wrote to the escalations address" } }); }
+    try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", text: body, msgId: evt.data.message_id || full.message_id, ...(attachments.length && { attachments }) }, escalate: { reason: "Customer wrote to the escalations address" } }); }
     catch (e) { console.error("thread store", e?.message); }
     await send({
       from: FROM(), to: [OWNER], reply_to: addr(from),
