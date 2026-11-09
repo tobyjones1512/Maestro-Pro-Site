@@ -59,9 +59,26 @@ const clip = (t, n) => String(t ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 export function summary(t) {
   const last = t.messages[t.messages.length - 1] || {};
   const waiting = t.messages.filter((m) => m.scheduledAt && !m.cancelled).map((m) => m.scheduledAt).sort().pop() || null;   // latest reply that has a send time and was not deleted
-  return { scheduledAt: waiting, id: t.id, customer: t.customer, name: t.name || null, subject: t.subject, escalated: !!t.escalated, pendingNotice: !!t.pendingNotice, heldReply: !!t.heldReply, escalatedAt: t.escalatedAt || null, reason: t.reason || null, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt, count: t.messages.length, preview: clip(last.text, 140), lastBy: last.by || null };
+  return { scheduledAt: waiting, id: t.id, customer: t.customer, name: t.name || null, subject: t.subject, escalated: !!t.escalated, pendingNotice: !!t.pendingNotice, heldReply: !!t.heldReply, pendingBot: !!t.pendingBot, files: t.messages.reduce((n, m) => n + (m.attachments?.length || 0), 0), escalatedAt: t.escalatedAt || null, reason: t.reason || null, status: t.status, createdAt: t.createdAt, updatedAt: t.updatedAt, count: t.messages.length, preview: clip(last.text, 140), lastBy: last.by || null };
 }
 
+/** Changes a thread safely when something else may be changing it too: reads it with its ETag, lets `fn` edit it (return false to leave it alone) and writes it only if nobody
+ *  else has in between, retrying a few times. Returns what `fn` returned (false when there is no thread). */
+export async function updateThread(id, fn) {
+  if (!/^[a-f0-9]{16}$/.test(String(id))) return false;
+  for (let i = 0; i < 5; i++) {
+    const { data, etag } = await readVersioned(THREAD(id));
+    if (!data) return false;
+    const out = fn(data);
+    if (out === false) return false;
+    data.updatedAt = data.updatedAt || new Date().toISOString();
+    if (await writeVersioned(THREAD(id), data, etag)) {
+      const threads = (await loadIndex()).filter((x) => x.id !== id); threads.push(summary(data)); threads.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))); await writeJson(INDEX, { threads });
+      return out;
+    }
+  }
+  throw new Error("The thread was busy.");
+}
 export const loadThread = (id) => (/^[a-f0-9]{16}$/.test(String(id)) ? readJson(THREAD(id)) : null);
 export async function loadIndex() { return (await readJson(INDEX))?.threads || []; }
 

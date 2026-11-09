@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (!process.env.CRON_SECRET || req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) return res.status(401).json({ error: "Not allowed." });
   try {
     const queue = await processQueue();
-    const held = (await loadIndex()).filter((t) => t.pendingNotice || t.heldReply).slice(0, 20);
+    const held = (await loadIndex()).filter((t) => t.pendingNotice || t.heldReply || t.pendingBot).slice(0, 20);
     for (const t of held) await settleScans(t.id, 0);
     return res.status(200).json({ ok: true, queue, held: held.length });
   } catch (e) {

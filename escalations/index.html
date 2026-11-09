@@ -158,7 +158,7 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
     <div class="tabs" role="tablist" aria-label="Desk">
       <button class="tab" role="tab" id="tab-esc" aria-selected="true" data-tab="esc">Escalations<span class="badge" id="openCount" hidden>0</span></button>
       <button class="tab" role="tab" id="tab-all" aria-selected="false" data-tab="all">Support chains</button>
-      <button class="tab" role="tab" id="tab-set" aria-selected="false" data-tab="settings">Bot settings</button>
+      <button class="tab" role="tab" id="tab-set" aria-selected="false" data-tab="settings">Settings</button>
     </div>
     <span class="sp"></span>
     <button class="btn btn--ghost btn--sm" id="refresh" type="button">Refresh</button>
@@ -245,6 +245,8 @@ function renderList(){
     if(state.tab==="all"&&t.escalated){left.append(el("span","pill pill--esc","escalated"))}
     if(!t.escalated)left.append(el("span","pill","bot"));
     if(waiting(t.scheduledAt)){left.append(" ");left.append(el("span","pill pill--wait","reply scheduled"))}
+    if(t.files){left.append(" ");var fp=el("span","pill",t.files+(t.files===1?" file":" files"));fp.title="Attachments in this chain";left.append(fp)}
+    if(t.pendingBot){left.append(" ");var wp=el("span","pill pill--wait","reply waiting");wp.title="The bot is waiting for the virus scans before it replies";left.append(wp)}
     meta.append(left,el("span",null,t.count+" message"+(t.count===1?"":"s")));
     b.append(top,tags,el("div","row__pre",t.preview),meta);
     b.addEventListener("click",function(){openThread(t.id)});
@@ -430,8 +432,9 @@ function renderThread(){
     v.append(box);
   });
   clearTimeout(state.scanT);
-  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})})||(t.drafts||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})||!!t.heldReply;
+  var scanning=t.messages.some(function(m){return (m.attachments||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})})||(t.drafts||[]).some(function(f){return f.scan&&(f.scan.status==="pending"||f.scan.status==="queued")})||!!t.heldReply||!!t.pendingBot;
   if(scanning)state.scanT=setTimeout(function(){if(state.cur===t.id)openThread(t.id,true)},6000);
+  if(t.pendingBot)v.append(el("p","hint","The support bot is waiting for this email's attachments to finish their virus scan, and will then send one reply. This page updates by itself."));
   if(t.escalated&&t.heldReply)v.append(heldBanner(t));
   if(t.escalated)v.append(composer(draft));
   else v.append(el("p","hint","This chain was answered by the bot and has not been escalated. Use Escalate to me to take it over."));

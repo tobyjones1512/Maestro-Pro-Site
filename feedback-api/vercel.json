@@ -23,6 +23,9 @@
     },
     "api/scan-sweep.js": {
       "maxDuration": 60
+    },
+    "api/support-admin.js": {
+      "maxDuration": 60
     }
   },
   "crons": [
