@@ -15,6 +15,10 @@
     {
       "source": "/api/student-owns",
       "destination": "/api/student-key?fn=owns"
+    },
+    {
+      "source": "/api/marketplace-:fn",
+      "destination": "/api/marketplace?fn=:fn"
     }
   ],
   "functions": {

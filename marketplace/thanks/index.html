@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Thank you | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+</header>
+<main id="main" class="plain">
+<h1 id="h">Checking your payment…</h1>
+<p id="p"></p>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api } from "/assets/marketplace.js";
+const q = Object.fromEntries(new URLSearchParams(location.search)), h = document.getElementById("h"), p = document.getElementById("p");
+for (let i = 0; i < 40; i++) {
+  try {
+    const o = await api("order", { query: { o: q.o, t: q.t } });
+    if (o.status === "paid") {
+      h.textContent = "Thank you!";
+      p.innerHTML = `<a class="pay__btn" style="display:inline-block;text-decoration:none" href="${o.download}">Download “${o.title.replace(/[<&>"]/g, "")}”</a><br><br>Open the downloaded file in Maestro Pro. We have also emailed you the link.`;
+      break;
+    }
+    if (["failed", "canceled", "expired"].includes(o.status)) { h.textContent = "The payment didn't go through."; p.innerHTML = `Nothing was charged. <a href="/marketplace/">Back to the marketplace</a>.`; break; }
+  } catch (e) { h.textContent = "Order not found."; p.textContent = e.message; break; }
+  await new Promise((r) => setTimeout(r, 3000));
+}
+</script>
+</body>
+</html>

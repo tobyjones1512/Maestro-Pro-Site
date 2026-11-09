@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Become a seller | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Become a seller</h1>
+<p>Sell your sheet music, backing tracks and karaoke to Maestro Pro players. You keep 70% of every sale and Maestro Pro keeps 30%. You set your own price in whole US dollars, and buyers are charged in their own currency.</p>
+<p>Payments are handled by Mollie. You will connect (or create) a Mollie account in the next step, and Mollie pays your share out to you.</p>
+<p id="err" class="notice" hidden></p>
+<form id="f" class="pay">
+  <label class="field">Your name or business name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
+  <label class="field">Email<input name="email" type="email" required autocomplete="email"></label>
+  <label class="field"><input name="agree" type="checkbox" required> I will only sell music I wrote or own the rights to, and I agree to Maestro Pro's 30% share of each sale.</label>
+  <button class="pay__btn" type="submit">Continue to Mollie</button>
+  <p class="pay__msg" role="status"></p>
+</form>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api } from "/assets/marketplace.js";
+const f = document.getElementById("f"), e0 = new URLSearchParams(location.search).get("error");
+if (e0) { const n = document.getElementById("err"); n.textContent = e0; n.hidden = false; }
+f.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const m = f.querySelector(".pay__msg"), b = f.querySelector("button");
+  b.disabled = true; m.textContent = "";
+  try { location.href = (await api("onboard-start", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked } })).url; }
+  catch (err) { m.textContent = err.message; b.disabled = false; }
+});
+</script>
+</body>
+</html>

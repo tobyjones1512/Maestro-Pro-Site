@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sell your music | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Sell your music</h1>
+<div id="out" class="notice" hidden><p>You're not signed in. <a href="/marketplace/onboard/">Become a seller</a> to connect your Mollie account and start selling.</p></div>
+<div id="in" hidden>
+  <p>Signed in as <b id="who"></b>. You set each price in whole US dollars; buyers pay in their own currency. Maestro Pro keeps 30% of each sale and the rest is paid out by Mollie to your account.</p>
+  <form id="f" class="pay pay--wide"></form>
+  <h2>Your pieces</h2>
+  <ul id="mine"></ul>
+</div>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api, esc, mountBuilder, builderFields, dollars } from "/assets/marketplace.js";
+const K = "mp-seller-key", f = document.getElementById("f");
+let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
+const fromLink = new URLSearchParams(location.hash.slice(1)).get("k");
+if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
+const row = (l) => `<li>${esc(l.title)}, ${dollars(l.priceUSD)}</li>`;
+async function load() {
+  if (!key) return (document.getElementById("out").hidden = false);
+  try {
+    const s = await api("seller", { key });
+    document.getElementById("who").textContent = s.name;
+    document.getElementById("mine").innerHTML = s.listings.map(row).join("") || "<li>Nothing yet.</li>";
+    document.getElementById("in").hidden = false;
+  } catch { try { localStorage.removeItem(K); } catch {} key = ""; document.getElementById("out").hidden = false; }
+}
+f.innerHTML = builderFields;
+mountBuilder(f, { getKey: () => key, onDone: load });
+load();
+</script>
+</body>
+</html>

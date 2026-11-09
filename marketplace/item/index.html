@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Buy | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+</header>
+<main id="main" class="plain">
+<div id="item">Loading…</div>
+<form id="f" class="pay" hidden>
+  <h2 class="pay__title">Buy</h2>
+  <label class="field">Email, for your download link<input name="email" type="email" autocomplete="email" required></label>
+  <button class="pay__btn" type="submit">Continue to payment</button>
+  <p class="pay__msg" role="status"></p>
+  <p class="pay__fine" id="cur"></p>
+</form>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api, esc, local, dollars } from "/assets/marketplace.js";
+const id = new URLSearchParams(location.search).get("id"), box = document.getElementById("item"), f = document.getElementById("f");
+try {
+  const d = await api("list"), l = d.listings.find((x) => x.id === id);
+  if (!l) throw new Error("That piece isn't for sale.");
+  document.title = l.title + " | Maestro Pro Marketplace";
+  box.innerHTML = `<h1>${esc(l.title)}</h1><p><b>${esc(l.composer)}</b></p><p>${esc(l.description)}</p><p>Includes: ${esc(l.contents)}. By ${esc(l.sellerName)}.</p><p><b>${esc(local(l.priceUSD, d))}</b></p>`;
+  document.getElementById("cur").textContent = d.currency === "USD" ? `Charged in US dollars (${dollars(l.priceUSD)}).` : `Charged in ${d.currency}, converted from ${dollars(l.priceUSD)}.`;
+  f.hidden = false;
+  f.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const m = f.querySelector(".pay__msg"), b = f.querySelector("button");
+    b.disabled = true; m.textContent = "";
+    try { location.href = (await api("buy", { method: "POST", body: { id, email: f.email.value } })).url; }
+    catch (err) { m.textContent = err.message; b.disabled = false; }
+  });
+} catch (e) { box.textContent = e.message; }
+</script>
+</body>
+</html>
