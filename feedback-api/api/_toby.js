@@ -38,6 +38,7 @@ export function htmlToText(html, unquoted = false) {
 
 // ---- Reading Toby's reply: only what he wrote, with his greeting and sign-off taken off (the design adds both).
 const SIGNOFF = /^(best regards|kind regards|warm regards|regards|best wishes|many thanks|thanks|thank you|cheers|best|yours sincerely|sincerely),?!?$/i;
+const NAME = /^(?:[-\u2013\u2014~]\s*)?toby(?:\s+jones)?[.,]?$/i;
 const FORMAL_ALONE = /^(best regards|kind regards|warm regards|regards|best wishes|cheers|best|yours sincerely|sincerely),?!?$/i;
 export function stripFraming(text) {
   const lines = String(text).replace(/\r\n/g, "\n").split("\n").map((l) => l.replace(/\s+$/, ""));
@@ -45,12 +46,16 @@ export function stripFraming(text) {
   if (lines.length > 1 && /^(hi|hello|hey|dear|good (morning|afternoon|evening))\b/i.test(lines[0].trim()) && lines[0].trim().split(/\s+/).length <= 6) lines.shift();
   const last = () => { while (lines.length && !lines[lines.length - 1].trim()) lines.pop(); return lines[lines.length - 1]?.trim() || ""; };
   while (/^(sent from my .*|get outlook for .*|--)$/i.test(last())) lines.pop();
-  const l1 = last();
-  if (l1 && l1.length <= 40 && !/[.!?:]$/.test(l1)) {   // a name on its own under a sign-off
-    const keep = lines.slice(); lines.pop();
-    if (SIGNOFF.test(last())) lines.pop(); else lines.splice(0, lines.length, ...keep);
-  } else if (FORMAL_ALONE.test(l1)) lines.pop();
   last();
+  // A sign-off: a closing phrase in the last few lines with only a short name or title under it ("Best regards,", "Thanks,", then "Toby Jones"), all taken off.
+  for (let i = Math.max(0, lines.length - 6); i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (!SIGNOFF.test(t)) continue;
+    const after = lines.slice(i + 1).filter((l) => l.trim());
+    if (after.length ? after.length <= 4 && after.every((l) => l.trim().length <= 60 && !/[.!?]$/.test(l.trim())) : FORMAL_ALONE.test(t)) { lines.length = i; break; }
+  }
+  last();
+  while (NAME.test(last())) lines.pop();   // just a name at the end: "Toby", "Toby Jones", "- Toby"
   while (lines.length && !lines[0].trim()) lines.shift();
   return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
