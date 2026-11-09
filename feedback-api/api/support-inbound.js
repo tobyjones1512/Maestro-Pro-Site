@@ -258,6 +258,11 @@ export function dedupeSentences(t) {
 }
 const polish = (t) => dedupeSentences(noDashes(noEmoji(t)));
 
+/** Is this sender on the list of addresses that never wait for the reply delay? An entry is a full address ("sam@school.org") or a whole domain ("@school.org" or "school.org"). */
+export const exemptFrom = (list, address) => {
+  const a = String(address || "").trim().toLowerCase(), dom = a.split("@")[1] || "";
+  return (Array.isArray(list) ? list : []).some((e) => { const x = String(e).trim().toLowerCase(); return x.includes("@") && !x.startsWith("@") ? x === a : x.replace(/^@/, "") === dom; });
+};
 /** A random delay of 10 to 45 minutes, as an ISO time for Resend's scheduled sending (nothing waits inside this function). */
 export const replyTime = (now = Date.now(), rnd = Math.random(), min = 10, max = 45) => new Date(now + (min + rnd * (max - min)) * 60000).toISOString();
 
@@ -706,7 +711,7 @@ export async function answerEmail(job) {
     const { text, html } = buildEmail({ name, reply: inlineReply, buttons, guides: guideCards, aiNotice, resolve, contact: escalate ? ESCALATIONS : SUPPORT });
 
     // Reply delay: the desk page setting if there is one, otherwise REPLY_DELAY=on from the environment (10 to 45 minutes).
-    const dl = settings.delay, delayOn = dl ? dl.enabled === true : process.env.REPLY_DELAY === "on";
+    const dl = settings.delay, exempt = exemptFrom(settings.delayExempt, addr(from)), delayOn = !exempt && (dl ? dl.enabled === true : process.env.REPLY_DELAY === "on");   // a whitelisted sender is answered straight away
     const scheduledAt = delayOn ? replyTime(Date.now(), Math.random(), dl?.minMinutes ?? 10, dl?.maxMinutes ?? 45) : undefined;
     const r = await send({
       from: FROM(), to: [addr(from)], reply_to: escalate ? ESCALATIONS : SUPPORT,   // once escalated, the customer's next email goes to the desk

@@ -587,6 +587,14 @@ function renderSettings(){
       dm.style.color="";dm.textContent="Saving...";
       call("POST","",{action:"settings",delay:{enabled:cb.checked,minMinutes:mn.value,maxMinutes:mx.value}}).then(function(){dm.style.color="var(--ok)";dm.textContent="Saved."}).catch(function(e){dm.textContent=e.message});
     });
+    w.append(el("h2",null,"Skip the delay for these senders"));
+    w.append(el("p","hint","Emails from these addresses are answered straight away, even when the reply delay is on. One per line: a full address (sam@school.org) or a whole domain (@school.org)."));
+    var xa=document.createElement("textarea");xa.className="field";xa.rows=5;xa.style.width="100%";xa.style.maxWidth="420px";xa.setAttribute("aria-label","Addresses that skip the reply delay");xa.value=(S.delayExempt||[]).join("\n");
+    var xr=el("div","row2"),xs=el("button","btn btn--sm","Save list");xs.type="button";var xm=el("span","err");xm.setAttribute("role","status");xr.append(xs,xm);w.append(xa,xr);
+    xs.addEventListener("click",function(){
+      xm.style.color="";xm.textContent="Saving...";
+      call("POST","",{action:"settings",delayExempt:xa.value}).then(function(j){xa.value=(j.settings.delayExempt||[]).join("\n");xm.style.color="var(--ok)";xm.textContent="Saved."}).catch(function(e){xm.textContent=e.message});
+    });
     w.append(el("h2",null,"Licence key email"));
     w.append(el("p","hint","Licence key emails are sent from noreply@maestro-pro.app. Send yourself a sample to check how it looks in a real inbox. The sample key in it does not work. “Send the testing key” sends the real Professional testing key instead, which unlocks Professional in the app, so only send it to people you trust."));
     var tr=el("div","row2"),te=el("input","field");te.type="email";te.placeholder="Send the sample to...";te.setAttribute("aria-label","Send the sample licence email to");te.style.maxWidth="320px";te.autocomplete="email";
