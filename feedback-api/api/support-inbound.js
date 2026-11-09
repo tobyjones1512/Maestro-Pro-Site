@@ -17,7 +17,7 @@
 import crypto from "node:crypto";
 import { gc, customersByEmail } from "./_gc.js";
 import { recordMessage, threadId, loadSettings, findCase } from "./_threads.js";
-import { ingestInbound } from "./_attachments.js";
+import { ingestInbound, queueScans } from "./_attachments.js";
 
 export const config = { api: { bodyParser: false } }; // the signature is over the exact bytes Resend sent
 
@@ -584,6 +584,7 @@ export default async function handler(req, res) {
     try {
       const attachments = await ingestInbound(id, tid).catch(() => []);   // files the customer attached: stored and virus-scanned for the desk
       await recordMessage({ customer: addr(from), name, subject, message: { key: id, dir: "in", by: "customer", at, text: body, msgId, ...(attachments.length && { attachments }) } });
+      await queueScans(tid, attachments);
       await recordMessage({ customer: addr(from), name, subject, message: { key: `bot-${id}`, dir: "out", by: "bot", at: new Date().toISOString(), text, ...(resendId && { resendId }), ...(scheduledAt && { scheduledAt }) }, escalate: escalate ? { reason: verdict.reason } : undefined });
     } catch (e) { console.error("thread store", e?.message); }
 
@@ -614,7 +615,7 @@ export default async function handler(req, res) {
 async function reopenCase({ res, id, from, subject, body, msgId, hit }) {
   const tid = hit.id, text = `I’m sorry the issue has not been resolved. I have re-opened case ${hit.caseNumber} and escalated it, and someone will get back to you shortly.`;
   try {
-    try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ threadKey: tid, customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", from: addr(from), text: body, msgId, reopen: hit.caseNumber, ...(attachments.length && { attachments }) }, escalate: { reason: `Case ${hit.caseNumber} re-opened by the customer` } }); }
+    try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ threadKey: tid, customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", from: addr(from), text: body, msgId, reopen: hit.caseNumber, ...(attachments.length && { attachments }) }, escalate: { reason: `Case ${hit.caseNumber} re-opened by the customer` } }); await queueScans(tid, attachments); }
     catch (e) { console.error("thread store", e?.message); }
     const mail = buildEmail({ name: firstName(from), reply: text, contact: ESCALATIONS, aiNotice: false });
     await send({ from: FROM(), to: [addr(from)], reply_to: ESCALATIONS, subject: /^re:/i.test(subject) ? subject : `Re: ${subject}`, text: mail.text, html: mail.html, ...(msgId && { headers: { "In-Reply-To": msgId, References: msgId } }) }, `support-reopen-${id}`);
@@ -637,7 +638,7 @@ async function deskInbound(evt, res) {
     if (shouldIgnore(from, full.headers)) return res.status(200).json({ ok: true, ignored: "automated" });
     const subject = String(evt.data.subject || full.subject || "(no subject)").replace(/[\r\n]+/g, " ").slice(0, 200), body = plain(full);
     const tid = threadId(addr(from), subject);
-    try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", text: body, msgId: evt.data.message_id || full.message_id, ...(attachments.length && { attachments }) }, escalate: { reason: "Customer wrote to the escalations address" } }); }
+    try { const attachments = await ingestInbound(id, tid).catch(() => []); await recordMessage({ customer: addr(from), name: firstName(from), subject, message: { key: id, dir: "in", by: "customer", text: body, msgId: evt.data.message_id || full.message_id, ...(attachments.length && { attachments }) }, escalate: { reason: "Customer wrote to the escalations address" } }); await queueScans(tid, attachments); }
     catch (e) { console.error("thread store", e?.message); }
     await send({
       from: FROM(), to: [OWNER], reply_to: addr(from),
