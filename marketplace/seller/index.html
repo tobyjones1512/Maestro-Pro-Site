@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=6">
+<link rel="stylesheet" href="/assets/marketplace.css?v=7">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -139,11 +139,11 @@ async function load() {
       </dl>
       <blockquote class="dcard__claim">${esc(d.details)}</blockquote>
       ${(d.files || []).length ? `<div class="dcard__row"><span class="dcard__lbl">Evidence</span>${d.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join("")}</div>` : ""}
-      ${d.response ? `<div class="dcard__resp"><span class="dcard__lbl">Merchant response</span><p>${esc(d.response.text)}</p></div>` : ""}
+      ${d.response ? `<div class="dcard__resp"><span class="dcard__lbl">Merchant response</span><p>${esc(d.response.text)}</p>${(d.response.files || []).length ? `<div class="dcard__row">${d.response.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join("")}</div>` : ""}</div>` : ""}
       ${d.decision ? `<div class="dcard__resp"><span class="dcard__lbl">Decision, ${day(d.decision.at)}</span><p>${ST[d.status]}${d.decision.note ? `. ${esc(d.decision.note)}` : ""}</p></div>` : ""}
       ${isOpen ? (s.admin
         ? `<div class="dcard__act"><label class="dcard__lbl" for="n-${esc(d.id)}">Note to both sides (optional)</label><textarea id="n-${esc(d.id)}" rows="2" maxlength="600" data-note></textarea><div class="dcard__btns"><button class="pay__btn" type="button" data-act="uphold">Uphold: remove item and give a strike</button><button class="pay__btn pay__btn--ghost" type="button" data-act="dismiss">Dismiss: put back on sale</button></div></div>`
-        : `<div class="dcard__act"><label class="dcard__lbl" for="r-${esc(d.id)}">Your response</label><textarea id="r-${esc(d.id)}" rows="4" maxlength="2000" data-text placeholder="Explain why the item is yours to sell, for example a licence or proof that you wrote it.">${esc(d.response?.text || "")}</textarea><div class="dcard__btns"><button class="pay__btn" type="button" data-act="respond">${d.response ? "Update response" : "Send response"}</button></div></div>`) : ""}
+        : `<div class="dcard__act"><label class="dcard__lbl" for="r-${esc(d.id)}">Your response</label><textarea id="r-${esc(d.id)}" rows="4" maxlength="2000" data-text placeholder="Explain why the item is yours to sell, for example a licence or proof that you wrote it.">${esc(d.response?.text || "")}</textarea><label class="dcard__lbl" for="e-${esc(d.id)}">Supporting evidence (optional)</label><input id="e-${esc(d.id)}" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt" data-evidence class="dcard__file"><p class="mp-note">A licence, a letter of permission or proof that you wrote it. PDF, PNG, JPG or TXT, up to 5 files of 15 MB.</p><p class="pay__msg" data-msg></p><div class="dcard__btns"><button class="pay__btn" type="button" data-act="respond">${d.response ? "Update response" : "Send response"}</button></div></div>`) : ""}
     </article>`;
   }).join("") : '<div class="card empty">No disputes.</div>';
   const E = s.escalations || [];
@@ -183,7 +183,25 @@ $("disps").addEventListener("click", async (e) => {
   }
   const card = b.closest("[data-id]"), act = b.dataset.act;
   try {
-    if (act === "respond") await api("dispute-respond", { method: "POST", key, body: { id: card.dataset.id, text: card.querySelector("[data-text]").value } });
+    if (act === "respond") {
+      const list = [...card.querySelector("[data-evidence]").files], paths = [], msg = card.querySelector("[data-msg]");
+      if (list.length > 5) throw new Error("Attach up to 5 files.");
+      b.disabled = true;
+      try {
+        if (list.length) {
+          const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");
+          for (const file of list) {
+            if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed. Use PDF, PNG, JPG or TXT.`);
+            if (file.size > 15e6) throw new Error(`${file.name} is too big. The limit is 15 MB.`);
+            msg.textContent = `Uploading ${file.name}…`;
+            const path = `marketplace/dispute-response/${card.dataset.id}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ()]+/g, "_").slice(-100)}`;
+            await upload(path, file, { access: "private", handleUploadUrl: API + "upload", clientPayload: JSON.stringify({ key }), contentType: file.type || "application/octet-stream" });
+            paths.push(path);
+          }
+        }
+        await api("dispute-respond", { method: "POST", key, body: { id: card.dataset.id, text: card.querySelector("[data-text]").value, files: paths } });
+      } finally { b.disabled = false; msg.textContent = ""; }
+    }
     else {
       if (!confirm(act === "uphold" ? "Uphold this dispute? The item is removed for good and the merchant gets a strike." : "Dismiss this dispute and put the item back on sale?")) return;
       await api("dispute-decide", { method: "POST", key, body: { id: card.dataset.id, uphold: act === "uphold", note: card.querySelector("[data-note]").value } });

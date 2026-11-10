@@ -439,6 +439,7 @@ async function remove(req, res) {
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
 const EVID = /^marketplace\/evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;
 const DEV = /^marketplace\/dispute-evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // evidence a rights holder uploads with a dispute
+const DR = /^marketplace\/dispute-response\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // evidence a merchant uploads with a response
 const EVID_EXT = new Set(["pdf", "png", "jpg", "jpeg", "txt"]);
 const bad = (m) => Object.assign(new Error(m), { safe: true });   // an error whose message the merchant may read
 const EXTRA = /^marketplace\/extras\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // downloads that go with an item (printable PDFs and so on)
@@ -471,10 +472,10 @@ async function escalation(req, res) {
 /** An evidence file, for the owner to read (admin key only). */
 async function evidenceFile(req, res) {
   const path = String(req.query.path || "");
-  if (!EVID.test(path) && !DEV.test(path)) return fail(res, 401, "No.");
+  if (!EVID.test(path) && !DEV.test(path) && !DR.test(path)) return fail(res, 401, "No.");
   if (!isAdmin(String(req.headers["x-mp-key"] || ""))) {
     const me = await who(req);
-    if (!me || !DEV.test(path) || !(await disputes()).some((d) => d.sellerId === me.id && (d.files || []).some((f) => f.path === path))) return fail(res, 401, "No.");
+    if (!me || DR.test(path) === DEV.test(path) || !(await disputes()).some((d) => d.sellerId === me.id && [...(d.files || []), ...(d.response?.files || [])].some((f) => f.path === path))) return fail(res, 401, "No.");
   }
   const buf = await readBlob(path);
   if (!buf) return fail(res, 404, "Not found.");
@@ -503,7 +504,14 @@ async function disputeRespond(req, res) {
   if (!me) return fail(res, 401, "Not signed in.");
   const text = clip(req.body?.text, 2000);
   if (text.length < 10) return fail(res, 400, "Write your response.");
-  if (!(await respondDispute(me.id, String(req.body?.id), text))) return fail(res, 404, "That dispute can't be answered.");
+  const id = String(req.body?.id);
+  let files = [];
+  if (Array.isArray(req.body?.files) && req.body.files.length) {
+    const u = await uploaded(req.body.files, DR, id, EVID_EXT, 5);
+    if (u.error) return fail(res, 400, u.error);
+    files = u.files;
+  }
+  if (!(await respondDispute(me.id, id, text, files))) return fail(res, 404, "That dispute can't be answered.");
   res.status(200).json({ ok: true });
 }
 async function disputeDecide(req, res) {
@@ -520,6 +528,12 @@ async function upload(req, res) {
   const json = await handleUpload({
     body: req.body, request: req,
     onBeforeGenerateToken: async (pathname, payload) => {
+      if (DR.test(pathname)) {   // only the merchant a dispute is against, while it is open
+        const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
+        const id = DR.exec(pathname)[1];
+        if (!user || user.admin || !EVID_EXT.has(ext(pathname)) || !(await disputes()).some((d) => d.id === id && d.sellerId === user.id && (d.status === "open" || d.status === "responded"))) throw bad("You can't upload to this dispute. Use PDF, PNG, JPG or TXT files.");
+        return { maximumSizeInBytes: 15e6, allowOverwrite: false, addRandomSuffix: false };
+      }
       if (DEV.test(pathname)) {   // anyone may attach evidence to a claim: small PDF, PNG, JPG or TXT files only
         if (!EVID_EXT.has(ext(pathname))) throw bad("That file type isn't allowed. Use PDF, PNG, JPG or TXT.");
         return { maximumSizeInBytes: 15e6, allowOverwrite: false, addRandomSuffix: false };

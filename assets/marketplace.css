@@ -193,3 +193,4 @@ main.mp-wide .mp-grid{grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))}
 .mp-done{max-width:36rem;padding:20px 22px;border:1px solid var(--hl);border-radius:14px;background:color-mix(in srgb,var(--bg) 94%,var(--hl) 6%)}
 .mp-done h2{margin:0 0 .5em;font-style:normal}
 .mp-done:focus{outline:none}
+.console .dcard__file{display:block;margin:6px 0 4px;color:var(--fg2);font:inherit;font-size:.85rem;max-width:100%}

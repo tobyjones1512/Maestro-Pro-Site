@@ -59,15 +59,15 @@ export async function fileDispute(b) {
 }
 
 /** A merchant answers a dispute against one of their items. */
-export async function respond(sellerId, id, text) {
+export async function respond(sellerId, id, text, files = []) {
   let done = null;
   await modify(DISPUTES, (a) => (a || []).map((d) => {
     if (d.id !== id || d.sellerId !== sellerId || !open(d)) return d;
-    done = { ...d, status: "responded", response: { text, at: Date.now() } };
+    done = { ...d, status: "responded", response: { text, files, at: Date.now() } };
     return done;
   }));
   if (done) await sendMail({ to: OWNER, idem: `mp-dispute-r-${id}-${Date.now()}`, subject: `Dispute response: ${done.productTitle}`,
-    mail: buildEmail({ name: "Toby", label: "Dispute Resolution Centre", reply: `The merchant responded to the dispute about **${done.productTitle}**:\n\n${text}\n\nDecide it in the [merchant console](merchant).` }) }).catch(() => {});
+    mail: buildEmail({ name: "Toby", label: "Dispute Resolution Centre", reply: `The merchant responded to the dispute about **${done.productTitle}**:\n\n${text}${files.length ? `\n\n(${files.length} evidence file${files.length > 1 ? "s" : ""} attached.)` : ""}\n\nDecide it in the [merchant console](merchant).` }) }).catch(() => {});
   return done;
 }
 
