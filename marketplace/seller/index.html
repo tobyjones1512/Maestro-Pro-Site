@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=11">
+<link rel="stylesheet" href="/assets/marketplace.css?v=12">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -78,7 +78,7 @@
   </form></dialog>
 </div>
 <script type="module">
-import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile } from "/assets/marketplace.js?v=12";
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile, uploadEvidence } from "/assets/marketplace.js?v=13";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");
@@ -122,10 +122,10 @@ async function load() {
     : `<div class="empty">No sales yet.</div>`;
   $("acct").innerHTML = [["Name", esc(s.name)], ["Email", esc(s.email)], ["Technology fee", s.fee === "paid" ? "Paid" : "Not paid"], ["Payouts", s.connected ? "Set up" : "Not set up"], ["Marketplace share", Math.round(s.cut * 100) + "% of each sale"]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
-  const D = s.disputes || [], live = D.filter((d) => d.status === "open" || d.status === "responded");
+  const D = s.disputes || [], live = D.filter((d) => d.status === "open" || d.status === "responded" || (d.appeal && !d.appeal.outcome));
   $("n-disp").hidden = !live.length; $("n-disp").textContent = live.length; $("rd").textContent = s.respondDays;
   $("strikes").innerHTML = stat("Copyright strikes", `${s.strikes} of ${s.maxStrikes}`) + stat("Open disputes", live.length);
-  const ST = { open: "Open", responded: "Responded", upheld: "Upheld", dismissed: "Dismissed" }, day = (t) => new Date(t).toLocaleDateString();
+  const ST = { open: "Open", responded: "Responded", upheld: "Upheld", dismissed: "Dismissed" }, day = (t) => new Date(t).toLocaleDateString(), fb = (l) => ((l || []).length ? `<div class="dcard__row">${l.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join("")}</div>` : "");
   $("disps").innerHTML = D.length ? D.map((d) => {
     const isOpen = d.status === "open" || d.status === "responded";
     return `<article class="card dcard" data-id="${esc(d.id)}">
@@ -141,6 +141,9 @@ async function load() {
       ${(d.files || []).length ? `<div class="dcard__row"><span class="dcard__lbl">Evidence</span>${d.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join("")}</div>` : ""}
       ${d.response ? `<div class="dcard__resp"><span class="dcard__lbl">Merchant response</span><p>${esc(d.response.text)}</p>${(d.response.files || []).length ? `<div class="dcard__row">${d.response.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join("")}</div>` : ""}</div>` : ""}
       ${d.decision ? `<div class="dcard__resp"><span class="dcard__lbl">Decision, ${day(d.decision.at)}</span><p>${ST[d.status]}${d.decision.note ? `. ${esc(d.decision.note)}` : ""}</p></div>` : ""}
+      ${d.appeal ? `<div class="dcard__resp"><span class="dcard__lbl">Appeal by the ${d.appeal.by === "seller" ? "merchant" : "rights holder"}, ${day(d.appeal.at)}</span><p>${esc(d.appeal.text)}</p>${fb(d.appeal.files)}${d.appeal.outcome ? `<p><b>Appeal ${d.appeal.outcome === "overturned" ? "successful: the decision was reversed" : "not successful: the decision stands"}</b>${d.appeal.note ? `. ${esc(d.appeal.note)}` : ""}</p>` : "<p><i>Waiting for a decision.</i></p>"}</div>` : ""}
+      ${d.appeal && !d.appeal.outcome && s.admin ? `<div class="dcard__act"><label class="dcard__lbl" for="n-${esc(d.id)}">Note to both sides (optional)</label><textarea id="n-${esc(d.id)}" rows="2" maxlength="600" data-note></textarea><div class="dcard__btns"><button class="pay__btn" type="button" data-act="overturn">${d.status === "upheld" ? "Overturn: dismiss, remove the strike, put back on sale" : "Overturn: uphold, remove the item and give a strike"}</button><button class="pay__btn pay__btn--ghost" type="button" data-act="reject">Reject the appeal: the decision stands</button></div></div>` : ""}
+      ${d.canAppeal ? `<div class="dcard__act"><label class="dcard__lbl" for="a-${esc(d.id)}">Appeal this decision</label><textarea id="a-${esc(d.id)}" rows="4" maxlength="2000" data-text placeholder="Explain why the decision should change."></textarea><label class="dcard__lbl" for="af-${esc(d.id)}">Evidence (required)</label><input id="af-${esc(d.id)}" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt" data-evidence class="dcard__file"><p class="mp-note">A licence, a letter of permission or proof that you wrote it. PDF, PNG, JPG or TXT, up to 5 files of 15 MB. You can appeal once, until ${day(d.appealUntil)}. If the appeal fails you do not get another strike. If it succeeds, the strike is removed.</p><p class="pay__msg" data-msg></p><div class="dcard__btns"><button class="pay__btn" type="button" data-act="appeal">Send appeal</button></div></div>` : ""}
       ${isOpen ? (s.admin
         ? `<div class="dcard__act"><label class="dcard__lbl" for="n-${esc(d.id)}">Note to both sides (optional)</label><textarea id="n-${esc(d.id)}" rows="2" maxlength="600" data-note></textarea><div class="dcard__btns"><button class="pay__btn" type="button" data-act="uphold">Uphold: remove item and give a strike</button><button class="pay__btn pay__btn--ghost" type="button" data-act="dismiss">Dismiss: put back on sale</button></div></div>`
         : `<div class="dcard__act"><label class="dcard__lbl" for="r-${esc(d.id)}">Your response</label><textarea id="r-${esc(d.id)}" rows="4" maxlength="2000" data-text placeholder="Explain why the item is yours to sell, for example a licence or proof that you wrote it.">${esc(d.response?.text || "")}</textarea><label class="dcard__lbl" for="e-${esc(d.id)}">Supporting evidence (optional)</label><input id="e-${esc(d.id)}" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt" data-evidence class="dcard__file"><p class="mp-note">A licence, a letter of permission or proof that you wrote it. PDF, PNG, JPG or TXT, up to 5 files of 15 MB.</p><p class="pay__msg" data-msg></p><div class="dcard__btns"><button class="pay__btn" type="button" data-act="respond">${d.response ? "Update response" : "Send response"}</button></div></div>`) : ""}
@@ -201,6 +204,19 @@ $("disps").addEventListener("click", async (e) => {
         }
         await api("dispute-respond", { method: "POST", key, body: { id: card.dataset.id, text: card.querySelector("[data-text]").value, files: paths } });
       } finally { b.disabled = false; msg.textContent = ""; }
+    }
+    else if (act === "appeal") {
+      const list = [...card.querySelector("[data-evidence]").files], msg = card.querySelector("[data-msg]");
+      if (!list.length) throw new Error("An appeal needs evidence. Attach at least one file.");
+      b.disabled = true;
+      try {
+        const files = await uploadEvidence("dispute-appeal", card.dataset.id, list, { key }, (t) => (msg.textContent = t));
+        await api("dispute-appeal", { method: "POST", key, body: { id: card.dataset.id, text: card.querySelector("[data-text]").value, files } });
+      } finally { b.disabled = false; msg.textContent = ""; }
+    }
+    else if (act === "overturn" || act === "reject") {
+      if (!confirm(act === "overturn" ? "Overturn the earlier decision? The strike or item changes at once." : "Reject the appeal? The earlier decision stands.")) return;
+      await api("dispute-appeal-decide", { method: "POST", key, body: { id: card.dataset.id, overturn: act === "overturn", note: card.querySelector("[data-note]").value } });
     }
     else {
       if (!confirm(act === "uphold" ? "Uphold this dispute? The item is removed for good and the merchant gets a strike." : "Dismiss this dispute and put the item back on sale?")) return;

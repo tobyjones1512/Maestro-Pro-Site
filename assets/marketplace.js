@@ -41,7 +41,7 @@ const regionBoxes = () => Object.entries(CONTINENTS).map(([name, codes]) => `<di
 // Layout: "PLAYALONG1", a 4-byte little-endian header length, the JSON header (the item and the names and sizes of its files), then the files.
 const AUDIO = ["mp3", "m4a", "wav", "aif", "aiff", "caf", "aac", "flac"];
 const SCORE = ["musicxml", "mxl", "xml", "pdf", "mid", "midi", "kar", "cdg", "lrc", "txt"];
-export const GENRES = ["Ambient", "Blues", "Children's", "Classical", "Country", "Dance", "Electronic", "Film and TV", "Folk", "Gospel and Worship", "Hip-hop", "Holiday and Seasonal", "Indie", "Jazz", "Latin", "Metal", "Musical Theatre", "Pop", "Punk", "R&B and Soul", "Reggae", "Rock", "World", "Other"];
+export const GENRES = ["Ambient", "Blues", "Children's", "Classical", "Country", "Dance", "Electronic", "Film and TV", "Folk", "Gospel and Worship", "Hip-hop", "Holiday and Seasonal", "Indie", "Jazz", "Latin", "Metal", "Musical Theatre", "Pop", "Punk", "R&B and Soul", "Reggae", "Rock", "Video Games", "World", "Other"];
 export const accept = { sheet: ".musicxml,.mxl,.xml,.pdf,.mid,.midi", karaoke: ".kar,.cdg", score: SCORE.map((e) => "." + e).join(","), audio: AUDIO.map((e) => "." + e).join(","), lyrics: ".lrc,.txt" };
 const ext = (n) => n.split(".").pop().toLowerCase();
 const uuid = () => crypto.randomUUID().toUpperCase();
@@ -285,6 +285,21 @@ export function renderProducts(table, products, act, onAppeal, onEdit, onRemove,
   table.querySelectorAll("button[data-id]").forEach((b) => b.addEventListener("click", () => act(b.dataset.id, Boolean(b.dataset.w))));
 }
 export const productsTable = `<table class="mp-table"><thead><tr><th>Product</th><th>Status</th><th>Sold</th><th>Proceeds</th><th></th></tr></thead><tbody></tbody></table>`;
+
+/** Uploads evidence files (PDF, PNG, JPG or TXT, 15 MB each, up to 5) into a folder of the Marketplace's storage and returns their paths. */
+export async function uploadEvidence(folder, id, list, payload, say = () => {}) {
+  if (list.length > 5) throw new Error("Attach up to 5 files.");
+  const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client"), paths = [];
+  for (const file of list) {
+    if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed. Use PDF, PNG, JPG or TXT.`);
+    if (file.size > 15e6) throw new Error(`${file.name} is too big. The limit is 15 MB.`);
+    say(`Uploading ${file.name}…`);
+    const path = `marketplace/${folder}/${id}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ()]+/g, "_").slice(-100)}`;
+    await upload(path, file, { access: "private", handleUploadUrl: API + "upload", clientPayload: JSON.stringify(payload), contentType: file.type || "application/octet-stream" });
+    paths.push(path);
+  }
+  return paths;
+}
 
 /** Shows a file (PDF, image or text) in a window on the page instead of opening it in a new tab. */
 export async function showFile(blob, name) {

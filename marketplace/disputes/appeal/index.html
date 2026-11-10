@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Appeal a decision | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css?v=12">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a class="top__acct" href="/marketplace/account/">Account</a><a class="top__sell" href="/marketplace/onboard/">Sell</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Appeal a decision</h1>
+<p id="msg">Checking your link...</p>
+<section id="done" class="mp-done" tabindex="-1" role="status" hidden>
+  <h2>We have received your appeal</h2>
+  <p>Your appeal is filed. We have emailed a confirmation. A person at Maestro Pro will look at it again with your evidence and email you the outcome.</p>
+  <p><a href="/marketplace/">Back to the Marketplace</a></p>
+</section>
+<form id="f" class="pay pay--wide" hidden>
+  <p id="about"></p>
+  <label class="field">Why should the decision change?<textarea name="text" rows="5" required minlength="20" maxlength="2000"></textarea></label>
+  <label class="field">Evidence (required): proof the work is yours, such as a registration, a licence or your published copy. PDF, PNG, JPG or TXT, up to 5 files<input name="evidence" type="file" multiple required accept=".pdf,.png,.jpg,.jpeg,.txt"></label>
+  <button class="pay__btn" type="submit">Send appeal</button>
+  <p class="pay__msg" role="status"></p>
+</form>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/marketplace/disputes/">Report copyright</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api, uploadEvidence } from "/assets/marketplace.js?v=13";
+const q = new URLSearchParams(location.search), d = q.get("d") || "", k = q.get("k") || "";
+const $ = (id) => document.getElementById(id), f = $("f"), m = f.querySelector(".pay__msg"), b = f.querySelector("button");
+try {
+  const i = await api("dispute-appeal-info", { query: { d, k } });
+  if (!i.ok) $("msg").textContent = i.why;
+  else {
+    $("msg").hidden = true; f.hidden = false;
+    $("about").textContent = `Your dispute about "${i.title}" (reference ${i.ref}) was dismissed${i.note ? `: ${i.note}` : "."} You can appeal once, within ${i.days} days of the decision, and an appeal needs evidence.`;
+  }
+} catch (e) { $("msg").textContent = e.message; }
+f.addEventListener("submit", async (e) => {
+  e.preventDefault(); b.disabled = true; m.textContent = "";
+  try {
+    const files = await uploadEvidence("dispute-appeal", d, [...f.evidence.files], { k }, (t) => (m.textContent = t));
+    if (!files.length) throw new Error("An appeal needs evidence. Attach at least one file.");
+    await api("dispute-appeal", { method: "POST", body: { id: d, k, text: f.text.value, files } });
+    f.hidden = true; $("done").hidden = false; $("done").focus(); scrollTo(0, 0);
+  } catch (err) { m.textContent = err.message; b.disabled = false; }
+});
+</script>
+</body>
+</html>

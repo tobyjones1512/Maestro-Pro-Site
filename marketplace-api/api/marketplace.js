@@ -12,7 +12,7 @@ import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, curren
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
-import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, STRIKES, RESPOND_DAYS } from "./_disputes.js";
+import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import guidelines from "../lib/guidelines.js";
 
 const ORDER = (id) => `marketplace/orders/${id}.json`;
@@ -69,7 +69,7 @@ async function bundleOK(id) {
 // What a buyer can open without the app: PDF and audio files work anywhere. The rest are for Maestro Pro or other music software.
 const FORMAT = { pdf: "PDF", mp3: "Audio", m4a: "Audio", wav: "Audio", aif: "Audio", aiff: "Audio", caf: "Audio", aac: "Audio", flac: "Audio", musicxml: "MusicXML", mxl: "MusicXML", xml: "MusicXML", mid: "MIDI", midi: "MIDI", kar: "Karaoke", cdg: "Karaoke", lrc: "Lyrics", txt: "Lyrics" };
 const formatsOf = (p) => [...new Set([...(p.review?.files || []).filter((f) => !f.proof), ...(p.extras || [])].map((f) => FORMAT[ext(f.name)]).filter(Boolean))];
-const GENRES = ["Ambient", "Blues", "Children's", "Classical", "Country", "Dance", "Electronic", "Film and TV", "Folk", "Gospel and Worship", "Hip-hop", "Holiday and Seasonal", "Indie", "Jazz", "Latin", "Metal", "Musical Theatre", "Pop", "Punk", "R&B and Soul", "Reggae", "Rock", "World", "Other"];
+const GENRES = ["Ambient", "Blues", "Children's", "Classical", "Country", "Dance", "Electronic", "Film and TV", "Folk", "Gospel and Worship", "Hip-hop", "Holiday and Seasonal", "Indie", "Jazz", "Latin", "Metal", "Musical Theatre", "Pop", "Punk", "R&B and Soul", "Reggae", "Rock", "Video Games", "World", "Other"];
 const cleanGenres = (g) => [...new Set((Array.isArray(g) ? g : []).map(String).filter((x) => GENRES.includes(x)))].slice(0, 3);
 const TYPE = { single: "Single", ep: "EP", album: "Album" };
 const coverIx = (p) => (p.extras || []).findIndex((x) => x.cover);
@@ -421,7 +421,7 @@ async function merchant(req, res) {
     })),
     sales: { tipsUSD: Math.round(sales.reduce((n, s) => n + (s.tipUSD || 0), 0) * share * 100) / 100, tipCount: sales.filter((s) => s.tipUSD).length, count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd, tip: Math.round((s.tipUSD || 0) * share * 100) / 100 })) },
     cut: CUT, maxRefusals: MAX_REFUSALS, strikes: (me.strikes || []).length, maxStrikes: STRIKES, barred: Boolean(me.barred), respondDays: RESPOND_DAYS,
-    disputes: allDisputes.filter((d) => me.admin || d.sellerId === me.id).reverse().map((d) => ({ id: d.id, created: d.created, status: d.status, title: d.productTitle, claimant: d.claimant.name + (d.claimant.org ? `, ${d.claimant.org}` : ""), ...(me.admin && { email: d.claimant.email, via: d.via }), code: allProducts.find((p) => p.id === d.productId)?.id.slice(0, 8).toUpperCase(), files: d.files || [], work: d.work, details: d.details, respondBy: d.respondBy, response: d.response, decision: d.decision })),
+    disputes: allDisputes.filter((d) => me.admin || d.sellerId === me.id).reverse().map((d) => ({ id: d.id, created: d.created, status: d.status, title: d.productTitle, claimant: d.claimant.name + (d.claimant.org ? `, ${d.claimant.org}` : ""), ...(me.admin && { email: d.claimant.email, via: d.via }), code: allProducts.find((p) => p.id === d.productId)?.id.slice(0, 8).toUpperCase(), files: d.files || [], work: d.work, details: d.details, respondBy: d.respondBy, response: d.response, decision: d.decision, appeal: d.appeal, canAppeal: !me.admin && appealState(d, { sellerId: me.id }).ok, appealUntil: d.decision && d.decision.at + APPEAL_DAYS * 864e5 })),
     ...(me.admin && { escalations: (await products()).filter((p) => p.status === "escalated").map((p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, seller: p.sellerName, history: p.history || [] })) }),
   });
 }
@@ -467,6 +467,7 @@ async function remove(req, res) {
 const EVID = /^marketplace\/evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;
 const DEV = /^marketplace\/dispute-evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // evidence a rights holder uploads with a dispute
 const DR = /^marketplace\/dispute-response\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // evidence a merchant uploads with a response
+const AP = /^marketplace\/dispute-appeal\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // evidence with an appeal
 const EVID_EXT = new Set(["pdf", "png", "jpg", "jpeg", "txt"]);
 const bad = (m) => Object.assign(new Error(m), { safe: true });   // an error whose message the merchant may read
 const EXTRA = /^marketplace\/extras\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // downloads that go with an item (printable PDFs and so on)
@@ -499,10 +500,10 @@ async function escalation(req, res) {
 /** An evidence file, for the owner to read (admin key only). */
 async function evidenceFile(req, res) {
   const path = String(req.query.path || "");
-  if (!EVID.test(path) && !DEV.test(path) && !DR.test(path)) return fail(res, 401, "No.");
+  if (!EVID.test(path) && !DEV.test(path) && !DR.test(path) && !AP.test(path)) return fail(res, 401, "No.");
   if (!isAdmin(String(req.headers["x-mp-key"] || ""))) {
     const me = await who(req);
-    if (!me || DR.test(path) === DEV.test(path) || !(await disputes()).some((d) => d.sellerId === me.id && [...(d.files || []), ...(d.response?.files || [])].some((f) => f.path === path))) return fail(res, 401, "No.");
+    if (!me || EVID.test(path) || !(await disputes()).some((d) => d.sellerId === me.id && [...(d.files || []), ...(d.response?.files || []), ...(d.appeal?.files || [])].some((f) => f.path === path))) return fail(res, 401, "No.");
   }
   const buf = await readBlob(path);
   if (!buf) return fail(res, 404, "Not found.");
@@ -541,6 +542,33 @@ async function disputeRespond(req, res) {
   if (!(await respondDispute(me.id, id, text, files))) return fail(res, 404, "That dispute can't be answered.");
   res.status(200).json({ ok: true });
 }
+/** An appeal against a decision: by the merchant (signed in) or by the rights holder (the key in their email's link). Evidence is required. */
+async function disputeAppeal(req, res) {
+  const b = req.body || {}, k = b.k ? String(b.k) : "", id = String(b.id);
+  const me = k ? null : await who(req);
+  if (!k && (!me || me.admin)) return fail(res, 401, "Not signed in.");
+  let files = [];
+  if (Array.isArray(b.files) && b.files.length) {
+    const u = await uploaded(b.files, AP, id, EVID_EXT, 5);
+    if (u.error) return fail(res, 400, u.error);
+    files = u.files;
+  }
+  const r = await fileAppeal({ id, sellerId: me?.id, key: k, text: b.text, files });
+  if (r.error) return fail(res, r.code || 400, r.error);
+  res.status(200).json({ ok: true });
+}
+/** What the rights holder's appeal page needs: whether the decision can still be appealed. The key in the link is the only proof needed. */
+async function disputeAppealInfo(req, res) {
+  const d = (await disputes()).find((x) => x.id === String(req.query.d || ""));
+  const s = d ? appealState(d, { key: String(req.query.k || "") }) : { ok: false, why: "We couldn't find that dispute." };
+  res.status(200).json({ ok: s.ok, why: s.why, days: APPEAL_DAYS, ...(s.side && { title: d.productTitle, ref: d.id.slice(0, 8).toUpperCase(), note: d.decision?.note }) });
+}
+async function disputeAppealDecide(req, res) {
+  if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
+  const b = req.body || {};
+  if (!(await decideAppeal(String(b.id), b.overturn === true, clip(b.note, 600)))) return fail(res, 404, "Nothing waiting for a decision.");
+  res.status(200).json({ ok: true });
+}
 /** Every dispute with everything the owner needs to decide it (owner only). */
 async function disputeList(req, res) {
   if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
@@ -548,7 +576,7 @@ async function disputeList(req, res) {
   for (const id of new Set(all.map((d) => d.sellerId))) strikes[id] = id === "platform" ? 0 : ((await readJson(SELLER(id)))?.strikes || []).length;
   res.status(200).json({ max: STRIKES, disputes: all.slice().reverse().map((d) => {
     const p = prods.find((x) => x.id === d.productId);
-    return { id: d.id, created: d.created, status: d.status, title: d.productTitle, code: p && code(p), itemStatus: p ? (p.withdrawn ? "withdrawn" : p.hold ? "on hold" : p.status) : "deleted", seller: p?.sellerName || "", strikes: strikes[d.sellerId] ?? 0, claimant: d.claimant, via: d.via, work: d.work, details: d.details, files: d.files || [], respondBy: d.respondBy, response: d.response, decision: d.decision };
+    return { id: d.id, created: d.created, status: d.status, title: d.productTitle, code: p && code(p), itemStatus: p ? (p.withdrawn ? "withdrawn" : p.hold ? "on hold" : p.status) : "deleted", seller: p?.sellerName || "", strikes: strikes[d.sellerId] ?? 0, claimant: d.claimant, via: d.via, work: d.work, details: d.details, files: d.files || [], respondBy: d.respondBy, response: d.response, decision: d.decision, appeal: d.appeal };
   }) });
 }
 async function disputeDecide(req, res) {
@@ -565,6 +593,12 @@ async function upload(req, res) {
   const json = await handleUpload({
     body: req.body, request: req,
     onBeforeGenerateToken: async (pathname, payload) => {
+      if (AP.test(pathname)) {   // the merchant (upheld) or the rights holder with their link's key (dismissed), once, within 14 days
+        const pl = JSON.parse(payload || "{}"), user = pl.k ? null : me || (await who({ headers: { "x-mp-key": pl.key } }));
+        const d = (await disputes()).find((x) => x.id === AP.exec(pathname)[1]);
+        if (!d || user?.admin || !EVID_EXT.has(ext(pathname)) || !appealState(d, { sellerId: user?.id, key: String(pl.k || "") }).ok) throw bad("You can't attach files to an appeal for this decision. Use PDF, PNG, JPG or TXT files.");
+        return { maximumSizeInBytes: 15e6, allowOverwrite: false, addRandomSuffix: false };
+      }
       if (DR.test(pathname)) {   // only the merchant a dispute is against, while it is open
         const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
         const id = DR.exec(pathname)[1];
@@ -752,7 +786,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

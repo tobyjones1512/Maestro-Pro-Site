@@ -655,6 +655,21 @@ function disputeCard(d,max,reload){
   if(d.response){var r=el("div");r.append(el("span","dcase__lbl","Merchant response, "+when(d.response.at)),el("blockquote","dcase__quote",d.response.text));c.append(r);files(d.response.files,"Merchant evidence")}
   else if(open)c.append(el("p","hint","The merchant has not responded yet."));
   if(d.decision){c.append(el("p","hint","Decided "+when(d.decision.at)+(d.decision.note?": "+d.decision.note:"")))}
+  if(d.appeal){
+    var ap=el("div");ap.append(el("span","dcase__lbl","Appeal by the "+(d.appeal.by==="seller"?"merchant":"rights holder")+", "+when(d.appeal.at)),el("blockquote","dcase__quote",d.appeal.text));c.append(ap);files(d.appeal.files,"Appeal evidence");
+    if(d.appeal.outcome)c.append(el("p","hint","Appeal "+d.appeal.outcome+", "+when(d.appeal.decidedAt)+(d.appeal.note?": "+d.appeal.note:"")));
+    else{
+      var sel2=d.status==="upheld",an=el("textarea","field");an.maxLength=600;an.placeholder="Note to both sides (optional)";an.setAttribute("aria-label","Note to both sides");
+      var ab=el("div","dcase__btns"),ov=el("button","btn",sel2?"Overturn: dismiss, remove the strike, put back on sale":"Overturn: uphold, remove the item and give a strike"),rj=el("button","btn btn--ghost","Reject the appeal: the decision stands");ov.type=rj.type="button";
+      var go=function(overturn){
+        if(!confirm(overturn?(sel2?"Overturn? The dispute is dismissed, the strike is removed and the item goes back on sale.":"Overturn? The dispute is upheld, the item is removed for good and the merchant gets a strike."):"Reject the appeal? The earlier decision stands."))return;
+        ov.disabled=rj.disabled=true;
+        mpCall("dispute-appeal-decide",{body:{id:d.id,overturn:overturn,note:an.value}}).then(reload).catch(function(e){alert(e.message);ov.disabled=rj.disabled=false});
+      };
+      ov.addEventListener("click",function(){go(true)});rj.addEventListener("click",function(){go(false)});
+      ab.append(ov,rj);c.append(an,ab);
+    }
+  }
   if(open){
     var ta=el("textarea","field");ta.maxLength=600;ta.placeholder="Note to both sides (optional)";ta.setAttribute("aria-label","Note to both sides");
     var bt=el("div","dcase__btns"),up=el("button","btn","Uphold: remove item and give a strike"),dm=el("button","btn btn--ghost","Dismiss: put back on sale");up.type=dm.type="button";
@@ -681,7 +696,7 @@ function renderDisputes(show){
   w.append(el("p","empty","Loading..."));
   mpCall("dispute-list").then(function(j){
     w.replaceChildren();
-    var openN=j.disputes.filter(function(d){return d.status==="open"||d.status==="responded"}).length;
+    var openN=j.disputes.filter(function(d){return d.status==="open"||d.status==="responded"||(d.appeal&&!d.appeal.outcome)}).length;
     var badge=$("disCount");badge.hidden=!openN;badge.textContent=openN;
     var bar=el("div","dis__bar");bar.append(el("h2",null,"Copyright disputes"));
     var sel=el("select","field");sel.style.maxWidth="160px";sel.setAttribute("aria-label","Show");
@@ -691,7 +706,7 @@ function renderDisputes(show){
     var list=el("div");list.style.cssText="display:grid;gap:14px";w.append(list);
     function draw(){
       list.replaceChildren();
-      var f=sel.value,rows=j.disputes.filter(function(d){return f==="all"||(f==="open"?(d.status==="open"||d.status==="responded"):d.status===f)});
+      var f=sel.value,rows=j.disputes.filter(function(d){return f==="all"||(f==="open"?(d.status==="open"||d.status==="responded"||(d.appeal&&!d.appeal.outcome)):d.status===f)});
       if(!rows.length)list.append(el("p","empty",f==="open"?"No disputes need a decision.":"Nothing here."));
       rows.forEach(function(d){list.append(disputeCard(d,j.max,function(){renderDisputes()}))});
     }

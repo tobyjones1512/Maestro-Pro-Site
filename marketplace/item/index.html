@@ -7,7 +7,7 @@
 <title>Buy | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=11">
+<link rel="stylesheet" href="/assets/marketplace.css?v=12">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -61,7 +61,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, local, dollars, where } from "/assets/marketplace.js?v=12";
+import { api, esc, local, dollars, where } from "/assets/marketplace.js?v=13";
 const $ = (id) => document.getElementById(id), id = new URLSearchParams(location.search).get("id"), f = $("f");
 const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
 let d, l;

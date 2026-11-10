@@ -243,6 +243,11 @@
           "id": "8.4",
           "title": "Three strikes",
           "text": "A merchant with 3 copyright strikes is barred from the Marketplace. The Merchant Account is closed, every item is withdrawn from sale, payouts connected with the account are cancelled, our connection to the merchant's payment account is cut, and no technology fee is refunded. Money that has already been paid into the merchant's own payment account is between the merchant and their payment provider, and the merchant remains responsible for any refunds that are due (7.3)."
+        },
+        {
+          "id": "8.5",
+          "title": "Appeals",
+          "text": "Either side can appeal a decision once, within 14 days of it. A merchant can appeal an upheld dispute, and a rights holder can appeal a dismissed one. An appeal must include evidence: a statement and at least one file, such as a licence, a letter of permission, a registration or proof of authorship. A person at Maestro Pro looks at the appeal again. If a merchant's appeal against an upheld dispute fails, the decision stands and the merchant does not get another copyright strike. If it succeeds, the copyright strike is removed, the item goes back on sale and, if the strike had closed the Merchant Account, the account is reopened (the merchant must reconnect their payment account). If a rights holder's appeal against a dismissed dispute succeeds, the dispute is upheld: the item is removed for good and the merchant gets a copyright strike. If it fails, the item stays on sale."
         }
       ]
     },
