@@ -19,7 +19,7 @@ export async function writeVersioned(path, data, etag) {
     await put(path, JSON.stringify(data), { access: ACCESS(), addRandomSuffix: false, contentType: "application/json", cacheControlMaxAge: 60, ...(etag ? { allowOverwrite: true, ifMatch: etag } : { allowOverwrite: false }) });
     return true;
   } catch (e) {
-    if (e instanceof BlobPreconditionFailedError || /already exists|precondition/i.test(String(e?.message))) return false;
+    if (e instanceof BlobPreconditionFailedError || /already exists|precondition/i.test(String(e?.message))) { console.error("blob write refused", path, "etag", etag, e?.name, String(e?.message).slice(0, 200)); return false; }
     throw e;
   }
 }
