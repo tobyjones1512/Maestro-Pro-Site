@@ -263,12 +263,27 @@ async function signin(req, res) {
   const em = String(req.body?.email ?? "").trim().toLowerCase();
   const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
   if (m && !(m.signinAt > Date.now() - 600e3)) {
-    const secret = rand(24);
-    await writeRaw(SELLER(m.id), { ...m, keyHash: sha(secret), signinAt: Date.now() });
+    const token = rand(24);   // one-time: it is swapped for a session key the first time it is used, and expires after 15 minutes
+    await modify(SELLER(m.id), (x) => (x ? { ...x, linkHash: sha(token), linkExp: Date.now() + 900e3, signinAt: Date.now() } : undefined));
     await sendMail({ to: m.email, idem: `mp-signin-${m.id}-${Date.now()}`, subject: "Your Maestro Pro merchant sign-in link",
-      mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Here is your sign-in link. Keep it private: anyone with it can manage your products. Asking for a new link signs out the old one.", buttons: [["Sign in", `${LINKS.merchant}#k=${m.id}.${secret}`]] }) });
+      mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Here is your sign-in link. This link works once and expires in 15 minutes. If you didn't ask for it, you can ignore this email.", buttons: [["Sign in", `${LINKS.merchant}#t=${m.id}.${token}`]] }) });
   }
   res.status(200).json({ ok: true });
+}
+
+/** Swaps the one-time link from the email for a session key. The link stops working the moment it is used. */
+async function signinVerify(req, res) {
+  const [id, token] = String(req.body?.t ?? "").split(".");
+  if (!/^[0-9a-f]{16}$/.test(id || "") || !token) return fail(res, 400, "That sign-in link isn't valid.");
+  const secret = rand(24);
+  let ok = false;
+  await modify(SELLER(id), (m) => {
+    if (!m?.linkHash || m.linkExp < Date.now() || m.linkHash !== sha(token)) return undefined;
+    ok = true;
+    return { ...m, keyHash: sha(secret), linkHash: undefined, linkExp: undefined };
+  });
+  if (!ok) return fail(res, 400, "That sign-in link has already been used or has expired. Ask for a new one.");
+  res.status(200).json({ key: `${id}.${secret}` });
 }
 
 // Register this redirect URL on the Mollie app: https://maestro-marketplace-api.vercel.app/api/marketplace-callback
@@ -474,6 +489,8 @@ async function content(b) {
   return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
 }
 
+/** Testing only: the code in MARKETPLACE_DEBUG_CODE makes a submission skip scanning and review and be accepted. Off while the variable is unset. */
+const debugOK = (b) => Boolean(process.env.MARKETPLACE_DEBUG_CODE) && typeof b?.debugCode === "string" && sha(b.debugCode) === sha(process.env.MARKETPLACE_DEBUG_CODE);
 async function publish(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
@@ -484,7 +501,7 @@ async function publish(req, res) {
   const all = await products();
   if (all.some((x) => x.id === b.id)) return fail(res, 409, "Already submitted.");
   if (all.filter((x) => x.sellerId === me.id && inReview(x)).length >= 10) return fail(res, 429, "You have 10 items waiting for review. Wait for some to finish first.");
-  await addProduct({ id: b.id, ...c.fields, sellerId: me.id, sellerName: me.name, created: Date.now(), status: "scanning", review: { rightsConfirmed: Date.now() } });
+  await addProduct({ id: b.id, ...c.fields, sellerId: me.id, sellerName: me.name, created: Date.now(), status: "scanning", ...(debugOK(b) && { debug: true }), review: { rightsConfirmed: Date.now() } });
   res.status(200).json({ id: b.id, status: "scanning" });
 }
 
@@ -500,7 +517,7 @@ async function edit(req, res) {
   await updateProduct(String(b.id), (x) => {
     if (x.sellerId !== me.id || !["ready", "refused"].includes(x.status) || x.final) return undefined;
     done = true;
-    return { ...x, ...c.fields, published: x.published || (x.status === "ready" ? { variants: variantsOf(x), extras: x.extras || [] } : undefined), status: "scanning", lock: 0, appeal: undefined, review: { rightsConfirmed: Date.now() } };
+    return { ...x, ...c.fields, published: x.published || (x.status === "ready" ? { variants: variantsOf(x), extras: x.extras || [] } : undefined), status: "scanning", lock: 0, appeal: undefined, debug: debugOK(b) || undefined, review: { rightsConfirmed: Date.now() } };
   });
   if (!done) return fail(res, 409, "This product can't be edited right now.");
   res.status(200).json({ ok: true });
@@ -589,7 +606,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

@@ -84,6 +84,7 @@ const keptPaths = (box) => [...box.querySelectorAll("input:checked")].map((i) =>
 
 /** Returns { edit(product), clear() }. */
 export function mountBuilder(form, { getKey, onDone }) {
+  if (location.hash.includes("debug")) form.querySelector("#debugfield")?.removeAttribute("hidden");
   const msg = $(".pay__msg", form), submit = $("button[type=submit]", form), say = (t, bad) => { msg.textContent = t; msg.style.color = bad ? "#c0392b" : ""; };
   const some = form.elements.where, vs = $(".mp-vers", form), list = $(".mp-regions", form);
   let editing = null;
@@ -155,7 +156,7 @@ export function mountBuilder(form, { getKey, onDone }) {
       for (const file of [...f.extras.files]) { const path = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); extras.push(path); }
       for (const file of [...f.proofFiles.files]) { if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed as proof. Use PDF, PNG, JPG or TXT.`); const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
       const contents = [variants.length > 1 ? `${variants.length} versions` : "Score", extras.length && `${extras.length} download${extras.length > 1 ? "s" : ""}`].filter(Boolean).join(", ");
-      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, proof: { text: f.proofText.value, files: proof } } });
+      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
       clear(); say("Submitted for review. Every file is checked, then the whole product is reviewed against the guidelines. You will be emailed the result.");
       onDone?.();
     } catch (err) { say(err.message, true); }
@@ -186,6 +187,7 @@ export const builderFields = `
     <label><input type="radio" name="where" value="all" checked> Worldwide</label>
     <label><input type="radio" name="where" value="some"> Only these countries (you must hold the rights there; see guideline 2.9)</label>
     <div class="mp-regions" hidden></div></fieldset>
+  <label class="field" id="debugfield" hidden>Debug code (testing only)<input name="debugCode" type="password" autocomplete="off"></label>
   <label class="field"><input name="rights" type="checkbox" required> I wrote this, or I own the rights to sell all of it, and I have read the <a href="/marketplace/guidelines/" target="_blank">Merchant Content Review Guidelines</a>.</label>
   <div class="row"><button class="pay__btn" type="submit">Submit for review</button><button class="pay__btn pay__btn--ghost" type="button" data-cancel hidden>Cancel</button></div>
   <p class="pay__msg" role="status"></p>`;

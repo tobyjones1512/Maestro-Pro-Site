@@ -139,4 +139,12 @@ const all = await products();
 assert.equal(all.find((x) => x.id === D[1]).final, true);
 assert.ok(all.filter((x) => x.sellerId === "aaaaaaaaaaaaaaaa").every((x) => x.withdrawn));   // barred: everything withdrawn, even the dismissed one
 assert.ok(emails.some((m) => /Merchant Account has been closed/.test(m.subject)));
+// 8. the debug code: a flagged submission skips scanning and review and is accepted
+{
+  const id = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+  await addProduct({ id, title: "Debug", composer: "Sam Lee", description: "d", priceUSD: 4.25, sellerId: "aaaaaaaaaaaaaaaa", sellerName: "Sam Lee", contents: "Score", created: 1, status: "scanning", debug: true, review: {} });
+  llm.answer = '{"decision":"refuse","guidelines":["1.1"],"reason":"No."}';
+  await step(id);
+  assert.equal((await products()).find((x) => x.id === id).status, "ready");
+}
 console.log("ok");

@@ -81,7 +81,12 @@
 import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal } from "/assets/marketplace.js";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
-const fromLink = new URLSearchParams(location.hash.slice(1)).get("k");
+const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");
+if (once) {   // the one-time link from the sign-in email
+  history.replaceState(null, "", location.pathname);
+  try { key = (await api("signin-verify", { method: "POST", body: { t: once } })).key; localStorage.setItem(K, key); }
+  catch (err) { setTimeout(() => { const m = $("si").querySelector("p"); if (m) m.textContent = err.message; }, 0); }
+}
 if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
 const out = () => { $("out").hidden = false; $("in").hidden = true; };
 function tab(name) {

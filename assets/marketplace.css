@@ -135,3 +135,4 @@ main.mp-wide .mp-grid{grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))}
 .console .cbar .pay__btn{padding:6px 14px}
 .console .row{margin-bottom:16px;align-items:center}
 .console .row .sub{margin-bottom:0}
+#debugfield[hidden]{display:none}
