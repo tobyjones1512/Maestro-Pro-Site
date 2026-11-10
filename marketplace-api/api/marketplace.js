@@ -86,7 +86,7 @@ async function item(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   const p = (await products()).find((x) => x.id === String(req.query.id) && onSale(x) && availableIn(x.regions, country(req)));
   if (!p) return fail(res, 404, "That piece isn't for sale.");
-  const kind = (n) => ({ pdf: "pdf", mp3: "audio" })[ext(n)] || "", ex = p.extras || [];
+  const kind = (n) => ({ pdf: "pdf", mp3: "audio", musicxml: "xml", xml: "xml" })[ext(n)] || "", ex = p.extras || [];
   const url = (q) => `${API}/api/marketplace-preview?id=${p.id}&${q}`;
   const detail = await Promise.all(variantsOf(p).map(async (v, i) => ({ id: v.id, label: v.label || "", files: [
     ...(((await bundleInfo(v.id).catch(() => null))?.files) || []).map((f) => ({ name: f.name, size: f.size, type: FORMAT[ext(f.name)] || "", kind: kind(f.name), preview: kind(f.name) ? url(`v=${v.id}&f=${encodeURIComponent(f.name)}`) : "" })),
@@ -124,6 +124,14 @@ async function preview(req, res) {
   res.setHeader("Cache-Control", "public, max-age=300");
   if (ext(name) === "mp3") { res.setHeader("Content-Type", "audio/mpeg"); return res.status(200).send(buf); }
   if (x !== undefined && (p.extras || [])[Number(x)]?.cover && COVER.has(ext(name))) { res.setHeader("Content-Type", ext(name) === "png" ? "image/png" : "image/jpeg"); return res.status(200).send(buf); }
+  if (ext(name) === "musicxml" || ext(name) === "xml") {   // only the first four bars of each part, so the preview isn't the whole score
+    const xml = buf.toString("utf8").replace(/<part\s[^>]*>[\s\S]*?<\/part>/g, (part) => {
+      const bars = part.match(/<measure\b[\s\S]*?<\/measure>/g) || [], head = part.slice(0, part.indexOf(bars[0] ?? "</part>"));
+      return head + bars.slice(0, 4).join("") + "</part>";
+    });
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    return res.status(200).send(xml);
+  }
   if (ext(name) !== "pdf") return fail(res, 404, "No preview.");
   const { PDFDocument, StandardFonts, rgb, degrees } = await import("pdf-lib");
   const src = await PDFDocument.load(buf, { ignoreEncryption: true }), out = await PDFDocument.create();
@@ -156,21 +164,24 @@ async function payee(sellerId) {
 }
 
 async function buy(req, res) {
-  const { id, email, method } = req.body || {};
+  const { id, method } = req.body || {};
+  const buyer = await buyerWho(req);
+  if (!buyer) return fail(res, 401, "Sign in to your buyer account to buy.");
+  const email = buyer.email;
   const l = (await products()).find((x) => x.id === id);
   if (!l || !onSale(l)) return fail(res, 404, "That piece isn't for sale any more.");
   if (!availableIn(l.regions, country(req))) return fail(res, 403, "This piece isn't available in your country.");
   if (!EMAIL.test(String(email ?? "").trim())) return fail(res, 400, "Enter a valid email address.");
   // An optional tip, as a percentage of the price or an amount in dollars. It is charged with the price.
   const t = req.body?.tip || {};
-  const tipUSD = t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
+  let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
+  if (!r) { cur = "USD"; r = 1; }
+  const tipUSD = t.local !== undefined ? Number(t.local) / r : t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
   if (!Number.isFinite(tipUSD) || tipUSD < 0 || tipUSD > 500) return fail(res, 400, "A tip can be from $0 to $500.");
   const ip = String(country(req) || "").toUpperCase(), cc = ip, tax = taxFor(cc);   // the country is worked out from the buyer's connection
   let q;
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);
-  let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
-  if (!r) { cur = "USD"; r = 1; }
   const create = (currency, rt, how) => {
     q = quote(l.priceUSD, tipUSD || 0, currency, rt, tax.rate);   // the total is rounded up once, so the price, tax and tip shown add up to it
     const m = q.total;

@@ -7,7 +7,7 @@
 <title>Buy | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=17">
+<link rel="stylesheet" href="/assets/marketplace.css?v=18">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -29,7 +29,6 @@
   </section>
   <form id="f" class="mp-buy__box" novalidate>
     <h2>Checkout</h2>
-    <label class="field">Email, for your download link<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
     <fieldset class="mp-tip">
       <legend>Add a tip (optional)</legend>
       <div class="mp-tip__opts">
@@ -39,7 +38,7 @@
         <label><input type="radio" name="tip" value="15"><span>15%</span></label>
         <label><input type="radio" name="tip" value="custom"><span>Custom</span></label>
       </div>
-      <label class="field mp-tip__custom" id="cw" hidden>Tip in US dollars<input name="custom" type="number" inputmode="decimal" min="0" max="500" step="0.01" placeholder="0.00"></label>
+      <label class="field mp-tip__custom" id="cw" hidden><span id="cwl">Tip</span><input name="custom" type="number" inputmode="decimal" min="0" max="500" step="0.01" placeholder="0.00"></label>
     </fieldset>
     <dl class="mp-sum">
       <div><dt id="spl">Price</dt><dd id="sp"></dd></div>
@@ -63,20 +62,23 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, breakdown, money } from "/assets/marketplace.js?v=19";
+import { api, esc, breakdown, money } from "/assets/marketplace.js?v=20";
 const $ = (id) => document.getElementById(id), id = new URLSearchParams(location.search).get("id"), f = $("f");
 const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
-let d, l;
+let d, l, key = "";
+const dec = () => (d.currency === "JPY" || d.currency === "ISK" ? 0 : 2);
+// the tip in US dollars; a custom tip is typed in the buyer's own currency, so it is exact in that currency
+const customLocal = () => { const n = Math.round(Number(f.custom.value || 0) * 10 ** dec()) / 10 ** dec(); return Number.isFinite(n) ? Math.min(Math.max(n, 0), 500 * d.rate) : 0; };
 const tipUSD = () => {
   const v = f.tip.value;
-  if (v === "custom") { const n = Math.round(Number(f.custom.value || 0) * 100) / 100; return Number.isFinite(n) ? Math.min(Math.max(n, 0), 500) : 0; }
+  if (v === "custom") return customLocal() / d.rate;
   return Math.round(l.priceUSD * Number(v)) / 100;
 };
 const taxOf = () => { const v = TAXES[d.country]; return v ? { name: v[0], rate: v[1], inclusive: Boolean(v[2]) } : { name: "", rate: 0, inclusive: false }; };
 let TAXES = {};
 function totals() {
   const t = tipUSD(), x = taxOf(), b = breakdown(l.priceUSD, t, d, x);
-  $("cw").hidden = f.tip.value !== "custom";
+  $("cw").hidden = f.tip.value !== "custom"; $("cwl").textContent = `Tip in ${d.currency}`;
   $("spl").textContent = x.rate ? "Price, before tax" : "Price";
   $("sp").textContent = money(b.net, d.currency);
   $("txr").hidden = !x.rate; $("txl").textContent = `${x.name} (${+(x.rate * 100).toFixed(1)}%)`; $("tx").textContent = money(b.tax, d.currency);
@@ -88,8 +90,18 @@ function preview(file, name) {
   box.hidden = false;
   box.innerHTML = `<div class="mp-preview__bar"><b>${esc(name)}</b><button type="button" class="pay__btn pay__btn--ghost" data-close>Close preview</button></div>` + (file.kind === "pdf"
     ? `<iframe title="Preview of ${esc(name)}" src="${esc(file.preview)}#toolbar=0&navpanes=0&view=FitH"></iframe><p class="mp-note">A preview of the first page. The full file is yours after you buy.</p>`
+    : file.kind === "xml" ? `<div class="mp-xml" id="xml">Loading the first bars…</div><p class="mp-note">The first four bars. The full score is yours after you buy.</p>`
     : `<audio controls controlsList="nodownload noplaybackrate" src="${esc(file.preview)}"></audio><p class="mp-note">A short clip. The full recording is yours after you buy.</p>`);
+  if (file.kind === "xml") drawXml(file.preview);
   box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+async function drawXml(url) {
+  const el = $("xml");
+  try {
+    if (!window.opensheetmusicdisplay) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdisplay.min.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
+    const xml = await (await fetch(url)).text(), osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(el, { autoResize: true, drawTitle: true });
+    await osmd.load(xml); el.textContent = ""; osmd.render();
+  } catch { el.textContent = "The preview couldn't be shown."; }
 }
 try {
   d = await api("item", { query: { id } }); l = d.listing;
@@ -102,17 +114,22 @@ try {
   $("pv").addEventListener("click", (e) => { if (e.target.closest("[data-close]")) { $("pv").hidden = true; $("pv").innerHTML = ""; } });
   $("cur").textContent = d.currency === "USD" ? "Charged in US dollars." : `Charged in ${d.currency}, converted from US dollars and rounded up to the next quarter.`;
   TAXES = d.taxes || {};   // an older server sends no tax table: no tax is shown
-  try { f.email.value = localStorage.getItem("mp-buyer-email") || ""; } catch {}
+  f.custom.step = dec() ? "0.01" : "1";
+  try { key = localStorage.getItem("mp-buyer-key") || ""; } catch {}
+  if (!key) {   // buying needs a buyer account
+    const next = encodeURIComponent(location.pathname + location.search);
+    f.querySelector("button[type=submit]").outerHTML = `<div class="mp-signin"><p><b>Sign in to buy.</b> Everything you buy is kept in your buyer account, so you can download it again and open it in the Maestro Pro app.</p><a class="pay__btn" href="/marketplace/account/?next=${next}">Sign in or create an account</a></div>`;
+  }
   f.addEventListener("input", totals); totals();
   $("item").hidden = false;
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
     const m = f.querySelector(".pay__msg"), b = f.querySelector("button[type=submit]");
-    if (!f.email.checkValidity()) { m.textContent = "Enter a valid email address."; return; }
+    if (!b) return;
     b.disabled = true; m.textContent = "";
-    try { localStorage.setItem("mp-buyer-email", f.email.value.trim()); } catch {}
-    try { location.href = (await api("buy", { method: "POST", body: { id, email: f.email.value, tip: { usd: tipUSD() } } })).url; }
-    catch (err) { m.textContent = err.message; b.disabled = false; }
+    const tip = f.tip.value === "custom" ? { local: customLocal() } : { usd: tipUSD() };
+    try { location.href = (await api("buy", { method: "POST", key, header: "X-MP-Buyer", body: { id, tip } })).url; }
+    catch (err) { m.textContent = err.message; b.disabled = false; if (/Sign in/.test(err.message)) { try { localStorage.removeItem("mp-buyer-key"); } catch {} } }
   });
 } catch (e) { $("err").textContent = e.message; }
 </script>
