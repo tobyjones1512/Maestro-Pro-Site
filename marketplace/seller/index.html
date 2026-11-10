@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Sell your music | Maestro Pro Marketplace</title>
+<title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
 <link rel="stylesheet" href="/assets/marketplace.css">
@@ -13,40 +13,64 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
 </header>
 <main id="main" class="plain">
-<h1>Sell your music</h1>
-<div id="out" class="notice" hidden><p>You're not signed in. <a href="/marketplace/onboard/">Become a seller</a> to connect your Mollie account and start selling.</p></div>
+<h1>Merchant account</h1>
+<div id="out" hidden>
+  <p>Sign in with the link we email you, or <a href="/marketplace/onboard/">open a Merchant Account</a>.</p>
+  <form id="si" class="pay"><label class="field">Email<input name="email" type="email" required autocomplete="email"></label><button class="pay__btn" type="submit">Email me a sign-in link</button><p class="pay__msg" role="status"></p></form>
+</div>
 <div id="in" hidden>
-  <p>Signed in as <b id="who"></b>. You set each price in whole US dollars; buyers pay in their own currency. Maestro Pro keeps 30% of each sale and the rest is paid out by Mollie to your account.</p>
-  <form id="f" class="pay pay--wide"></form>
-  <h2>Your pieces</h2>
-  <ul id="mine"></ul>
+  <p>Signed in as <b id="who"></b>. <button id="bye" class="pay__btn pay__btn--ghost" type="button">Sign out</button></p>
+  <p id="todo" class="notice" hidden></p>
+  <h2>Sales</h2>
+  <p id="sum"></p>
+  <h2>Your products</h2>
+  <p class="pay__fine">Every item is checked with VirusTotal and reviewed against the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a>. You are emailed the result. Anything you withdraw from sale stays available to the people who already bought it.</p>
+  <div id="list"></div>
+  <div id="add" hidden>
+    <h2>Add a product</h2>
+    <p>You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span id="cut">30</span>% of each sale and Mollie pays the rest to you.</p>
+    <form id="f" class="pay pay--wide"></form>
+  </div>
 </div>
 </main>
 <footer class="foot">
-  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
   <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
 </footer>
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, mountBuilder, builderFields, dollars } from "/assets/marketplace.js";
-const K = "mp-seller-key", f = document.getElementById("f");
-let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
+import { api, mountBuilder, builderFields, dollars, renderProducts, productsTable, inReview } from "/assets/marketplace.js";
+const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f");
+let key = "", timer = 0; try { key = localStorage.getItem(K) || ""; } catch {}
 const fromLink = new URLSearchParams(location.hash.slice(1)).get("k");
 if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
-const row = (l) => `<li>${esc(l.title)}, ${dollars(l.priceUSD)}</li>`;
+const out = () => { $("out").hidden = false; $("in").hidden = true; };
 async function load() {
-  if (!key) return (document.getElementById("out").hidden = false);
-  try {
-    const s = await api("seller", { key });
-    document.getElementById("who").textContent = s.name;
-    document.getElementById("mine").innerHTML = s.listings.map(row).join("") || "<li>Nothing yet.</li>";
-    document.getElementById("in").hidden = false;
-  } catch { try { localStorage.removeItem(K); } catch {} key = ""; document.getElementById("out").hidden = false; }
+  clearTimeout(timer);
+  if (!key) return out();
+  let s;
+  try { s = await api("merchant", { key }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return out(); }
+  $("out").hidden = true; $("in").hidden = false;
+  $("who").textContent = s.name; $("cut").textContent = Math.round(s.cut * 100);
+  const todo = $("todo");
+  todo.hidden = s.canPublish;
+  todo.innerHTML = s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts with Mollie</a>. You can add products after that.`;
+  $("add").hidden = !s.canPublish;
+  $("sum").textContent = `${s.sales.count} sold, ${dollars(s.sales.grossUSD)} in sales, ${dollars(s.sales.earnedUSD)} your share (before Mollie's own fees).`;
+  $("list").innerHTML = productsTable;
+  renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); });
+  if (s.products.some(inReview)) timer = setTimeout(load, 20000);   // each visit moves the review on
 }
+$("bye").addEventListener("click", () => { try { localStorage.removeItem(K); } catch {} key = ""; out(); });
+$("si").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const m = e.target.querySelector(".pay__msg");
+  try { await api("signin", { method: "POST", body: { email: e.target.email.value } }); m.textContent = "If that email has a Merchant Account, we have sent it a sign-in link."; } catch (err) { m.textContent = err.message; }
+});
 f.innerHTML = builderFields;
 mountBuilder(f, { getKey: () => key, onDone: load });
 load();

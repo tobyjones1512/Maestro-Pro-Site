@@ -9,3 +9,15 @@
 .pay input[type=checkbox]{margin-right:8px}
 .pay--wide{max-width:36rem}
 .pay__msg{min-height:1.4em;margin-top:.8em}
+.gl{margin-top:2em}
+.gl__toc{columns:2;padding-left:1.2em}
+.gl__item{margin:1.2em 0;scroll-margin-top:5rem}
+.gl__item h3{font-size:1.05rem;margin:0 0 .3em}
+.gl__item h3 a{color:var(--hl);text-decoration:none;font-variant-numeric:tabular-nums;margin-right:.4em}
+.gl__item:target{outline:2px solid var(--hl);outline-offset:6px;border-radius:6px}
+.mp-status{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;border:1px solid var(--hair)}
+.mp-status--ready{color:#1e7e34;border-color:#1e7e34}.mp-status--refused{color:#c0392b;border-color:#c0392b}.mp-status--wait{color:var(--fg2)}
+.mp-table{width:100%;border-collapse:collapse;margin:1em 0}.mp-table th,.mp-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--hair);vertical-align:top}
+.mp-reason{margin:6px 0 0;padding:10px 14px;border-left:3px solid #c0392b;background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%);font-size:.92rem}
+@media(max-width:600px){.gl__toc{columns:1}}
+.pay fieldset{border:0;padding:0;margin:1em 0}.pay fieldset label{display:block;margin:.3em 0}.pay select[multiple]{display:block;width:100%;margin-top:8px;font:inherit}

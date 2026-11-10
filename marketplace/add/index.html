@@ -13,13 +13,14 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
 </header>
 <main id="main" class="plain">
 <h1>Add music</h1>
-<p>For the site owner. Pieces added here are paid straight to the Maestro Pro Mollie account.</p>
+<p>For the site owner. Pieces added here are paid straight to the Maestro Pro Mollie account. They are checked and reviewed like every other item.</p>
 <form id="auth" class="pay"><label class="field">Admin key<input name="k" type="password" autocomplete="current-password"></label><button class="pay__btn pay__btn--ghost" type="submit">Use this key</button></form>
 <form id="f" class="pay pay--wide" hidden></form>
+<div id="list"></div>
 </main>
 <footer class="foot">
   <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
@@ -28,12 +29,23 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { mountBuilder, builderFields } from "/assets/marketplace.js";
+import { api, mountBuilder, builderFields, renderProducts, productsTable, inReview } from "/assets/marketplace.js";
 const K = "mp-admin-key", f = document.getElementById("f"), a = document.getElementById("auth");
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
 f.innerHTML = builderFields;
-mountBuilder(f, { getKey: () => key });
-const show = () => { f.hidden = !key; };
+let timer = 0;
+async function load() {
+  clearTimeout(timer);
+  if (!key) return;
+  try {
+    const s = await api("merchant", { key });
+    document.getElementById("list").innerHTML = "<h2>Products</h2>" + productsTable;
+    renderProducts(document.querySelector("#list tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); });
+    if (s.products.some(inReview)) timer = setTimeout(load, 20000);
+  } catch { /* wrong key: the form's own message says so */ }
+}
+mountBuilder(f, { getKey: () => key, onDone: load });
+const show = () => { f.hidden = !key; load(); };
 a.addEventListener("submit", (e) => { e.preventDefault(); key = a.k.value.trim(); try { localStorage.setItem(K, key); } catch {} show(); });
 show();
 </script>

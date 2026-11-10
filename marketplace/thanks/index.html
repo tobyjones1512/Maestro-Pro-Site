@@ -13,14 +13,14 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
 </header>
 <main id="main" class="plain">
 <h1 id="h">Checking your payment…</h1>
 <p id="p"></p>
 </main>
 <footer class="foot">
-  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
   <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
 </footer>
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
@@ -32,8 +32,9 @@ for (let i = 0; i < 40; i++) {
   try {
     const o = await api("order", { query: { o: q.o, t: q.t } });
     if (o.status === "paid") {
+      if (q.app) { h.textContent = "Thank you!"; p.textContent = "Your purchase is complete. Close this window and return to Maestro Pro: it will add the piece to your library."; break; }
       h.textContent = "Thank you!";
-      p.innerHTML = `<a class="pay__btn" style="display:inline-block;text-decoration:none" href="${o.download}">Download “${o.title.replace(/[<&>"]/g, "")}”</a><br><br>Open the downloaded file in Maestro Pro. We have also emailed you the link.`;
+      p.innerHTML = `<a class="pay__btn" style="display:inline-block;text-decoration:none" href="${o.download}">Download “${o.title.replace(/[<&>"]/g, "")}”</a><br><br>Open the downloaded file in Maestro Pro. We have also emailed you the link. It is yours to keep, and you will find it in your <a href="/marketplace/account/">buyer account</a> (and in the Maestro Pro app) whenever you need it. You can cancel for a full refund within 14 days from your account.`;
       break;
     }
     if (["failed", "canceled", "expired"].includes(o.status)) { h.textContent = "The payment didn't go through."; p.innerHTML = `Nothing was charged. <a href="/marketplace/">Back to the marketplace</a>.`; break; }

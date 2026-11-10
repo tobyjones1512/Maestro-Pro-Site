@@ -1,4 +1,4 @@
-// Shared helpers for the Maestro Pro marketplace (see marketplace.js). Secrets come from Vercel environment variables:
+// Shared helpers for the Maestro Pro marketplace server (see marketplace.js). Secrets come from Vercel environment variables:
 //   MOLLIE_API_KEY         the platform's own Mollie key (test_... or live_...), used for listings the site owner adds.
 //   MOLLIE_CLIENT_ID, MOLLIE_CLIENT_SECRET   the Mollie Connect app, used to onboard sellers and charge on their behalf.
 //   MOLLIE_LIVE            "1" to go live for seller payments (OAuth payments run in test mode otherwise).
@@ -7,7 +7,11 @@
 import crypto from "node:crypto";
 
 export const SITE = "https://maestro-pro.app";
-export const API = "https://fider-feedback-api.vercel.app";
+export const API = "https://maestro-marketplace-api.vercel.app";
+export const NOREPLY = "noreply@maestro-pro.app";
+export const SUPPORT = "support@maestro-pro.app";
+export const OWNER = "hello@thecaffeinemediacompany.com";
+export const FEE_GBP = "5.00";   // the one-time technology fee for a Merchant Account
 export const CUT = 0.3;   // the marketplace's share of every seller's sale
 const ORIGINS = [SITE, "https://www.maestro-pro.app", "http://localhost:8000"];
 
@@ -15,7 +19,7 @@ export function cors(req, res) {
   const o = req.headers.origin;
   if (ORIGINS.includes(o)) { res.setHeader("Access-Control-Allow-Origin", o); res.setHeader("Vary", "Origin"); }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-MP-Key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-MP-Key, X-MP-Buyer");
   if (req.method === "OPTIONS") { res.status(204).end(); return true; }
   return false;
 }
@@ -33,7 +37,7 @@ export function unsign(s) {
   try { return JSON.parse(Buffer.from(p, "base64url").toString()); } catch { return null; }
 }
 
-// ---- Prices: sellers set whole US dollars; buyers are charged in their own currency (Mollie's list, rates from the ECB via frankfurter).
+// ---- Prices: sellers set US dollars in steps of a quarter; buyers are charged in their own currency (Mollie's list, rates from the ECB via frankfurter).
 const ZONES = {
   EUR: "AT BE BG CY DE EE ES FI FR GR HR IE IT LT LU LV MT NL PT SI SK AD MC SM VA ME",
   GBP: "GB GG JE IM", CHF: "CH LI", AUD: "AU", BRL: "BR", CAD: "CA", CZK: "CZ", DKK: "DK", HKD: "HK", HUF: "HU", ILS: "IL", ISK: "IS",
@@ -56,16 +60,16 @@ export async function rate(cur) {
   }
   return rates.v[cur] || null;
 }
-/** Whole dollars -> the charge in minor units of `cur`, rounded up. */
+/** US dollars -> the charge in minor units of `cur`, rounded up. */
 export const minor = (usd, cur, r) => Math.ceil(usd * r * 10 ** decimals(cur) - 1e-6);
 export const fmt = (m, cur) => (m / 10 ** decimals(cur)).toFixed(decimals(cur));
 
-/** A whole number of dollars from 1 to 999, or null. Anything with a fraction is refused, never rounded. */
-export function wholePrice(v) {
-  const s = String(v ?? "").trim();
-  if (!/^\d{1,3}$/.test(s)) return null;
-  const n = Number(s);
-  return n >= 1 && n <= 999 ? n : null;
+/** A price from $0.25 to $999.75 that ends in .00, .25, .50 or .75, as a number of dollars, or null. Any other cent amount is refused, never rounded. */
+export function price(v) {
+  const m = /^(\d{1,3})(?:\.(\d{1,2}))?$/.exec(String(v ?? "").trim());
+  if (!m) return null;
+  const cents = Number(m[1]) * 100 + Number((m[2] || "").padEnd(2, "0"));
+  return cents >= 25 && cents % 25 === 0 ? cents / 100 : null;
 }
 
 // ---- Mollie
@@ -89,3 +93,18 @@ export async function oauth(form) {
   });
   return { status: r.status, data: await r.json().catch(() => ({})) };
 }
+
+// ---- Where an item is sold. An item with no regions is sold worldwide; otherwise only in the listed countries (ISO codes, from the buyer's IP address).
+/** The merchant's choice as a clean list of country codes ([] means worldwide), or null if it isn't valid. */
+export function cleanRegions(v) {
+  if (v === undefined || v === null || v === "") return [];
+  if (!Array.isArray(v) || v.length > 250) return null;
+  const out = [...new Set(v.map((c) => String(c).trim().toUpperCase()))];
+  return out.every((c) => /^[A-Z]{2}$/.test(c)) ? out : null;
+}
+export const availableIn = (regions, country) => !regions?.length || regions.includes(String(country || "").toUpperCase());
+
+// ---- Refunds. A buyer may withdraw within 14 days of paying, once per item: if they have bought the same item again (even after a refund), neither purchase can be refunded.
+export const REFUND_DAYS = 14;
+/** same: how many orders by this buyer for this item are paid or refunded (this one included). */
+export const refundable = ({ status, paidAt, same }, now = Date.now()) => status === "paid" && same === 1 && now - paidAt < REFUND_DAYS * 864e5;

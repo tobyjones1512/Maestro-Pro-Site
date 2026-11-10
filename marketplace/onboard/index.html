@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Become a seller | Maestro Pro Marketplace</title>
+<title>Open a Merchant Account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
 <link rel="stylesheet" href="/assets/marketplace.css">
@@ -13,38 +13,85 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a></nav>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
 </header>
 <main id="main" class="plain">
-<h1>Become a seller</h1>
-<p>Sell your sheet music, backing tracks and karaoke to Maestro Pro players. You keep 70% of every sale and Maestro Pro keeps 30%. You set your own price in whole US dollars, and buyers are charged in their own currency.</p>
-<p>Payments are handled by Mollie. You will connect (or create) a Mollie account in the next step, and Mollie pays your share out to you.</p>
+<h1>Open a Merchant Account</h1>
 <p id="err" class="notice" hidden></p>
-<form id="f" class="pay">
-  <label class="field">Your name or business name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
-  <label class="field">Email<input name="email" type="email" required autocomplete="email"></label>
-  <label class="field"><input name="agree" type="checkbox" required> I will only sell music I wrote or own the rights to, and I agree to Maestro Pro's 30% share of each sale.</label>
-  <button class="pay__btn" type="submit">Continue to Mollie</button>
-  <p class="pay__msg" role="status"></p>
-</form>
+
+<section id="s1" hidden>
+  <p>Sell your sheet music, backing tracks and karaoke to Maestro Pro players. You set your own price, Maestro Pro keeps 30% of each sale and Mollie pays the rest to you.</p>
+  <ol>
+    <li>Pay the one-time <b>£5 technology fee</b>.</li>
+    <li>Set up your payout details with Mollie.</li>
+    <li>Add your content. Every item is checked with VirusTotal and reviewed against the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a> before it can go on sale.</li>
+  </ol>
+  <form id="f" class="pay">
+    <label class="field">Your name or business name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
+    <label class="field">Email<input name="email" type="email" required autocomplete="email"></label>
+    <label class="field"><input name="agree" type="checkbox" required> I have read and agree to the <a href="/marketplace/guidelines/" target="_blank">Merchant Content Review Guidelines</a>, and I will only sell music I own or have the rights to sell.</label>
+    <button class="pay__btn" type="submit">Pay the £5 fee</button>
+    <p class="pay__msg" role="status"></p>
+  </form>
+  <p class="pay__fine">Already have an account? <a href="/marketplace/seller/">Sign in</a>.</p>
+</section>
+
+<section id="s2" hidden>
+  <h2>Step 1: pay the technology fee</h2>
+  <p id="s2t">Your fee payment isn't complete yet.</p>
+  <button id="pay" class="pay__btn" type="button">Pay the £5 fee</button>
+</section>
+
+<section id="s3" hidden>
+  <h2>Step 2: set up your payouts</h2>
+  <p>Thank you, your fee is paid. Now connect or create a Mollie account. This is where Mollie collects your payout details and pays out your share of every sale.</p>
+  <button id="connect" class="pay__btn" type="button">Set up payouts with Mollie</button>
+</section>
+
+<section id="s4" hidden>
+  <h2>You're ready to sell</h2>
+  <p>Your account is open and your payouts are set up. <a class="pay__btn" style="display:inline-block;text-decoration:none" href="/marketplace/seller/">Add your first product</a></p>
+</section>
+<p id="m" class="pay__msg" role="status"></p>
 </main>
 <footer class="foot">
-  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
   <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
 </footer>
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
 import { api } from "/assets/marketplace.js";
-const f = document.getElementById("f"), e0 = new URLSearchParams(location.search).get("error");
-if (e0) { const n = document.getElementById("err"); n.textContent = e0; n.hidden = false; }
-f.addEventListener("submit", async (e) => {
+const K = "mp-seller-key", $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
+let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
+const show = (n) => [1, 2, 3, 4].forEach((i) => ($("s" + i).hidden = i !== n));
+const say = (t) => ($("m").textContent = t || "");
+if (q.get("error")) { $("err").textContent = q.get("error"); $("err").hidden = false; }
+
+async function load(waitForFee) {
+  if (!key) return show(1);
+  let me;
+  try { me = await api("merchant", { key }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return show(1); }
+  if (me.fee !== "paid") {
+    show(2);
+    if (waitForFee && me.fee === "open") { say("Checking your payment…"); await new Promise((r) => setTimeout(r, 3000)); return load(--waitForFee); }
+    $("s2t").textContent = me.fee === "open" ? "Your fee payment is waiting to be completed." : "Your last fee payment didn't go through. Nothing was charged.";
+    say("");
+  } else show(me.connected ? 4 : 3);
+}
+$("f").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const m = f.querySelector(".pay__msg"), b = f.querySelector("button");
+  const f = e.target, b = f.querySelector("button"), m = f.querySelector(".pay__msg");
   b.disabled = true; m.textContent = "";
-  try { location.href = (await api("onboard-start", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked } })).url; }
-  catch (err) { m.textContent = err.message; b.disabled = false; }
+  try {
+    const d = await api("signup", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked } });
+    try { localStorage.setItem(K, d.key); } catch {}
+    location.href = d.url;
+  } catch (err) { m.textContent = err.message; b.disabled = false; }
 });
+$("pay").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key })).url; } catch (err) { say(err.message); } });
+$("connect").addEventListener("click", async () => { try { location.href = (await api("connect-start", { method: "POST", key })).url; } catch (err) { say(err.message); } });
+load(q.get("m") ? 20 : 0);
 </script>
 </body>
 </html>

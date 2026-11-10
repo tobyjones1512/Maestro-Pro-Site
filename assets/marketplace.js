@@ -1,27 +1,39 @@
 // Front end for the Maestro Pro marketplace: API calls, prices, and the .maestropro bundle builder.
-export const API = "https://fider-feedback-api.vercel.app/api/marketplace-";
+export const API = "https://maestro-marketplace-api.vercel.app/api/marketplace-";
 const $ = (s, r = document) => r.querySelector(s);
 export const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-export async function api(fn, { method = "GET", body, query = {}, key } = {}) {
+export async function api(fn, { method = "GET", body, query = {}, key, header = "X-MP-Key" } = {}) {
   const q = new URLSearchParams(query).toString();
   const r = await fetch(API + fn + (q ? "?" + q : ""), {
-    method, headers: { ...(body && { "Content-Type": "application/json" }), ...(key && { "X-MP-Key": key }) }, body: body && JSON.stringify(body),
+    method, headers: { ...(body && { "Content-Type": "application/json" }), ...(key && { [header]: key }) }, body: body && JSON.stringify(body),
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || "Something went wrong. Please try again.");
   return d;
 }
 
-/** Whole dollars -> the buyer's currency, rounded up the way the server rounds it. */
+/** US dollars -> the buyer's currency, rounded up the way the server rounds it. */
 export function local(usd, { currency, rate }) {
   const dec = currency === "JPY" || currency === "ISK" ? 0 : 2;
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Math.ceil(usd * rate * 10 ** dec - 1e-6) / 10 ** dec);
 }
-export const dollars = (n) => "$" + n + " USD";
+export const dollars = (n) => "$" + Number(n).toFixed(2) + " USD";
 
-/** True for "4" or "12"; false for "4.50", "4.0", "-1", "1e1" or "". Sellers may only price in whole dollars. */
-export const wholeDollars = (v) => /^\d{1,3}$/.test(String(v).trim()) && Number(v) >= 1;
+/** True for $0.25 to $999.75 ending in .00, .25, .50 or .75 ("4", "4.5" and "4.25" pass; "4.10", "4.99" and "0.75" do not). Mirrors price() on the server. */
+export function validPrice(v) {
+  const m = /^(\d{1,3})(?:\.(\d{1,2}))?$/.exec(String(v ?? "").trim());
+  if (!m) return false;
+  const cents = Number(m[1]) * 100 + Number((m[2] || "").padEnd(2, "0"));
+  return cents >= 25 && cents % 25 === 0;
+}
+export const PRICE_RULE = "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed.";
+
+// ---- Where an item is sold: worldwide, or only the countries the merchant picks (ISO codes; names come from the browser).
+const COUNTRIES = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
+export const countryName = (c) => { try { return new Intl.DisplayNames(undefined, { type: "region" }).of(c) || c; } catch { return c; } };
+export const where = (regions) => (regions?.length ? regions.map(countryName).join(", ") : "Worldwide");
+const countryOptions = () => COUNTRIES.map((c) => [c, countryName(c)]).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join("");
 
 // ---- The bundle: a .maestropro file, the same one the app makes with "Share with Another Player".
 // Layout: "PLAYALONG1", a 4-byte little-endian header length, the JSON header (the item and the names and sizes of its files), then the files.
@@ -59,12 +71,18 @@ export async function makeBundle({ title, score, tracks = [], lyrics }) {
 // ---- The upload form, shared by /marketplace/add (the site owner) and /marketplace/seller (connected sellers).
 export function mountBuilder(form, { getKey, onDone }) {
   const msg = $(".pay__msg", form), btn = $(".pay__btn", form), say = (t, bad) => { msg.textContent = t; msg.style.color = bad ? "#c0392b" : ""; };
-  form.price.addEventListener("input", () => say(form.price.value && !wholeDollars(form.price.value) ? "The price must be a whole number of US dollars. Cents are not allowed." : "", true));
+  const some = form.elements.where, list = form.elements.regions;
+  list.innerHTML = countryOptions();
+  const sync = () => { list.hidden = some.value !== "some"; };
+  form.querySelectorAll("input[name=where]").forEach((r) => r.addEventListener("change", sync)); sync();
+  form.price.addEventListener("input", () => say(form.price.value && !validPrice(form.price.value) ? PRICE_RULE : "", true));
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const key = getKey();
     if (!key) return say("Sign in first.", true);
-    if (!wholeDollars(form.price.value)) return say("The price must be a whole number of US dollars, from 1 to 999. Cents are not allowed.", true);
+    if (!validPrice(form.price.value)) return say(PRICE_RULE, true);
+    const regions = some.value === "some" ? [...list.selectedOptions].map((o) => o.value) : [];
+    if (some.value === "some" && !regions.length) return say("Choose at least one country, or sell worldwide.", true);
     btn.disabled = true;
     try {
       const f = form.elements, title = f.title.value.trim();
@@ -77,9 +95,9 @@ export function mountBuilder(form, { getKey, onDone }) {
         onUploadProgress: (p) => say(`Uploading… ${Math.round(p.percentage)}%`),
       });
       const contents = ["Score", tracks.length && `${tracks.length} backing track${tracks.length > 1 ? "s" : ""}`, f.lyrics.files[0] && "Lyrics"].filter(Boolean).join(", ");
-      const { listing } = await api("publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents } });
-      say(`Published “${listing.title}” at ${dollars(listing.priceUSD)}.`);
-      form.reset(); onDone?.(listing);
+      await api("publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked } });
+      say("Submitted for review. Every file is checked with VirusTotal, then the item is reviewed against the guidelines. You will be emailed the result.");
+      form.reset(); onDone?.();
     } catch (err) { say(err.message, true); }
     btn.disabled = false;
   });
@@ -89,10 +107,30 @@ export const builderFields = `
   <label class="field">Title<input name="title" type="text" required maxlength="100"></label>
   <label class="field">Composer or arranger<input name="composer" type="text" maxlength="100"></label>
   <label class="field">Description<textarea name="description" rows="3" maxlength="600"></textarea></label>
-  <label class="field">Price in US dollars (whole dollars only)<input name="price" type="number" inputmode="numeric" min="1" max="999" step="1" required></label>
+  <label class="field">Price in US dollars (.00, .25, .50 or .75)<input name="price" type="number" inputmode="decimal" min="0.25" max="999.75" step="0.25" required></label>
   <label class="field">Sheet music, karaoke or lyrics file<input name="score" type="file" accept="${accept.score}" required></label>
   <label class="field">Backing tracks (optional, the first is the main one)<input name="tracks" type="file" accept="${accept.audio}" multiple></label>
   <label class="field">Lyrics (optional, .lrc or .txt)<input name="lyrics" type="file" accept="${accept.lyrics}"></label>
-  <label class="field"><input name="rights" type="checkbox" required> I wrote this, or I own the rights to sell all of it.</label>
-  <button class="pay__btn" type="submit">Publish to the marketplace</button>
+  <fieldset class="field"><legend>Where is this sold?</legend>
+    <label><input type="radio" name="where" value="all" checked> Worldwide</label>
+    <label><input type="radio" name="where" value="some"> Only these countries (you must hold the rights there; see guideline 2.9)</label>
+    <select name="regions" multiple size="8" hidden aria-label="Countries"></select></fieldset>
+  <label class="field"><input name="rights" type="checkbox" required> I wrote this, or I own the rights to sell all of it, and I have read the <a href="/marketplace/guidelines/" target="_blank">Merchant Content Review Guidelines</a>.</label>
+  <button class="pay__btn" type="submit">Submit for review</button>
   <p class="pay__msg" role="status"></p>`;
+
+// ---- Merchant pages: the product list with each review result, shared by /marketplace/seller and /marketplace/add.
+const LABEL = { scanning: "In review: checking files", reviewing: "In review", ready: "Ready For Distribution", refused: "Refused" };
+export const inReview = (p) => p.status === "scanning" || p.status === "reviewing";
+const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".", "-")}">${esc(g.id)} ${esc(g.title)}</a>: “${esc(g.text)}”</li>`;
+
+/** Fills `table` (a <tbody>) with the products. `act(id, withdrawn)` is called by the withdraw / put back on sale button. */
+export function renderProducts(table, products, act) {
+  table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}</small></td>
+    <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : LABEL[p.status] || esc(p.status)}</span>${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
+      ${p.status === "refused" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul></div>` : ""}</td>
+    <td>${p.sold}</td><td>${dollars(p.earnedUSD)}</td>
+    <td>${p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;
+  table.querySelectorAll("button[data-id]").forEach((b) => b.addEventListener("click", () => act(b.dataset.id, Boolean(b.dataset.w))));
+}
+export const productsTable = `<table class="mp-table"><thead><tr><th>Product</th><th>Status</th><th>Sold</th><th>Your share</th><th></th></tr></thead><tbody></tbody></table>`;

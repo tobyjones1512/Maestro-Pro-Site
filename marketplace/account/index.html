@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Buyer account | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Buyer account</h1>
+<div id="out" hidden>
+  <p>Your buyer account keeps everything you buy on the Marketplace in one place, so you can download it again, see it in the Maestro Pro app, or cancel within 14 days. It needs only your email address.</p>
+  <form id="f1" class="pay">
+    <label class="field">Email<input name="email" type="email" required autocomplete="email"></label>
+    <label class="field"><input name="create" type="checkbox"> I'm new here: create my account</label>
+    <button class="pay__btn" type="submit">Email me a code</button>
+    <p class="pay__msg" role="status"></p>
+  </form>
+  <form id="f2" class="pay" hidden>
+    <label class="field">The 6-digit code we emailed you<input name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
+    <button class="pay__btn" type="submit">Sign in</button>
+    <p class="pay__msg" role="status"></p>
+  </form>
+</div>
+<div id="in" hidden>
+  <p>Signed in as <b id="who"></b>. <button id="bye" class="pay__btn pay__btn--ghost" type="button">Sign out</button></p>
+  <h2>Your purchases</h2>
+  <table class="mp-table"><thead><tr><th>Item</th><th>Bought</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  <p class="pay__fine">You can cancel a purchase for a full refund within 14 days. If you buy the same item again, the right to cancel no longer applies to it. See the <a href="/marketplace/guidelines/#s7">refund rules</a>. Open your downloads in Maestro Pro, or sign in to the app with this email address.</p>
+  <p id="m" class="pay__msg" role="status"></p>
+</div>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api, esc } from "/assets/marketplace.js";
+const K = "mp-buyer-key", $ = (id) => document.getElementById(id);
+let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
+const out = () => { $("out").hidden = false; $("in").hidden = true; };
+async function load() {
+  if (!key) return out();
+  let d;
+  try { d = await api("buyer-purchases", { key, header: "X-MP-Buyer" }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return out(); }
+  $("out").hidden = true; $("in").hidden = false; $("who").textContent = d.email;
+  const day = (t) => new Date(t).toLocaleDateString(undefined, { dateStyle: "medium" });
+  $("rows").innerHTML = d.purchases.map((p) => `<tr><td><b>${esc(p.title)}</b></td><td>${day(p.paidAt)}${p.status === "refunded" ? "<br><small>Refunded</small>" : ""}</td><td>${p.status === "paid" ? `<a class="pay__btn" style="display:inline-block;text-decoration:none" href="https://maestro-marketplace-api.vercel.app/api/marketplace-download?o=${p.order}&t=${p.token}">Download</a>` : ""}${p.refundable ? ` <button class="pay__btn pay__btn--ghost" data-o="${p.order}" data-t="${p.token}">Cancel and refund (until ${day(p.refundBy)})</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="3">Nothing bought yet. <a href="/marketplace/">Browse the Marketplace</a>.</td></tr>`;
+  $("rows").querySelectorAll("button[data-o]").forEach((b) => b.addEventListener("click", async () => {
+    if (!confirm("Cancel this purchase and get a full refund? You will lose access to it.")) return;
+    b.disabled = true;
+    try { await api("refund", { method: "POST", body: { o: b.dataset.o, t: b.dataset.t } }); $("m").textContent = "Refunded. The money returns to your payment method in a few days."; load(); }
+    catch (e) { $("m").textContent = e.message; b.disabled = false; }
+  }));
+}
+let email = "";
+$("f1").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, m = f.querySelector(".pay__msg"); email = f.email.value.trim();
+  try { await api("buyer-code", { method: "POST", body: { email, create: f.create.checked } }); $("f2").hidden = false; m.textContent = "We have emailed you a code."; }
+  catch (err) { m.textContent = err.message; }
+});
+$("f2").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const m = e.target.querySelector(".pay__msg");
+  try { key = (await api("buyer-verify", { method: "POST", body: { email, code: e.target.code.value } })).key; try { localStorage.setItem(K, key); localStorage.setItem("mp-buyer-email", email); } catch {} $("f2").hidden = true; load(); }
+  catch (err) { m.textContent = err.message; }
+});
+$("bye").addEventListener("click", () => { try { localStorage.removeItem(K); } catch {} key = ""; out(); });
+load();
+</script>
+</body>
+</html>
