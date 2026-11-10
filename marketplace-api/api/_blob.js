@@ -1,6 +1,6 @@
 // Storage for the marketplace: small JSON files in a Vercel Blob store, written with an ETag check so two requests never overwrite each other.
 // Needs BLOB_READ_WRITE_TOKEN. BLOB_ACCESS is "private" (default) or "public", and must match how the store was created.
-import { put, get, BlobPreconditionFailedError } from "@vercel/blob";
+import { put, get, head, BlobPreconditionFailedError } from "@vercel/blob";
 
 const ACCESS = () => (process.env.BLOB_ACCESS === "public" ? "public" : "private");
 
@@ -8,7 +8,11 @@ export async function readVersioned(path) {
   try {
     const r = await get(path, { access: ACCESS(), useCache: false });
     if (!r || r.statusCode !== 200) return { data: null, etag: null };
-    return { data: JSON.parse(await new Response(r.stream).text()), etag: r.blob.etag };
+    const data = JSON.parse(await new Response(r.stream).text());
+    let etag = r.blob.etag;
+    // A large file comes back compressed with a weak ETag (W/"..."), which ifMatch never accepts: ask for the real one.
+    if (/^W\//.test(etag || "")) etag = (await head(path).catch(() => null))?.etag || etag.replace(/^W\//, "");
+    return { data, etag };
   } catch (e) { console.error("blob read", path, e?.message); return { data: null, etag: null }; }
 }
 export const readJson = async (path) => (await readVersioned(path)).data;
