@@ -9,7 +9,7 @@ import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
 import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
-import { BUNDLE, ALLOWED, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
+import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, STRIKES, RESPOND_DAYS } from "./_disputes.js";
@@ -56,7 +56,9 @@ async function bundleOK(id) {
 // What a buyer can open without the app: PDF and audio files work anywhere. The rest are for Maestro Pro or other music software.
 const FORMAT = { pdf: "PDF", mp3: "Audio", m4a: "Audio", wav: "Audio", aif: "Audio", aiff: "Audio", caf: "Audio", aac: "Audio", flac: "Audio", musicxml: "MusicXML", mxl: "MusicXML", xml: "MusicXML", mid: "MIDI", midi: "MIDI", kar: "Karaoke", cdg: "Karaoke", lrc: "Lyrics", txt: "Lyrics" };
 const formatsOf = (p) => [...new Set([...(p.review?.files || []).filter((f) => !f.proof), ...(p.extras || [])].map((f) => FORMAT[ext(f.name)]).filter(Boolean))];
-const pub = (p) => ({ code: code(p), formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
+const TYPE = { single: "Single", ep: "EP", album: "Album" };
+const coverIx = (p) => (p.extras || []).findIndex((x) => x.cover);
+const pub = (p) => ({ kind: p.kind === "music" ? "music" : "score", type: p.kind === "music" ? TYPE[p.format] || "" : "", cover: coverIx(p) >= 0 ? `${API}/api/marketplace-preview?id=${p.id}&x=${coverIx(p)}` : "", code: code(p), formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
 const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
@@ -74,6 +76,7 @@ async function item(req, res) {
     ...(((await bundleInfo(v.id).catch(() => null))?.files) || []).map((f) => ({ name: f.name, size: f.size, type: FORMAT[ext(f.name)] || "", kind: kind(f.name), preview: kind(f.name) ? url(`v=${v.id}&f=${encodeURIComponent(f.name)}`) : "" })),
     ...ex.map((e, k) => [e, k]).filter(([e]) => (e.v ? e.v === v.id : i === 0)).map(([e, k]) => ({ name: e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })),
   ] })));
+  if (p.kind === "music") detail.push({ id: p.id, label: "Tracks", files: ex.map((e, k) => [e, k]).filter(([e]) => !e.cover).map(([e, k]) => ({ name: e.name, title: e.title ? `${e.n}. ${e.title}` : e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })) });
   res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1 });
 }
 const CLIP = 450000;   // about 30 seconds of a typical MP3
@@ -104,6 +107,7 @@ async function preview(req, res) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Cache-Control", "public, max-age=300");
   if (ext(name) === "mp3") { res.setHeader("Content-Type", "audio/mpeg"); return res.status(200).send(buf); }
+  if (x !== undefined && (p.extras || [])[Number(x)]?.cover && COVER.has(ext(name))) { res.setHeader("Content-Type", ext(name) === "png" ? "image/png" : "image/jpeg"); return res.status(200).send(buf); }
   if (ext(name) !== "pdf") return fail(res, 404, "No preview.");
   const { PDFDocument, StandardFonts, rgb, degrees } = await import("pdf-lib");
   const src = await PDFDocument.load(buf, { ignoreEncryption: true }), out = await PDFDocument.create();
@@ -218,8 +222,8 @@ async function order(req, res) {
   const out = { status: o.status, title: o.title };
   if (o.status === "paid") {
     const pk = packageOf(o, await products()), u = link(o);
-    const xurl = (e, i) => ({ name: e.name, size: e.size, url: `${u}&x=${i}` });
-    Object.assign(out, { download: u, extras: pk.extras.map((e, i) => [e, i]).filter(([e]) => !pk.variants.some((v) => v.id === e.v)).map(([e, i]) => xurl(e, i)),
+    const xurl = (e, i) => ({ name: e.name, title: e.title ? `${e.n}. ${e.title}` : "", size: e.size, url: `${u}&x=${i}` });
+    Object.assign(out, { download: u, kind: (await products()).find((x) => x.id === o.listing)?.kind === "music" ? "music" : "score", extras: pk.extras.map((e, i) => [e, i]).filter(([e]) => !pk.variants.some((v) => v.id === e.v)).map(([e, i]) => xurl(e, i)),
       variants: await Promise.all(pk.variants.map(async (v) => ({ id: v.id, label: v.label || "", url: `${u}&v=${v.id}`, extras: pk.extras.map((e, i) => [e, i]).filter(([e]) => e.v === v.id).map(([e, i]) => xurl(e, i)),
         files: ((await bundleInfo(v.id).catch(() => null))?.files || []).map((f) => ({ name: f.name, size: f.size, url: `${u}&v=${v.id}&f=${encodeURIComponent(f.name)}` })) }))) });
   }
@@ -396,7 +400,7 @@ async function merchant(req, res) {
       id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
       reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), versions: variantsOf(p).map((v) => v.label).filter(Boolean),
-      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
+      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { kind: p.kind === "music" ? "music" : "score", format: p.format, description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
       guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
@@ -550,9 +554,9 @@ async function upload(req, res) {
       }
       const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
       if (!user || !ready(user)) throw bad("Not signed in.");
-      const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname)), extra = EXTRA.test(pathname) && ALLOWED.has(ext(pathname));
+      const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname)), extra = EXTRA.test(pathname) && (ALLOWED.has(ext(pathname)) || COVER.has(ext(pathname)));
       if (!evid && !extra && !/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw bad(pathname.startsWith("marketplace/evidence/") ? "That file type isn't allowed. Use PDF, PNG, JPG or TXT." : "That file isn't allowed.");
-      return { maximumSizeInBytes: evid ? 25e6 : extra ? 60e6 : 150e6, allowOverwrite: false, addRandomSuffix: false };
+      return { maximumSizeInBytes: evid ? 25e6 : extra ? 120e6 : 150e6, allowOverwrite: false, addRandomSuffix: false };
     },
   });
   res.status(200).json(json);
@@ -582,6 +586,19 @@ async function content(b) {
   const title = clip(b.title, 100);
   if (title.length < 2) return { error: "Give the piece a title." };
   if (!/^[0-9a-f-]{36}$/.test(b.id || "")) return { error: "Bad item." };
+  if (b.kind === "music") {   // a single, EP or album: audio files, no .maestropro bundles (guideline 3.5)
+    const range = { single: [1, 3], ep: [3, 6], album: [7, 40] }[b.format];
+    if (!range) return { error: "Choose single, EP or album." };
+    const ts = (Array.isArray(b.tracks) ? b.tracks : []).slice(0, 40).map((t) => ({ path: String(t?.path || ""), title: clip(t?.title, 100) }));
+    if (ts.length < range[0] || ts.length > range[1]) return { error: `A${b.format === "ep" ? "n" : ""} ${TYPE[b.format]} has ${range[0]} to ${range[1]} tracks.` };
+    if (ts.some((t) => !t.title)) return { error: "Give every track a title." };
+    const audio = await uploaded(ts.map((t) => t.path), EXTRA, b.id, new Set("mp3 m4a wav flac aac aif aiff".split(" ")), 40);
+    const art = b.cover ? await uploaded([String(b.cover)], EXTRA, b.id, COVER, 1) : { files: [] };
+    const proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
+    if (audio.error || art.error || proof.error) return { error: audio.error || art.error || proof.error };
+    const extras = [...audio.files.map((f, i) => ({ ...f, title: ts[i].title, n: i + 1 })), ...art.files.map((f) => ({ ...f, cover: true }))];
+    return { fields: { kind: "music", format: b.format, title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: `${TYPE[b.format]}, ${ts.length} track${ts.length > 1 ? "s" : ""}`, regions, variants: [], extras, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
+  }
   const variants = (Array.isArray(b.variants) ? b.variants : []).slice(0, 12).map((v) => ({ id: String(v?.id || ""), label: clip(v?.label, 40) }));
   if (!variants.length || variants.some((v) => !/^[0-9a-f-]{36}$/.test(v.id)) || new Set(variants.map((v) => v.id)).size !== variants.length) return { error: "Add at least one version." };
   if (variants.length > 1 && variants.some((v) => !v.label)) return { error: "Name each version, for example the key or the instrument." };
@@ -590,7 +607,7 @@ async function content(b) {
   const extras = await uploaded(xs.map((e) => e.path), EXTRA, b.id, ALLOWED, 10), proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
   if (extras.error || proof.error) return { error: extras.error || proof.error };
   extras.files = extras.files.map((f, i) => (variants.some((v) => v.id === xs[i].v) ? { ...f, v: xs[i].v } : f));   // each download belongs to one version
-  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
+  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, kind: undefined, format: undefined, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
 }
 
 /** Testing only: the code in MARKETPLACE_DEBUG_CODE makes a submission skip scanning and review and be accepted. Off while the variable is unset. */

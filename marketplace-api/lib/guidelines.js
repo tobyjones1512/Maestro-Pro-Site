@@ -2,7 +2,7 @@
 export default {
  "updated": "10 November 2026",
  "intro": [
-  "The Maestro Pro Marketplace lets musicians sell sheet music, backing tracks, karaoke and lyrics to other Maestro Pro players. We want it to be a place where composers, arrangers and performers are paid fairly for their own work, and where buyers can trust what they download.",
+  "The Maestro Pro Marketplace lets musicians sell sheet music, backing tracks, karaoke, lyrics and produced music to other Maestro Pro players. We want it to be a place where composers, arrangers and performers are paid fairly for their own work, and where buyers can trust what they download.",
   "These guidelines apply to every merchant and every item sold on the Marketplace. By opening a Merchant Account or submitting content you agree to them. They are operated by The Caffeine Media Company (\"we\", \"us\"), the company behind Maestro Pro.",
   "Every item is checked before it can go on sale. If you are unsure whether something is allowed, assume it needs your own permission, and ask us at support@maestro-pro.app before you submit it."
  ],
@@ -108,6 +108,11 @@ export default {
      "id": "3.4",
      "title": "Versions",
      "text": "Different keys, instruments or arrangements of the same piece belong in one item as versions, not in separate items. A buyer gets every version in the item. Each version must be named so a buyer can tell them apart, for example the key or the instrument, and every version must be your own work or covered by the same rights."
+    },
+    {
+     "id": "3.5",
+     "title": "Produced music: singles, EPs and albums",
+     "text": "You may sell your own recordings as a single (1 to 3 tracks), an EP (3 to 6 tracks) or an album (7 or more tracks). The recordings must be yours. A cover, remix or sample of a published song or recording needs a licence from the rights holders of the song and of any recording used (2.2 to 2.5). Every track needs a clear title, the listing must say truthfully whether it is a single, an EP or an album (11.1), and any cover art must be yours too. Buyers receive the audio files and may keep them for their own listening (6.3)."
     }
    ]
   },

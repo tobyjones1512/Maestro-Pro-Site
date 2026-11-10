@@ -113,9 +113,20 @@ export function mountBuilder(form, { getKey, onDone }) {
     vs.append(el);
   };
   $("[data-addv]", form).addEventListener("click", () => vs.children.length < 12 && addVersion());
+  const musicBox = $(".mp-music", form), tracksEl = $(".mp-tracks", form), isMusic = () => form.elements.kind.value === "music";
+  const syncKind = () => { const m = isMusic(); musicBox.hidden = !m; vs.hidden = m; $("[data-addv]", form).hidden = m; $(".mp-vernote", form).hidden = m; if (m && !tracksEl.children.length) addTrack(); };
+  const addTrack = (keep) => {
+    const d = document.createElement("div"); d.className = "mp-track";
+    d.innerHTML = `<input name="ttitle" type="text" maxlength="100" placeholder="Track title" aria-label="Track title"><input name="tfile" type="file" accept=".mp3,.m4a,.wav,.flac,.aac,.aif,.aiff" aria-label="Audio file"><button class="pay__btn pay__btn--ghost" type="button" data-rm>Remove</button>`;
+    if (keep) { d.dataset.keep = keep.path; $("[name=ttitle]", d).value = keep.title || ""; $("[name=tfile]", d).title = "Current file: " + keep.name; }
+    $("[data-rm]", d).addEventListener("click", () => d.remove());
+    tracksEl.append(d);
+  };
+  $("[data-addt]", form).addEventListener("click", () => tracksEl.children.length < 40 && addTrack());
+  form.querySelectorAll("input[name=kind]").forEach((r) => r.addEventListener("change", syncKind));
   const clear = () => {
-    editing = null; form.reset(); vs.innerHTML = ""; addVersion(); setRegions([]); sync();
-    keptBoxes($("[data-kept=proof]", form), []);
+    editing = null; form.reset(); vs.innerHTML = ""; tracksEl.innerHTML = ""; addVersion(); setRegions([]); sync(); syncKind();
+    keptBoxes($("[data-kept=proof]", form), []); keptBoxes($("[data-kept=cover]", form), []);
     submit.textContent = "Submit for review"; $("[data-cancel]", form).hidden = true; say("");
   };
   $("[data-cancel]", form).addEventListener("click", () => { clear(); onDone?.(); });
@@ -125,6 +136,12 @@ export function mountBuilder(form, { getKey, onDone }) {
     f.title.value = p.title; f.composer.value = p.composer || ""; f.description.value = p.edit.description || ""; f.price.value = Number(p.priceUSD).toFixed(2);
     some.value = p.regions.length ? "some" : "all"; setRegions(p.regions); sync();
     vs.innerHTML = ""; p.edit.variants.forEach((v) => addVersion(v));
+    if (p.edit.kind === "music") {
+      form.elements.kind.value = "music"; f.format.value = p.edit.format || "single"; tracksEl.innerHTML = "";
+      p.edit.extras.filter((x) => !x.cover).forEach((x) => addTrack(x));
+      keptBoxes($("[data-kept=cover]", form), p.edit.extras.filter((x) => x.cover));
+    } else form.elements.kind.value = "score";
+    syncKind();
     // each download stays with its own version (older items had them in one list: they go with the first version)
     [...vs.children].forEach((el, i) => keptBoxes($("[data-kept=vx]", el), p.edit.extras.filter((x) => (x.v ? x.v === el.dataset.keep : i === 0))));
     keptBoxes($("[data-kept=proof]", form), p.edit.proof.files || []);
@@ -146,7 +163,7 @@ export function mountBuilder(form, { getKey, onDone }) {
       const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");
       const up = (path, blob, what) => upload(path, blob, { access: "private", handleUploadUrl: API + "upload", clientPayload: JSON.stringify({ key }), multipart: blob.size > 8e6,
         contentType: blob.type || "application/octet-stream", onUploadProgress: (p) => say(`Uploading ${what}… ${Math.round(p.percentage)}%`) });
-      const blocks = [...vs.children], variants = [], extras = [];
+      const music = isMusic(), blocks = music ? [] : [...vs.children], variants = [], extras = [];
       for (const el of blocks) {
         const label = $("[name=vlabel]", el).value.trim(), score = $("[name=vscore]", el).files[0], karaoke = $("[name=vkaraoke]", el).files[0];
         const addExtras = async (vid) => {   // this version's downloads: the kept ones, then any new files
@@ -164,8 +181,26 @@ export function mountBuilder(form, { getKey, onDone }) {
       }
       const proof = keptPaths($("[data-kept=proof]", form));
       for (const file of [...f.proofFiles.files]) { if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed as proof. Use PDF, PNG, JPG or TXT.`); const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
+      let release = {};
+      if (music) {
+        const rows = [...tracksEl.children], tracks = [], range = { single: [1, 3], ep: [3, 6], album: [7, 40] }[f.format.value];
+        if (rows.length < range[0] || rows.length > range[1]) throw new Error(`Add ${range[0]} to ${range[1]} tracks for a ${f.format.value === "ep" ? "EP" : f.format.value}.`);
+        for (const r of rows) {
+          const t = $("[name=ttitle]", r).value.trim(), file = $("[name=tfile]", r).files[0];
+          if (!t) throw new Error("Give every track a title.");
+          if (!file && !r.dataset.keep) throw new Error(`Choose the audio file for "${t}".`);
+          if (file && !AUDIO.includes(ext(file.name))) throw new Error(`${file.name} isn't an audio file we accept (MP3, M4A, WAV or FLAC).`);
+          let path = r.dataset.keep;
+          if (file) { path = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, t); }
+          tracks.push({ path, title: t });
+        }
+        let cover = keptPaths($("[data-kept=cover]", form))[0] || "";
+        const art = f.cover.files[0];
+        if (art) { if (!/\.(png|jpe?g)$/i.test(art.name)) throw new Error("Cover art must be a PNG or JPG."); cover = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(art.name)}`; await up(cover, art, "the cover art"); }
+        release = { kind: "music", format: f.format.value, tracks, cover };
+      }
       const contents = [variants.length > 1 ? `${variants.length} versions` : "Score", extras.length && `${extras.length} download${extras.length > 1 ? "s" : ""}`].filter(Boolean).join(", ");
-      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
+      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, ...release, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
       clear(); say("Submitted for review. Every file is checked, then the whole product is reviewed against the guidelines. You will be emailed the result.");
       onDone?.();
     } catch (err) { say(err.message, true); }
@@ -176,13 +211,24 @@ export function mountBuilder(form, { getKey, onDone }) {
 }
 
 export const builderFields = `
+  <fieldset class="field mp-kind"><legend>What are you selling?</legend>
+    <label><input type="radio" name="kind" value="score" checked> Sheet music, karaoke or backing tracks for Maestro Pro</label>
+    <label><input type="radio" name="kind" value="music"> Produced music: a single, EP or album</label></fieldset>
   <label class="field">Title<input name="title" type="text" required maxlength="100"></label>
-  <label class="field">Composer or arranger<input name="composer" type="text" maxlength="100"></label>
+  <label class="field">Composer, arranger or artist<input name="composer" type="text" maxlength="100"></label>
   <label class="field">Description<textarea name="description" rows="3" maxlength="600"></textarea></label>
   <label class="field">Price in US dollars (.00, .25, .50 or .75)<input name="price" type="number" inputmode="decimal" min="0.25" max="999.75" step="0.25" required></label>
+  <div class="mp-music" hidden>
+    <label class="field">Release type<select name="format"><option value="single">Single (1 to 3 tracks)</option><option value="ep">EP (3 to 6 tracks)</option><option value="album">Album (7 to 40 tracks)</option></select></label>
+    <div class="mp-kept" data-kept="cover"></div>
+    <label class="field">Cover art (optional, PNG or JPG)<input name="cover" type="file" accept=".png,.jpg,.jpeg"></label>
+    <div class="mp-tracks"></div>
+    <button class="pay__btn pay__btn--ghost" type="button" data-addt>Add a track</button>
+    <p class="mp-note">MP3, M4A, WAV or FLAC. Buyers can download every track. MP3 tracks get a short preview on the item page. Only sell recordings you own (<a href="/marketplace/guidelines/#g3-5" target="_blank">guideline 3.5</a>).</p>
+  </div>
   <div class="mp-vers"></div>
   <button class="pay__btn pay__btn--ghost" type="button" data-addv>Add another version (a different key or instrument)</button>
-  <p class="mp-note">Buyers get every version. Put different keys or instruments of the same piece here, not in separate products. Add each version's PDFs to that version.</p>
+  <p class="mp-note mp-vernote">Buyers get every version. Put different keys or instruments of the same piece here, not in separate products. Add each version's PDFs to that version.</p>
   <fieldset class="field"><legend>Proof that you own the rights (optional)</legend>
     <p class="mp-note">A licence, a letter of permission, a copyright registration, or dated drafts or project files that show you wrote it. PDF, PNG, JPG or TXT, 25 MB each, up to 5 files.</p>
     <label class="field">How do you hold the rights?<textarea name="proofText" rows="2" maxlength="1500"></textarea></label>
@@ -253,6 +299,7 @@ export async function sendAppeal({ key, id, text, files, say = () => {} }) {
 const size = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
 /** The downloads of a paid order (from the "order" call): the bundles for Maestro Pro, then every plain file for use anywhere. */
 export function downloadsHtml(o) {
+  if (o.kind === "music") return `<h2>Your music</h2><ul>${(o.extras || []).map((x) => `<li><a href="${esc(x.url)}">${esc(x.title || x.name)}</a> <small>${size(x.size)}</small></li>`).join("")}</ul><p class="mp-note">These are yours to keep and listen to. You may not resell or share them (<a href="/marketplace/guidelines/#g6-3">guideline 6.3</a>).</p>`;
   const v = o.variants || [], label = (x) => (x.label ? ` (${esc(x.label)})` : "");
   return `<h2>For Maestro Pro</h2>
     <p>${v.map((x) => `<a class="pay__btn" href="${esc(x.url)}">Download ${esc(o.title)}${label(x)}</a>`).join(" ")}</p>

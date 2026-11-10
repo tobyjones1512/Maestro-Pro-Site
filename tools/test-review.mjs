@@ -147,4 +147,18 @@ assert.ok(emails.some((m) => /Merchant Account has been closed/.test(m.subject))
   await step(id);
   assert.equal((await products()).find((x) => x.id === id).status, "ready");
 }
+// 9. produced music: audio tracks and cover art are scanned and reviewed, with no .maestropro bundle
+{
+  const id = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", path = (n) => `marketplace/extras/${id}/e1111111-1111-1111-1111-11111111111${n}-t${n}.mp3`;
+  await put(path(1), "audio one ".repeat(80)); await put(path(2), "audio two ".repeat(90));
+  await put(`marketplace/extras/${id}/e3333333-3333-3333-3333-333333333333-cover.png`, "png ".repeat(200));
+  await addProduct({ ...base, id, title: "Night Drive", contents: "Single, 2 tracks", kind: "music", format: "single", variants: [], created: 50,
+    extras: [{ name: "t1.mp3", size: 800, path: path(1), title: "Night Drive", n: 1 }, { name: "t2.mp3", size: 900, path: path(2), title: "Night Drive (Instrumental)", n: 2 },
+      { name: "cover.png", size: 800, path: `marketplace/extras/${id}/e3333333-3333-3333-3333-333333333333-cover.png`, cover: true }] });
+  llm.answer = '{"decision":"accept","guidelines":[],"reason":"Original."}';
+  const m = await run(id);
+  assert.equal(m.status, "ready");
+  assert.match(llm.last.messages[1].content, /<release type="single" tracks="2" cover-art="yes">/);
+  assert.equal((await import("../marketplace-api/api/_bundle.js")).variantsOf(m).length, 0);
+}
 console.log("ok");

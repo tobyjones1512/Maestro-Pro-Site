@@ -204,3 +204,15 @@ dialog.mp-viewer::backdrop{background:rgba(10,7,4,.78)}
 .mp-viewer__body iframe{width:100%;height:70vh;border:0;border-radius:6px;background:#fff}
 .mp-viewer__body img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:6px}
 .mp-viewer__body pre{margin:0;width:100%;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.5 ui-monospace,Menlo,monospace;align-self:start}
+
+/* produced music */
+.mp-cover{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;margin:0 0 10px;background:var(--hair)}
+.mp-cover--big{width:12rem;margin:0 0 14px}
+.mp-kind label{display:block;margin:.3em 0}
+.mp-track{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:0 0 8px;counter-increment:trk}
+.mp-track::before{content:counter(trk) ".";position:absolute;margin-left:-1.6rem;color:var(--fg2)}
+.mp-tracks{counter-reset:trk;padding-left:1.6rem;margin:10px 0}
+.mp-track input[type=text]{font:inherit;padding:7px 10px;border:1px solid var(--hair);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
+.mp-track input[type=file]{min-width:0;font-size:.85rem}
+.mp-track .pay__btn{margin:0;padding:5px 12px;font-size:.8rem}
+@media(max-width:600px){.mp-track{grid-template-columns:1fr}}

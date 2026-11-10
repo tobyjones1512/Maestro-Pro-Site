@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=8">
+<link rel="stylesheet" href="/assets/marketplace.css?v=9">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -78,7 +78,7 @@
   </form></dialog>
 </div>
 <script type="module">
-import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile } from "/assets/marketplace.js?v=8";
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile } from "/assets/marketplace.js?v=9";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");

@@ -4,7 +4,7 @@
 import { inflateRawSync } from "node:zlib";
 import guidelines from "../lib/guidelines.js";
 import { readJson, updateProduct, products } from "./_blob.js";
-import { bundleInfo, readRange, readBlob, ALLOWED, ext, variantsOf } from "./_bundle.js";
+import { bundleInfo, readRange, readBlob, ALLOWED, COVER, ext, variantsOf } from "./_bundle.js";
 import { startScan, pollScan, SCAN_CALLS } from "./_vt.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { OWNER } from "./_mp.js";
@@ -106,7 +106,7 @@ async function extraText(p) {
 
 // ---- The reviewer
 const POLICY = guidelines.sections.map((s) => `${s.n}. ${s.title}\n` + s.items.map((i) => `${i.id} ${i.title}: ${i.text}`).join("\n")).join("\n\n");
-const SYSTEM = `You review items submitted to the Maestro Pro Marketplace, where musicians sell sheet music, backing tracks, karaoke and lyrics. Decide whether an item may go on sale, using only the guidelines below.
+const SYSTEM = `You review items submitted to the Maestro Pro Marketplace, where musicians sell sheet music, backing tracks, karaoke, lyrics and produced music (their own singles, EPs and albums). Decide whether an item may go on sale, using only the guidelines below.
 The merchant has confirmed they own the rights. That is not proof. Look for signs the item copies someone else's work:
 - A title, lyric or tune that is a recognisable, commercially published song or composition whose writer is alive or died within the last 70 years (arrangements, transcriptions, covers and lyrics of it need a licence under 2.2, 2.4 and 2.5), unless the listing shows a licence.
 - A copyright line, publisher's name, "all rights reserved", a publisher's edition, or a scan of a printed edition in the file text or tags.
@@ -115,6 +115,7 @@ The merchant has confirmed they own the rights. That is not proof. Look for sign
 - Spam (10.1 to 10.3): the same piece offered again as a new item when it should be a version, padding, keyword stuffing or advertising.
 - A misleading or confusing listing (11.1 to 11.4): a title, composer, description or version name that does not say clearly what the buyer gets, imitates a more famous work, or does not match the files.
 - Countries ("available in") where the work is probably still protected even though it looks old or public domain elsewhere (2.9).
+A <release> block is produced music: a single, EP or album of the merchant's own recordings (3.5). Refuse a cover, remix or sample of a published song or recording without a licence, tags that name another artist, label or album, a release type that does not fit the track count, or cover art that copies another release.
 Public domain works (writer died before 1955) are fine when the arrangement or engraving looks like the merchant's own. Original work with no sign of copying is fine. If it looks like a well-known protected work and the listing gives no licence, refuse. If nothing points to a problem, accept.
 The merchant may add a <proof> block: documents (a licence, a letter of permission, a copyright registration, dated drafts) and a statement about their rights. Weigh it as real evidence only if it names the work and the parties and fits the item; a bare claim does not outweigh clear signs of copying.
 Sometimes the merchant is appealing an earlier refusal and has added a statement and evidence in an <appeal> block. Weigh it: a real licence, a letter of permission from the rights holder, or clear proof of authorship (dated drafts, project files) can change the decision; a bare claim of ownership, or evidence that does not match the work, cannot. Judge the item itself again, not only the earlier reason.
@@ -196,7 +197,7 @@ async function buildList(p) {
     files.push(...info.files.map((f) => ({ name: f.name, size: f.size, offset: f.offset, bundle: v.id, scan: queued() })));
   }
   for (const x of p.extras || []) {
-    if (!ALLOWED.has(ext(x.name))) return { refuse: ["1.2", `A download has a file type that isn't allowed: ${tidy(x.name)}.`] };
+    if (!ALLOWED.has(ext(x.name)) && !(x.cover && COVER.has(ext(x.name)))) return { refuse: ["1.2", `A download has a file type that isn't allowed: ${tidy(x.name)}.`] };
     files.push({ name: x.name, size: x.size, path: x.path, scan: queued() });
   }
   for (const x of p.proof?.files || []) files.push({ name: x.name, size: x.size, path: x.path, proof: true, scan: queued() });
@@ -251,7 +252,17 @@ async function reviewStep(p) {
       count += info.files.length;
       parts.push(`<version name="${v.label || "main"}">\n${await evidence(v.id, info.files, 6)}\n</version>`);
     }
-    for (const x of (p.extras || []).slice(0, 4)) { count++; parts.push(`<download name="${x.name}">\n${(await docs([x])).replace(/<\/?document[^>]*>/g, "")}\n</download>`); }
+    if (p.kind === "music") {
+      const tracks = (p.extras || []).filter((x) => !x.cover);
+      const facts = [];
+      for (const x of tracks.slice(0, 12)) {
+        let tags = "";
+        try { if (ext(x.name) === "mp3") tags = id3((await readBlob(x.path))?.subarray(0, 65536) || Buffer.alloc(0)); } catch { /* described by its name only */ }
+        facts.push(`<track n="${x.n}" title="${x.title}" file="${x.name}" size="${x.size}">${tags ? "\n" + tags + "\n" : ""}</track>`);
+      }
+      count += (p.extras || []).length;
+      parts.push(`<release type="${p.format}" tracks="${tracks.length}"${(p.extras || []).some((x) => x.cover) ? ' cover-art="yes"' : ""}>\n${facts.join("\n")}\n</release>`);
+    } else for (const x of (p.extras || []).slice(0, 4)) { count++; parts.push(`<download name="${x.name}">\n${(await docs([x])).replace(/<\/?document[^>]*>/g, "")}\n</download>`); }
     const v = await ask(p, parts.join("\n"), count, await extraText(p));
     await decide(p.id, v.accept, v.ids, v.reason);
   } catch (e) {
