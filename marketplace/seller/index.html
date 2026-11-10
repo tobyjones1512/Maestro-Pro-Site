@@ -58,7 +58,7 @@ async function load() {
   $("who").textContent = s.name; $("cut").textContent = Math.round(s.cut * 100);
   const todo = $("todo");
   todo.hidden = s.canPublish;
-  todo.innerHTML = s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts with Mollie</a>. You can add products after that.`;
+  todo.innerHTML = s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts</a>. You can add products after that.`;
   $("add").hidden = !s.canPublish;
   $("sum").textContent = `${s.sales.count} sold, ${dollars(s.sales.grossUSD)} in sales, ${dollars(s.sales.earnedUSD)} your share (before Mollie's own fees).`;
   $("list").innerHTML = productsTable;

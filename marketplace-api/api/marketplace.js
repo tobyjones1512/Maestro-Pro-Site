@@ -200,7 +200,7 @@ async function syncFee(m) {
   m = { ...(await readJson(SELLER(m.id))), fee: { ...m.fee, status: s, ...(s === "paid" && { paidAt: Date.now() }) } };
   await writeRaw(SELLER(m.id), m);
   if (s === "paid") await sendMail({ to: m.email, idem: `mp-fee-${m.id}`, subject: "Your Merchant Account is open",
-    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: `Thank you. Your technology fee has been paid and your Maestro Pro Merchant Account is open.\n\nThe next step is to set up your payout details with Mollie, so that your share of every sale is paid to you. After that you can add content. Every item is checked before it goes on sale, so please read the [Merchant Content Review Guidelines](guidelines) first.`, buttons: [["Open your merchant account", LINKS.merchant]] }) });
+    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: `Thank you. Your technology fee has been paid and your Maestro Pro Merchant Account is open.\n\nThe next step is to set up your payout details, so that your share of every sale is paid to you. After that you can add content. Every item is checked before it goes on sale, so please read the [Merchant Content Review Guidelines](guidelines) first.`, buttons: [["Open your merchant account", LINKS.merchant]] }) });
   return m;
 }
 async function feeWebhook(req, res) {
@@ -248,12 +248,12 @@ async function callback(req, res) {
   const back = (msg) => res.redirect(302, `${SITE}/marketplace/onboard/?error=${encodeURIComponent(msg)}`);
   const m = st && Date.now() - st.ts < 3600e3 && (await readJson(SELLER(st.m)));
   if (!m || m.fee?.status !== "paid") return back("That link expired. Please start the payout set-up again.");
-  if (req.query.error) return back("You didn't finish setting up your payouts. Nothing has changed, and you can carry on whenever you're ready.");   // they backed out at Mollie
-  if (!req.query.code) return back("Mollie didn't connect. Please try again.");
+  if (req.query.error) return back("You didn't finish setting up your payouts. Nothing has changed, and you can carry on whenever you're ready.");   // they backed out of the payout set-up
+  if (!req.query.code) return back("The payout set-up didn't complete. Please try again.");
   const t = await oauth({ grant_type: "authorization_code", code: req.query.code, redirect_uri: `${API}/api/marketplace-callback` });
-  if (!t.data.access_token) return back("Mollie refused the connection. Please try again.");
+  if (!t.data.access_token) return back("The payout set-up was refused. Please try again.");
   const [org, profile] = await Promise.all([mollie("GET", "/organizations/me", t.data.access_token), mollie("GET", "/profiles/me", t.data.access_token)]);
-  if (!org.data.id || !profile.data.id) return back("Couldn't read your Mollie account. Finish setting it up in Mollie, then try again.");
+  if (!org.data.id || !profile.data.id) return back("We couldn't read your payout account. Finish setting it up, then try again.");
   await writeRaw(SELLER(m.id), { ...m, mollieOrg: org.data.id, profileId: profile.data.id, access: t.data.access_token, refresh: t.data.refresh_token, exp: Date.now() + t.data.expires_in * 1e3, connectedAt: Date.now() });
   res.redirect(302, `${SITE}/marketplace/seller/`);
 }
@@ -311,7 +311,7 @@ async function upload(req, res) {
 async function publish(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
-  if (!ready(me)) return fail(res, 403, me.fee?.status === "paid" ? "Set up your payout details with Mollie before adding content." : "Pay the technology fee before adding content.");
+  if (!ready(me)) return fail(res, 403, me.fee?.status === "paid" ? "Set up your payout details before adding content." : "Pay the technology fee before adding content.");
   const b = req.body || {};
   const usd = price(b.priceUSD);
   if (!usd) return fail(res, 400, "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed.");
