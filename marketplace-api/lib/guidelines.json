@@ -217,22 +217,27 @@
     },
     {
       "n": 8,
-      "title": "Copyright complaints",
+      "title": "Copyright disputes",
       "items": [
         {
           "id": "8.1",
-          "title": "Reporting an infringement",
-          "text": "If you own the rights to something sold on the Marketplace and you did not allow it, email support@maestro-pro.app with the title of the item, proof that you own the rights, and a statement that the sale is not authorised. We act on complaints promptly."
+          "title": "Dispute Resolution Centre",
+          "text": "If you own the rights to something sold on the Marketplace and you did not allow it, file a dispute in the Dispute Resolution Centre on the Marketplace website, or tell Maestro Pro Support, who can file it for you. Say which work is yours and why the item infringes it. A claim must be made in good faith. Claims that are false or made to harm a merchant are dismissed, and the person making them may be blocked."
         },
         {
           "id": "8.2",
-          "title": "What we do",
-          "text": "When we receive a credible complaint we may withdraw the item from sale straight away, pass your details and the complaint to the other party, and hold the earnings from the item while the matter is settled. Counter-notices from merchants are considered fairly."
+          "title": "What happens to the item",
+          "text": "While a dispute is open the item is off sale. The merchant is told, and has 7 days to respond in the Dispute Resolution Centre with their own evidence, such as a licence or proof that they wrote the work. We may decide without a response after 7 days. A person at Maestro Pro decides every dispute. If it is dismissed the item goes back on sale. People who already bought the item keep it (6.1)."
         },
         {
           "id": "8.3",
-          "title": "Repeat infringement",
-          "text": "Merchants who sell content they do not have the right to sell are warned. Merchants who do it again, or who do it knowingly, have their Merchant Account closed, and no technology fee is refunded."
+          "title": "Copyright strikes",
+          "text": "A dispute that is upheld removes the item for good and gives the merchant a copyright strike. Merchants who sell content they do not have the right to sell are warned, and strikes stay on the Merchant Account."
+        },
+        {
+          "id": "8.4",
+          "title": "Three strikes",
+          "text": "A merchant with 3 copyright strikes is barred from the Marketplace. The Merchant Account is closed, every item is withdrawn from sale, payouts connected with the account are cancelled, our connection to the merchant's payment account is cut, and no technology fee is refunded. Money that has already been paid into the merchant's own payment account is between the merchant and their payment provider, and the merchant remains responsible for any refunds that are due (7.3)."
         }
       ]
     },

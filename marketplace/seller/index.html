@@ -33,6 +33,7 @@
       <button role="tab" id="t-sales" data-tab="sales" aria-selected="false">Sales and Trends</button>
       <button role="tab" id="t-add" data-tab="add" aria-selected="false">Add Product</button>
       <button role="tab" id="t-account" data-tab="account" aria-selected="false">Account</button>
+      <button role="tab" id="t-disp" data-tab="disp" aria-selected="false"><span>Dispute Resolution Centre</span> <i id="n-disp" hidden></i></button>
       <button role="tab" id="t-esc" data-tab="esc" aria-selected="false" hidden><span>Escalations</span> <i id="n-esc" hidden></i></button>
     </nav>
     <main class="page" id="main">
@@ -56,6 +57,11 @@
         <div class="card"><dl id="acct"></dl></div>
         <p class="mp-note">Need help? <a href="/support/">Contact support</a> or read the <a href="/marketplace/guidelines/">guidelines</a>.</p>
       </section>
+      <section id="p-disp" role="tabpanel" aria-labelledby="t-disp" hidden>
+        <h1>Dispute Resolution Centre</h1><p class="sub">Copyright disputes about items on the Marketplace. A rights holder can <a href="/marketplace/disputes/" target="_blank">file a dispute</a>. An item is off sale while a dispute is open, and you have <span id="rd">7</span> days to respond. Three upheld disputes close a Merchant Account (<a href="/marketplace/guidelines/#s8" target="_blank">guideline 8</a>).</p>
+        <div class="stats" id="strikes"></div>
+        <div id="disps"></div>
+      </section>
       <section id="p-esc" role="tabpanel" aria-labelledby="t-esc" hidden>
         <h1>Escalations</h1><p class="sub">Items refused three times. Your decision is final: accept it, or refuse it permanently.</p>
         <div id="escs"></div>
@@ -73,7 +79,7 @@
 </div>
 <script type="module">
 import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal } from "/assets/marketplace.js";
-const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc"];
+const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const fromLink = new URLSearchParams(location.hash.slice(1)).get("k");
 if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
@@ -97,8 +103,8 @@ async function load() {
   $("out").hidden = true; $("in").hidden = false;
   $("who").textContent = s.name; document.querySelectorAll(".cut").forEach((e) => (e.textContent = Math.round(s.cut * 100)));
   const todo = $("todo");
-  todo.hidden = s.canPublish;
-  todo.innerHTML = s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts</a>. You can add products after that.`;
+  todo.hidden = s.canPublish && !s.barred;
+  todo.innerHTML = s.barred ? "Your Merchant Account has been closed after three copyright strikes. Your items are withdrawn and payouts are cancelled. People who bought your items keep them." : s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts</a>. You can add products after that.`;
   $("t-add").hidden = $("new").hidden = !s.canPublish;
   const n = s.products.filter(inReview).length;
   $("n-products").hidden = !n; $("n-products").textContent = n;
@@ -111,6 +117,18 @@ async function load() {
     : `<div class="empty">No sales yet.</div>`;
   $("acct").innerHTML = [["Name", esc(s.name)], ["Email", esc(s.email)], ["Technology fee", s.fee === "paid" ? "Paid" : "Not paid"], ["Payouts", s.connected ? "Set up" : "Not set up"], ["Marketplace share", Math.round(s.cut * 100) + "% of each sale"]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+  const D = s.disputes || [], live = D.filter((d) => d.status === "open" || d.status === "responded");
+  $("n-disp").hidden = !live.length; $("n-disp").textContent = live.length; $("rd").textContent = s.respondDays;
+  $("strikes").innerHTML = stat("Copyright strikes", `${s.strikes} of ${s.maxStrikes}`) + stat("Open disputes", live.length);
+  const ST = { open: "Open", responded: "Responded", upheld: "Upheld", dismissed: "Dismissed" }, day = (t) => new Date(t).toLocaleDateString();
+  $("disps").innerHTML = D.length ? D.map((d) => `<div class="card form" data-id="${esc(d.id)}"><h2>${esc(d.title)} <span class="mp-status mp-status--${d.status === "upheld" ? "refused" : d.status === "dismissed" ? "ready" : "wait"}">${ST[d.status]}</span></h2>
+    <p><b>Filed by:</b> ${esc(d.claimant)}${d.email ? ` (${esc(d.email)}${d.via === "support" ? ", through the support bot" : ""})` : ""}, ${day(d.created)}</p>
+    <p><b>The work:</b> ${esc(d.work)}</p><p>${esc(d.details)}</p>
+    ${d.response ? `<p><b>Merchant response:</b> ${esc(d.response.text)}</p>` : ""}
+    ${d.decision ? `<p><b>Decision:</b> ${ST[d.status]}, ${day(d.decision.at)}${d.decision.note ? `. ${esc(d.decision.note)}` : ""}</p>` : ""}
+    ${d.status === "open" || d.status === "responded" ? (s.admin
+      ? `<label class="field">Note to both sides (optional)<textarea rows="2" maxlength="600" data-note></textarea></label><div class="row"><button class="pay__btn" type="button" data-act="uphold">Uphold: remove item and give a strike</button><button class="pay__btn pay__btn--ghost" type="button" data-act="dismiss">Dismiss: put back on sale</button></div>`
+      : `<p class="sub">Respond by ${day(d.respondBy)}.</p><label class="field">Your response<textarea rows="3" maxlength="2000" data-text>${esc(d.response?.text || "")}</textarea></label><button class="pay__btn" type="button" data-act="respond">Send response</button>`) : ""}</div>`).join("") : '<div class="card empty">No disputes.</div>';
   const E = s.escalations || [];
   $("t-esc").hidden = !s.admin; $("n-esc").hidden = !E.length; $("n-esc").textContent = E.length;
   $("escs").innerHTML = E.length ? E.map((p) => `<div class="card form" data-id="${esc(p.id)}"><h2>${esc(p.title)} <small>${esc(p.composer || "")}</small></h2>
@@ -138,6 +156,19 @@ $("af").addEventListener("submit", async (e) => {
   b.disabled = true;
   try { await sendAppeal({ key, id: appealId, text: f.text.value, files, say: (t) => (m.textContent = t) }); $("appeal").close(); tab("products"); load(); } catch (err) { m.textContent = err.message; }
   b.disabled = false;
+});
+$("disps").addEventListener("click", async (e) => {
+  const b = e.target.closest("button[data-act]");
+  if (!b) return;
+  const card = b.closest("[data-id]"), act = b.dataset.act;
+  try {
+    if (act === "respond") await api("dispute-respond", { method: "POST", key, body: { id: card.dataset.id, text: card.querySelector("[data-text]").value } });
+    else {
+      if (!confirm(act === "uphold" ? "Uphold this dispute? The item is removed for good and the merchant gets a strike." : "Dismiss this dispute and put the item back on sale?")) return;
+      await api("dispute-decide", { method: "POST", key, body: { id: card.dataset.id, uphold: act === "uphold", note: card.querySelector("[data-note]").value } });
+    }
+    load();
+  } catch (err) { alert(err.message); }
 });
 $("escs").addEventListener("click", async (e) => {
   const b = e.target.closest("button");

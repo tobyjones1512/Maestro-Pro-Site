@@ -12,6 +12,7 @@ import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, curren
 import { BUNDLE, ALLOWED, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
+import { disputes, fileDispute, respond as respondDispute, decide as decideDispute, STRIKES, RESPOND_DAYS } from "./_disputes.js";
 import guidelines from "../lib/guidelines.js";
 
 const ORDER = (id) => `marketplace/orders/${id}.json`;
@@ -27,7 +28,7 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 const fail = (res, code, error) => res.status(code).json({ error });
 const inReview = (p) => p.status === "scanning" || p.status === "reviewing";
-const onSale = (p) => p.status === "ready" && !p.withdrawn;
+const onSale = (p) => p.status === "ready" && !p.withdrawn && !p.hold;   // a dispute puts an item on hold
 const first = (name) => String(name || "").split(" ")[0] || "there";
 
 async function who(req) {
@@ -39,7 +40,7 @@ async function who(req) {
   return m && m.keyHash === sha(secret) ? m : null;
 }
 /** A merchant may add content once the fee is paid and a Mollie account is connected. */
-const ready = (m) => Boolean(m.admin || (m.fee?.status === "paid" && m.access));
+const ready = (m) => Boolean(m.admin || (!m.barred && m.fee?.status === "paid" && m.access));
 
 /** The bundle must be there and really be a .maestropro file, not whatever a merchant chose to upload. */
 async function bundleOK(id) {
@@ -326,7 +327,8 @@ async function merchant(req, res) {
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
     sales: { count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd })) },
-    cut: CUT, maxRefusals: MAX_REFUSALS,
+    cut: CUT, maxRefusals: MAX_REFUSALS, strikes: (me.strikes || []).length, maxStrikes: STRIKES, barred: Boolean(me.barred), respondDays: RESPOND_DAYS,
+    disputes: (await disputes()).filter((d) => me.admin || d.sellerId === me.id).reverse().map((d) => ({ id: d.id, created: d.created, status: d.status, title: d.productTitle, claimant: d.claimant.name + (d.claimant.org ? `, ${d.claimant.org}` : ""), ...(me.admin && { email: d.claimant.email, via: d.via }), work: d.work, details: d.details, respondBy: d.respondBy, response: d.response, decision: d.decision })),
     ...(me.admin && { escalations: (await products()).filter((p) => p.status === "escalated").map((p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, seller: p.sellerName, history: p.history || [] })) }),
   });
 }
@@ -382,6 +384,30 @@ async function evidenceFile(req, res) {
   res.status(200).send(buf);
 }
 
+// ---- Dispute Resolution Centre (guideline 8)
+/** Anyone may file (a rights holder on the website, or the support bot from an email). Nothing is decided by filing: the item goes on hold and a person decides. */
+async function disputeFile(req, res) {
+  const b = req.body || {};
+  if (b.website) return res.status(200).json({ ok: true });   // a field only a robot fills in
+  const r = await fileDispute(b);
+  if (r.error) return fail(res, r.code || 400, r.error);
+  res.status(200).json({ ok: true, id: r.id });
+}
+async function disputeRespond(req, res) {
+  const me = await who(req);
+  if (!me) return fail(res, 401, "Not signed in.");
+  const text = clip(req.body?.text, 2000);
+  if (text.length < 10) return fail(res, 400, "Write your response.");
+  if (!(await respondDispute(me.id, String(req.body?.id), text))) return fail(res, 404, "That dispute can't be answered.");
+  res.status(200).json({ ok: true });
+}
+async function disputeDecide(req, res) {
+  if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
+  const b = req.body || {};
+  if (!(await decideDispute(String(b.id), b.uphold === true, clip(b.note, 600)))) return fail(res, 404, "Nothing waiting for a decision.");
+  res.status(200).json({ ok: true });
+}
+
 // ---- Adding content (a merchant with their key, or the site owner with the admin key)
 async function upload(req, res) {
   const me = await who(req).catch(() => null);
@@ -435,6 +461,7 @@ async function content(b) {
 async function publish(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
+  if (me.barred) return fail(res, 403, "Your Merchant Account has been closed.");
   if (!ready(me)) return fail(res, 403, me.fee?.status === "paid" ? "Set up your payout details before adding content." : "Pay the technology fee before adding content.");
   const b = req.body || {}, c = await content(b);
   if (c.error) return fail(res, 400, c.error);
@@ -449,6 +476,7 @@ async function publish(req, res) {
 async function edit(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
+  if (me.barred) return fail(res, 403, "Your Merchant Account has been closed.");
   if (!ready(me)) return fail(res, 403, "Your Merchant Account isn't set up to add content.");
   const b = req.body || {}, c = await content(b);
   if (c.error) return fail(res, 400, c.error);
@@ -545,7 +573,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

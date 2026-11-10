@@ -113,4 +113,30 @@ assert.equal(q.status, "refused"); assert.deepEqual(q.review.ids, ["10.1"]); ass
 await updateProduct(P1, (x) => ({ ...x, status: "scanning", review: {}, extras: [], published: x.published }));
 llm.answer = no; q = await run(P1);
 assert.equal(q.status, "refused"); assert.equal(q.published.extras.length, 1); assert.equal(q.refusals, 1);
+
+// 7. Disputes: filing puts the item on hold, an upheld dispute removes it and gives a strike, the third strike bars the merchant and withdraws everything.
+const { fileDispute, respond, decide, disputes } = await import("../marketplace-api/api/_disputes.js");
+const mk = async (id, t) => addProduct({ ...base, id, title: t, created: 100, status: "ready", published: { variants: [{ id }], extras: [] } });
+const D = ["d1111111-1111-1111-1111-111111111111", "d2222222-2222-2222-2222-222222222222", "d3333333-3333-3333-3333-333333333333", "d4444444-4444-4444-4444-444444444444"];
+await mk(D[0], "Song One"); await mk(D[1], "Song Two"); await mk(D[2], "Song Three"); await mk(D[3], "Song Four");
+const claim = { name: "Rae Hill", email: "rae@example.com", work: "My song", details: "I wrote this song and it is copied here.", goodFaith: true };
+assert.equal((await fileDispute({ ...claim, listing: "nothing", goodFaith: true })).code, 404);
+assert.equal((await fileDispute({ ...claim, listing: D[0], goodFaith: false })).code, 400);
+const f1 = await fileDispute({ ...claim, listing: `https://maestro-pro.app/marketplace/item/?id=${D[0]}`, via: "support" });
+assert.ok(f1.id); assert.equal((await fileDispute({ ...claim, listing: D[0] })).id, f1.id);   // the same claim is not filed twice
+assert.ok((await products()).find((x) => x.id === D[0]).hold);
+assert.ok(emails.some((m) => /^Copyright dispute: Song One/.test(m.subject)) && emails.some((m) => /We have your copyright dispute/.test(m.subject)));
+assert.equal((await respond("aaaaaaaaaaaaaaaa", f1.id, "I hold the licence.")).status, "responded");
+assert.equal(await respond("someoneelse0000000", f1.id, "x"), null);
+await decide(f1.id, false, "Licence checked.");   // dismissed: back on sale
+assert.equal((await products()).find((x) => x.id === D[0]).hold, undefined);
+for (const [i, id] of [D[1], D[2], D[3]].entries()) {
+  const f = await fileDispute({ ...claim, listing: id }); await decide(f.id, true, "");
+  const m = JSON.parse(store.get("marketplace/sellers/aaaaaaaaaaaaaaaa.json").data.toString());
+  assert.equal(m.strikes.length, i + 1); assert.equal(Boolean(m.barred), i === 2);
+}
+const all = await products();
+assert.equal(all.find((x) => x.id === D[1]).final, true);
+assert.ok(all.filter((x) => x.sellerId === "aaaaaaaaaaaaaaaa").every((x) => x.withdrawn));   // barred: everything withdrawn, even the dismissed one
+assert.ok(emails.some((m) => /Merchant Account has been closed/.test(m.subject)));
 console.log("ok");

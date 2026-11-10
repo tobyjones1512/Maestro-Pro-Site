@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Report a copyright problem | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a><a class="top__sell" href="/marketplace/onboard/">Sell</a></nav>
+</header>
+<main id="main" class="plain">
+<h1>Dispute Resolution Centre</h1>
+<p>If something on the Marketplace uses your work without your permission, tell us here. The item goes off sale while we look at it, the merchant is asked to respond, and a person at Maestro Pro decides. If the dispute is upheld the item is removed for good and the merchant gets a copyright strike. Three strikes close their account. Read <a href="/marketplace/guidelines/#s8">the rules</a>.</p>
+<form id="f" class="pay pay--wide">
+  <label class="field">Your name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
+  <label class="field">Company or rights holder you act for (optional)<input name="org" type="text" maxlength="80"></label>
+  <label class="field">Your email<input name="email" type="email" required autocomplete="email"></label>
+  <label class="field">The Marketplace item (paste its address, or its exact title)<input name="listing" type="text" required maxlength="300"></label>
+  <label class="field">Your work that it uses<input name="work" type="text" required maxlength="200"></label>
+  <label class="field">Why this is yours, and how the item infringes it<textarea name="details" rows="5" required minlength="20" maxlength="2000"></textarea></label>
+  <input name="website" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+  <label class="field"><input name="good" type="checkbox" required> I am the rights holder, or I am authorised to act for them. The information I have given is accurate and I make this claim in good faith. I understand that a false claim can lead to action against me.</label>
+  <button class="pay__btn" type="submit">File dispute</button>
+  <p class="pay__msg" role="status"></p>
+</form>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/marketplace/disputes/">Report copyright</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api } from "/assets/marketplace.js";
+const f = document.getElementById("f"), m = f.querySelector(".pay__msg"), b = f.querySelector("button");
+f.addEventListener("submit", async (e) => {
+  e.preventDefault(); b.disabled = true; m.textContent = "";
+  const v = f.elements;
+  try {
+    await api("dispute-file", { method: "POST", body: { name: v.name.value, org: v.org.value, email: v.email.value, listing: v.listing.value, work: v.work.value, details: v.details.value, goodFaith: v.good.checked, website: v.website.value } });
+    f.hidden = true; m.parentNode.insertAdjacentHTML("beforeend", "<p><b>Thank you.</b> Your dispute is filed and we have emailed you a reference. The item is off sale while it is looked at, and we will email you the outcome.</p>");
+  } catch (err) { m.textContent = err.message; b.disabled = false; }
+});
+</script>
+</body>
+</html>
