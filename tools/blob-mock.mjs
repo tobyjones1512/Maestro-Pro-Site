@@ -18,3 +18,4 @@ export async function get(path) {
   return { statusCode: 200, stream, blob: { size: b.data.length, etag: b.etag } };
 }
 export const del = async (p) => store.delete(p);
+export const head = async (path) => { const b = store.get(path); return b ? { etag: b.etag } : null; };
