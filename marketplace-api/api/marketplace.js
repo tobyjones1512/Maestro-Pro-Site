@@ -248,6 +248,7 @@ async function callback(req, res) {
   const back = (msg) => res.redirect(302, `${SITE}/marketplace/onboard/?error=${encodeURIComponent(msg)}`);
   const m = st && Date.now() - st.ts < 3600e3 && (await readJson(SELLER(st.m)));
   if (!m || m.fee?.status !== "paid") return back("That link expired. Please start the payout set-up again.");
+  if (req.query.error) return back("You didn't finish setting up your payouts. Nothing has changed, and you can carry on whenever you're ready.");   // they backed out at Mollie
   if (!req.query.code) return back("Mollie didn't connect. Please try again.");
   const t = await oauth({ grant_type: "authorization_code", code: req.query.code, redirect_uri: `${API}/api/marketplace-callback` });
   if (!t.data.access_token) return back("Mollie refused the connection. Please try again.");
