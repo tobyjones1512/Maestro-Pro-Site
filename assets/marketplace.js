@@ -41,27 +41,29 @@ const regionBoxes = () => Object.entries(CONTINENTS).map(([name, codes]) => `<di
 // Layout: "PLAYALONG1", a 4-byte little-endian header length, the JSON header (the item and the names and sizes of its files), then the files.
 const AUDIO = ["mp3", "m4a", "wav", "aif", "aiff", "caf", "aac", "flac"];
 const SCORE = ["musicxml", "mxl", "xml", "pdf", "mid", "midi", "kar", "cdg", "lrc", "txt"];
-export const accept = { score: SCORE.map((e) => "." + e).join(","), audio: AUDIO.map((e) => "." + e).join(","), lyrics: ".lrc,.txt" };
+export const accept = { sheet: ".musicxml,.mxl,.xml,.pdf,.mid,.midi", karaoke: ".kar,.cdg", score: SCORE.map((e) => "." + e).join(","), audio: AUDIO.map((e) => "." + e).join(","), lyrics: ".lrc,.txt" };
 const ext = (n) => n.split(".").pop().toLowerCase();
 const uuid = () => crypto.randomUUID().toUpperCase();
 
-/** score: the sheet music (or karaoke / lyrics) file; tracks: backing recordings (the first is the main one); lyrics: an optional .lrc/.txt. All are File or Blob with a name. */
-export async function makeBundle({ title, score, tracks = [], lyrics }) {
-  if (!score || !SCORE.includes(ext(score.name))) throw new Error("Choose the sheet music, karaoke or lyrics file.");
+/** score: the sheet music; karaoke: a karaoke file; lyrics: a .lrc/.txt; tracks: backing recordings (the first is the main one). A version has sheet music or a karaoke file (the main file), or lyrics alone. All are File or Blob with a name. */
+export async function makeBundle({ title, score, karaoke, tracks = [], lyrics }) {
+  if (score && karaoke) throw new Error("A version has sheet music or a karaoke file, not both. Add another version for the other.");
+  const main = score || karaoke || lyrics;
+  if (!main || !SCORE.includes(ext(main.name))) throw new Error("Choose the sheet music, a karaoke file or the lyrics.");
   const used = new Set(), parts = [];
   const add = (f) => {   // plain, unique names: the app only accepts file names with no folders
     let n = f.name.replace(/[\\/]/g, "-"), i = 1;
     while (used.has(n.toLowerCase())) n = n.replace(/(\.[^.]*)?$/, `-${++i}$1`);
     used.add(n.toLowerCase()); parts.push({ name: n, file: f }); return n;
   };
-  const item = { id: uuid(), title, file: add(score), tempo: 100, offset: 0, beatsPerBar: 4, added: Date.now() / 1000 - 978307200 };
+  const item = { id: uuid(), title, file: add(main), tempo: 100, offset: 0, beatsPerBar: 4, added: Date.now() / 1000 - 978307200 };
   for (const t of tracks) if (!AUDIO.includes(ext(t.name))) throw new Error(`${t.name} isn't a recording the app can play.`);
   tracks.forEach((t, i) => {
     const n = add(t);
     if (i === 0) { item.track = n; item.trackName = n.replace(/\.[^.]*$/, ""); }
     else (item.extraTracks ||= []).push({ id: uuid(), file: n, name: n.replace(/\.[^.]*$/, ""), enabled: true, gainDB: 0, offset: 0, reduceVocals: false });
   });
-  if (lyrics) { if (!["lrc", "txt"].includes(ext(lyrics.name))) throw new Error("Lyrics must be a .lrc or .txt file."); item.lyrics = add(lyrics); }
+  if (lyrics && lyrics !== main) { if (!["lrc", "txt"].includes(ext(lyrics.name))) throw new Error("Lyrics must be a .lrc or .txt file."); item.lyrics = add(lyrics); }
   const files = [];
   for (const p of parts) files.push({ name: p.name, size: p.file.size });
   const head = new TextEncoder().encode(JSON.stringify({ item, files }));
@@ -75,9 +77,10 @@ const safe = (n) => n.replace(/[^\w.\- ()]+/g, "_").slice(-100);
 const VER = (n) => `<fieldset class="mp-ver"><legend>${n ? "Another version" : "Main version"}</legend>
   <label class="field">Name of this version ${n ? "(for example the key or instrument: &ldquo;B&flat; trumpet&rdquo;)" : "(optional, for example &ldquo;Concert pitch&rdquo;)"}<input name="vlabel" type="text" maxlength="40"></label>
   <p class="mp-note mp-keep" hidden>Your current files are kept. Choose new files below only to replace them.</p>
-  <label class="field">Sheet music, karaoke or lyrics file<input name="vscore" type="file" accept="${accept.score}"></label>
+  <label class="field">Sheet music (MusicXML, MIDI or PDF)<input name="vscore" type="file" accept="${accept.sheet}"></label>
+  <label class="field">Karaoke file (.kar or .cdg), instead of sheet music<input name="vkaraoke" type="file" accept="${accept.karaoke}"></label>
   <label class="field">Backing tracks (optional, the first is the main one)<input name="vtracks" type="file" accept="${accept.audio}" multiple></label>
-  <label class="field">Lyrics (optional, .lrc or .txt)<input name="vlyrics" type="file" accept="${accept.lyrics}"></label>
+  <label class="field">Lyrics (.lrc or .txt, optional with either)<input name="vlyrics" type="file" accept="${accept.lyrics}"></label>
   <div class="mp-kept" data-kept="vx"></div>
   <label class="field">PDFs and other downloads for this version (optional, for buyers to use outside Maestro Pro)<input name="vextras" type="file" accept=".pdf,${accept.score},${accept.audio}" multiple></label>
   ${n ? '<button class="pay__btn pay__btn--ghost" type="button" data-rm>Remove this version</button>' : ""}</fieldset>`;
@@ -106,7 +109,6 @@ export function mountBuilder(form, { getKey, onDone }) {
     const d = document.createElement("div"); d.innerHTML = VER(vs.children.length);
     const el = d.firstElementChild;
     if (keep) { el.dataset.keep = keep.id; el.querySelector("[name=vlabel]").value = keep.label || ""; el.querySelector(".mp-keep").hidden = false; }
-    else el.querySelector("[name=vscore]").required = true;
     el.querySelector("[data-rm]")?.addEventListener("click", () => el.remove());
     vs.append(el);
   };
@@ -146,15 +148,15 @@ export function mountBuilder(form, { getKey, onDone }) {
         contentType: blob.type || "application/octet-stream", onUploadProgress: (p) => say(`Uploading ${what}… ${Math.round(p.percentage)}%`) });
       const blocks = [...vs.children], variants = [], extras = [];
       for (const el of blocks) {
-        const label = $("[name=vlabel]", el).value.trim(), score = $("[name=vscore]", el).files[0];
+        const label = $("[name=vlabel]", el).value.trim(), score = $("[name=vscore]", el).files[0], karaoke = $("[name=vkaraoke]", el).files[0];
         const addExtras = async (vid) => {   // this version's downloads: the kept ones, then any new files
           for (const path of keptPaths($("[data-kept=vx]", el))) extras.push({ path, v: vid });
           for (const file of [...$("[name=vextras]", el).files]) { const path = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); extras.push({ path, v: vid }); }
         };
-        if (!score && el.dataset.keep) { variants.push({ id: el.dataset.keep, label }); await addExtras(el.dataset.keep); continue; }
+        if (!score && !karaoke && el.dataset.keep) { variants.push({ id: el.dataset.keep, label }); await addExtras(el.dataset.keep); continue; }
         if (blocks.length > 1 && !label) throw new Error("Name each version, for example the key or the instrument.");
         const tracks = [...$("[name=vtracks]", el).files], lyrics = $("[name=vlyrics]", el).files[0];
-        const bundle = await makeBundle({ title: blocks.length > 1 && label ? `${title} (${label})` : title, score, tracks, lyrics });
+        const bundle = await makeBundle({ title: blocks.length > 1 && label ? `${title} (${label})` : title, score, karaoke, tracks, lyrics });
         const vid = crypto.randomUUID();
         await up(`marketplace/bundles/${vid}.maestropro`, bundle, label || "the music");
         variants.push({ id: vid, label });
