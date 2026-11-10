@@ -99,8 +99,14 @@ async function drawXml(url) {
   const el = $("xml");
   try {
     if (!window.opensheetmusicdisplay) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdisplay.min.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
-    const xml = await (await fetch(url)).text(), osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(el, { autoResize: true, drawTitle: true });
-    await osmd.load(xml); el.textContent = ""; osmd.render();
+    const xml = await (await fetch(url)).text(), page = document.createElement("div");
+    page.style.width = "960px";   // always laid out at one width, four bars to a row, then scaled to fit the screen
+    el.textContent = ""; el.append(page);
+    const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(page, { autoResize: false, drawTitle: true });
+    osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
+    await osmd.load(xml); osmd.render();
+    page.querySelectorAll("svg").forEach((v) => { const w = parseFloat(v.getAttribute("width")) || 960, h = parseFloat(v.getAttribute("height")) || 0; v.setAttribute("viewBox", `0 0 ${w} ${h}`); v.removeAttribute("width"); v.removeAttribute("height"); v.style.width = "100%"; v.style.height = "auto"; });
+    page.style.width = "100%";
   } catch { el.textContent = "The preview couldn't be shown."; }
 }
 try {
