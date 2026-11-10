@@ -3,7 +3,7 @@
 // Maestro Pro collects the tax (it is added to the marketplace fee on the payment) and every sale is written to a ledger for the owner's tax returns.
 // DRAFT RATES: standard rates for digital goods as last known. Have an accountant check them, and check each country's registration threshold, before relying on them.
 import { modify } from "./_blob.js";
-import { decimals, minor } from "./_mp.js";
+import { decimals, minor, currencyFor, rate } from "./_mp.js";
 
 export const LEDGER = "marketplace/tax-ledger.json";
 
@@ -30,13 +30,23 @@ export function quote(priceUSD, tipUSD, cur, fx, rate) {
   return { total: base + tip, tip, tax, net: base - tax };
 }
 
+/** A ledger row with its amounts in the currency of the country the tax is owed to (converted from US dollars when the buyer paid in another currency). */
+export async function inLocal(row) {
+  if (row.lcur) return row;
+  const lcur = row.cc && TAX[row.cc] ? currencyFor(row.cc) : row.currency;
+  if (lcur === row.currency) return { ...row, lcur, lnet: row.net, ltax: row.tax };
+  const r = (await rate(lcur)) || 0, d = 10 ** decimals(lcur), c = (u) => Math.round(u * r * d) / d;
+  return r ? { ...row, lcur, lnet: c(row.netUSD), ltax: c(row.taxUSD) } : { ...row, lcur: "USD", lnet: row.netUSD, ltax: row.taxUSD };
+}
+
 /** Writes a paid sale to the ledger (once). */
 export async function recordTax(order, seller) {
   const t = order.tax;
   if (!t) return;
   const k = 10 ** decimals(order.currency), usd = (m) => Math.round((m / k / t.fx) * 100) / 100;
   const row = { id: order.id, t: order.paidAt || Date.now(), cc: t.cc || "", name: t.name, rate: t.rate, currency: order.currency, net: t.net / k, tax: t.tax / k, tip: t.tip / k, total: t.total / k, taxUSD: usd(t.tax), netUSD: usd(t.net), item: order.title, seller, status: "collected" };
-  await modify(LEDGER, (a) => ((a || []).some((x) => x.id === row.id) ? undefined : [...(a || []), row]));
+  const local = await inLocal(row);
+  await modify(LEDGER, (a) => ((a || []).some((x) => x.id === row.id) ? undefined : [...(a || []), local]));
 }
 /** A refund returns the tax too. */
 export const refundTax = (id) => modify(LEDGER, (a) => ((a || []).some((x) => x.id === id) ? a.map((x) => (x.id === id ? { ...x, status: "refunded", refundedAt: Date.now() } : x)) : undefined));

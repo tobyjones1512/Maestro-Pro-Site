@@ -600,7 +600,7 @@ async function disputeAppealDecide(req, res) {
 /** The tax ledger: every sale with the tax collected, for the owner's returns (admin key only). */
 async function taxReport(req, res) {
   if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
-  res.status(200).json({ rows: ((await readJson(LEDGER)) || []).slice().reverse() });
+  res.status(200).json({ rows: await Promise.all(((await readJson(LEDGER)) || []).slice().reverse().map(inLocal)) });
 }
 /** Every dispute with everything the owner needs to decide it (owner only). */
 async function disputeList(req, res) {

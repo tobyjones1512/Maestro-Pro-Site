@@ -743,14 +743,14 @@ function renderTax(){
     [["all","All time"]].concat(months.map(function(m){return [m,m]})).forEach(function(o){var op=el("option",null,o[1]);op.value=o[0];sel.append(op)});
     var sp=el("span","sp"),b1=el("button","btn btn--ghost btn--sm","Download summary (CSV)"),b2=el("button","btn btn--ghost btn--sm","Download all sales (CSV)"),ck=el("button","btn btn--ghost btn--sm","Change key");b1.type=b2.type=ck.type="button";
     bar.append(sp,sel,b1,b2,ck);w.append(bar);
-    w.append(el("p","hint","Amounts in US dollars use the exchange rate at the time of each sale. A refunded sale's tax is taken off. Rates are drafts: have your accountant check them."));
+    w.append(el("p","hint","Each country's tax is shown in that country's currency, which is what you report and pay in (a sale paid in another currency is converted at the rate on the day it was recorded). A refunded sale's tax is taken off. Rates are drafts: have your accountant check them."));
     var out=el("div");out.style.cssText="display:grid;gap:18px";w.append(out);
     var usd=function(n){return n.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})};
     function pick(){return rows.filter(function(r){return sel.value==="all"||new Date(r.t).toISOString().slice(0,7)===sel.value})}
     function summary(list){
       var by={};
-      list.forEach(function(r){var k=r.cc||"Other",s=by[k]||(by[k]={cc:k,name:r.name,rate:r.rate,sales:0,refunds:0,net:0,collected:0,refunded:0});
-        s.sales++;if(r.status==="refunded"){s.refunds++;s.refunded+=r.taxUSD}else s.net+=r.netUSD;s.collected+=r.taxUSD});
+      list.forEach(function(r){var k=r.cc||"Other",s=by[k]||(by[k]={cc:k,name:r.name,rate:r.rate,cur:r.lcur,sales:0,refunds:0,net:0,collected:0,refunded:0,usd:0});
+        s.sales++;s.collected+=r.ltax;if(r.status==="refunded"){s.refunds++;s.refunded+=r.ltax}else{s.net+=r.lnet;s.usd+=r.taxUSD}});
       return Object.keys(by).sort().map(function(k){return by[k]});
     }
     function table(head,body,foot){
@@ -761,18 +761,17 @@ function renderTax(){
     }
     function draw(){
       out.replaceChildren();var list=pick(),S=summary(list);
-      var due=0,coll=0,ref=0;S.forEach(function(s){coll+=s.collected;ref+=s.refunded});due=coll-ref;
-      if(!list.length){out.append(el("p","empty","No sales with tax recorded for this period."));return}
+            if(!list.length){out.append(el("p","empty","No sales with tax recorded for this period."));return}
       out.append(el("h3",null,"By country"));
-      out.append(table(["Country","Tax","Rate","Sales","Sales excl. tax (USD)","Tax collected (USD)","Refunded (USD)","Tax to pay (USD)"],
-        S.map(function(s){return [s.cc,s.name||"No tax",s.rate?(+(s.rate*100).toFixed(2))+"%":"",s.sales,usd(s.net),usd(s.collected),usd(s.refunded),usd(s.collected-s.refunded)]}),
-        ["Total","","",S.reduce(function(n,s){return n+s.sales},0),usd(S.reduce(function(n,s){return n+s.net},0)),usd(coll),usd(ref),usd(due)]));
+      out.append(table(["Country","Tax","Rate","Currency","Sales","Sales excl. tax","Tax collected","Refunded","Tax to pay","Tax to pay (USD)"],
+        S.map(function(s){return [s.cc,s.name||"No tax",s.rate?(+(s.rate*100).toFixed(2))+"%":"",s.cur,s.sales,usd(s.net),usd(s.collected),usd(s.refunded),usd(s.collected-s.refunded),usd(s.usd)]}),
+        ["Total","","","",S.reduce(function(n,s){return n+s.sales},0),"","","","",usd(S.reduce(function(n,s){return n+s.usd},0))]));
       out.append(el("h3",null,"Sales"+(list.length>200?" (the latest 200; the download has all "+list.length+")":"")));
-      out.append(table(["Date","Order","Item","Seller","Country","Tax","Rate","Currency","Excl. tax","Tax","Tip","Total","Tax (USD)","Status"],
-        list.slice(0,200).map(function(r){return [new Date(r.t).toISOString().slice(0,10),r.id.slice(0,8).toUpperCase(),r.item,r.seller,r.cc||"Other",r.name,r.rate?(+(r.rate*100).toFixed(2))+"%":"",r.currency,usd(r.net),usd(r.tax),usd(r.tip),usd(r.total),usd(r.taxUSD),r.status]})));
+      out.append(table(["Date","Order","Item","Seller","Country","Tax","Rate","Currency","Excl. tax","Tax","Tip","Total","Tax (USD)","Tax in "+"country currency","Status"],
+        list.slice(0,200).map(function(r){return [new Date(r.t).toISOString().slice(0,10),r.id.slice(0,8).toUpperCase(),r.item,r.seller,r.cc||"Other",r.name,r.rate?(+(r.rate*100).toFixed(2))+"%":"",r.currency,usd(r.net),usd(r.tax),usd(r.tip),usd(r.total),usd(r.taxUSD),r.lcur+" "+usd(r.ltax),r.status]})));
     }
-    b1.addEventListener("click",function(){var S=summary(pick());saveCsv("maestro-tax-summary-"+sel.value+".csv",csv(["Country","Tax","Rate","Sales","Refunded sales","Sales excl. tax (USD)","Tax collected (USD)","Refunded (USD)","Tax to pay (USD)"],S.map(function(s){return [s.cc,s.name,s.rate,s.sales,s.refunds,s.net.toFixed(2),s.collected.toFixed(2),s.refunded.toFixed(2),(s.collected-s.refunded).toFixed(2)]})))});
-    b2.addEventListener("click",function(){saveCsv("maestro-tax-sales-"+sel.value+".csv",csv(["Date","Order","Item","Seller","Country","Tax","Rate","Currency","Excl. tax","Tax","Tip","Total","Excl. tax (USD)","Tax (USD)","Status"],pick().map(function(r){return [new Date(r.t).toISOString(),r.id,r.item,r.seller,r.cc,r.name,r.rate,r.currency,r.net,r.tax,r.tip,r.total,r.netUSD,r.taxUSD,r.status]})))});
+    b1.addEventListener("click",function(){var S=summary(pick());saveCsv("maestro-tax-summary-"+sel.value+".csv",csv(["Country","Tax","Rate","Currency","Sales","Refunded sales","Sales excl. tax","Tax collected","Refunded","Tax to pay","Tax to pay (USD)"],S.map(function(s){return [s.cc,s.name,s.rate,s.cur,s.sales,s.refunds,s.net.toFixed(2),s.collected.toFixed(2),s.refunded.toFixed(2),(s.collected-s.refunded).toFixed(2),s.usd.toFixed(2)]})))});
+    b2.addEventListener("click",function(){saveCsv("maestro-tax-sales-"+sel.value+".csv",csv(["Date","Order","Item","Seller","Country","Tax","Rate","Currency","Excl. tax","Tax","Tip","Total","Excl. tax (USD)","Tax (USD)","Country currency","Excl. tax (country currency)","Tax (country currency)","Status"],pick().map(function(r){return [new Date(r.t).toISOString(),r.id,r.item,r.seller,r.cc,r.name,r.rate,r.currency,r.net,r.tax,r.tip,r.total,r.netUSD,r.taxUSD,r.lcur,r.lnet,r.ltax,r.status]})))});
     sel.addEventListener("change",draw);ck.addEventListener("click",function(){try{sessionStorage.removeItem(MPK)}catch(e){}renderTax()});
     draw();
   }).catch(function(err){w.replaceChildren(el("p","err",err.message));if(/key was not accepted/.test(err.message))renderTax()});
