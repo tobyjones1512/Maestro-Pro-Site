@@ -252,9 +252,15 @@ async function callback(req, res) {
   if (!req.query.code) return back("The payout set-up didn't complete. Please try again.");
   const t = await oauth({ grant_type: "authorization_code", code: req.query.code, redirect_uri: `${API}/api/marketplace-callback` });
   if (!t.data.access_token) return back("The payout set-up was refused. Please try again.");
-  const [org, profile] = await Promise.all([mollie("GET", "/organizations/me", t.data.access_token), mollie("GET", "/profiles/me", t.data.access_token)]);
-  if (!org.data.id || !profile.data.id) return back("We couldn't read your payout account. Finish setting it up, then try again.");
-  await writeRaw(SELLER(m.id), { ...m, mollieOrg: org.data.id, profileId: profile.data.id, access: t.data.access_token, refresh: t.data.refresh_token, exp: Date.now() + t.data.expires_in * 1e3, connectedAt: Date.now() });
+  const tok = t.data.access_token;
+  const [org, me] = await Promise.all([mollie("GET", "/organizations/me", tok), mollie("GET", "/profiles/me", tok)]);
+  let profile = me.data.id ? me.data : null;
+  if (!profile) profile = (await mollie("GET", "/profiles?limit=1", tok)).data?._embedded?.profiles?.[0] || null;   // a new account may not have a "current" profile yet
+  if (!org.data.id || !profile?.id) {
+    console.error("callback: unreadable payout account", org.status, org.data?.detail, me.status, me.data?.detail);
+    return back("Your payout account isn't ready yet. Finish creating your business profile there (it can take a few minutes to be approved), then set up payouts again.");
+  }
+  await writeRaw(SELLER(m.id), { ...m, mollieOrg: org.data.id, profileId: profile.id, access: t.data.access_token, refresh: t.data.refresh_token, exp: Date.now() + t.data.expires_in * 1e3, connectedAt: Date.now() });
   res.redirect(302, `${SITE}/marketplace/seller/`);
 }
 
