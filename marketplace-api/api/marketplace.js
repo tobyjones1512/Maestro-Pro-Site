@@ -8,7 +8,7 @@ import { Readable } from "node:stream";
 import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
-import { TAX, taxFor, quote, recordTax, refundTax, LEDGER } from "./_tax.js";
+import { TAX, TAX_ON, taxFor, quote, recordTax, refundTax, LEDGER } from "./_tax.js";
 import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
@@ -93,7 +93,7 @@ async function item(req, res) {
     ...ex.map((e, k) => [e, k]).filter(([e]) => (e.v ? e.v === v.id : i === 0)).map(([e, k]) => ({ name: e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })),
   ] })));
   if (p.kind === "music") detail.push({ id: p.id, label: "Tracks", files: ex.map((e, k) => [e, k]).filter(([e]) => !e.cover).map(([e, k]) => ({ name: e.name, title: e.title ? `${e.n}. ${e.title}` : e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })) });
-  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1, tax: taxFor(country(req)), taxes: TAX, country: String(country(req) || "").toUpperCase() });
+  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1, tax: taxFor(country(req)), taxes: TAX_ON ? TAX : {}, country: String(country(req) || "").toUpperCase() });
 }
 const CLIP = 450000;   // about 30 seconds of a typical MP3
 /** A preview that is no use as a copy: the first page of a PDF with a PREVIEW watermark across it, or the first 30 seconds or so of an MP3. */
