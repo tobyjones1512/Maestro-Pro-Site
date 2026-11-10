@@ -136,7 +136,7 @@ def art_to_md(art):
 
 # ---------- the search box, at the top of every guide page ----------
 SEARCH = ('<!--gs--><form class="gs" role="search" onsubmit="return false"><label class="gs__l" for="gs-q">Search the guide</label>'
-          '<input id="gs-q" type="search" placeholder="Search the guide, for example undo, backing track or sharp" autocomplete="off"><ul id="gs-r" class="gs__r" aria-live="polite"></ul></form>'
+          '<input id="gs-q" type="search" placeholder="Search the guide, for example undo, backing track or sharp" autocomplete="off"><ul id="gs-r" class="gs__r topics" aria-live="polite"></ul></form>'
           '<script src="/assets/guide-search.js" defer></script><!--/gs-->\n')
 def with_search(page):
     page = re.sub(r"<!--gs-->.*?<!--/gs-->\n?", "", page, flags=re.S)

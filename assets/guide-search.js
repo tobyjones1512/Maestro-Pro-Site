@@ -16,11 +16,11 @@
         });
         done();
       })
-      .catch(function () { r.textContent = "Search is not available right now."; });
+      .catch(function () { r.textContent = "Search is not available right now."; r.setAttribute("data-none", ""); });
   }
   function run() {
     var words = q.value.toLowerCase().split(/\s+/).filter(Boolean), hits = [];
-    r.textContent = "";
+    r.textContent = ""; r.removeAttribute("data-none");
     if (!words.length) return;
     pages.forEach(function (e) {
       var score = 0;
@@ -31,7 +31,7 @@
       hits.push([score, e.p]);
     });
     hits.sort(function (a, b) { return b[0] - a[0]; });
-    if (!hits.length) { r.textContent = "Nothing found."; return; }
+    if (!hits.length) { r.textContent = "Nothing found."; r.setAttribute("data-none", ""); return; }
     hits.slice(0, 12).forEach(function (h) {
       var li = document.createElement("li"), a = document.createElement("a"), b = document.createElement("b"), s = document.createElement("span");
       a.href = "/guide/" + h[1].slug + "/"; b.textContent = h[1].title; s.textContent = h[1].summary;
