@@ -13,7 +13,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a><a class="top__sell" href="/marketplace/onboard/">Sell</a></nav>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a class="top__acct" href="/marketplace/account/">Account</a><a class="top__sell" href="/marketplace/onboard/">Sell</a></nav>
 </header>
 <main id="main" class="plain">
 <h1>Dispute Resolution Centre</h1>
@@ -22,9 +22,10 @@
   <label class="field">Your name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
   <label class="field">Company or rights holder you act for (optional)<input name="org" type="text" maxlength="80"></label>
   <label class="field">Your email<input name="email" type="email" required autocomplete="email"></label>
-  <label class="field">The Marketplace item (paste its address, or its exact title)<input name="listing" type="text" required maxlength="300"></label>
+  <label class="field">The Marketplace item (its ID, such as MP-1A2B3C4D, or its address, or its exact title)<input name="listing" type="text" required maxlength="300"></label>
   <label class="field">Your work that it uses<input name="work" type="text" required maxlength="200"></label>
   <label class="field">Why this is yours, and how the item infringes it<textarea name="details" rows="5" required minlength="20" maxlength="2000"></textarea></label>
+  <label class="field">Evidence (optional): proof the work is yours, such as a registration, a licence or your published copy. PDF, PNG, JPG or TXT, up to 5 files<input name="evidence" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt"></label>
   <input name="website" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
   <label class="field"><input name="good" type="checkbox" required> I am the rights holder, or I am authorised to act for them. The information I have given is accurate and I make this claim in good faith. I understand that a false claim can lead to action against me.</label>
   <button class="pay__btn" type="submit">File dispute</button>
@@ -38,13 +39,26 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api } from "/assets/marketplace.js";
+import { api, API } from "/assets/marketplace.js";
+const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");
 const f = document.getElementById("f"), m = f.querySelector(".pay__msg"), b = f.querySelector("button");
 f.addEventListener("submit", async (e) => {
   e.preventDefault(); b.disabled = true; m.textContent = "";
   const v = f.elements;
   try {
-    await api("dispute-file", { method: "POST", body: { name: v.name.value, org: v.org.value, email: v.email.value, listing: v.listing.value, work: v.work.value, details: v.details.value, goodFaith: v.good.checked, website: v.website.value } });
+    const claim = crypto.randomUUID(), files = [];
+    const list = [...v.evidence.files];
+    if (list.length > 5) throw new Error("Attach up to 5 files.");
+    for (const file of list) {
+      if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed. Use PDF, PNG, JPG or TXT.`);
+      if (file.size > 15e6) throw new Error(`${file.name} is too big. The limit is 15 MB.`);
+      m.textContent = `Uploading ${file.name}…`;
+      const path = `marketplace/dispute-evidence/${claim}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\- ()]+/g, "_").slice(-100)}`;
+      await upload(path, file, { access: "private", handleUploadUrl: API + "upload", contentType: file.type || "application/octet-stream" });
+      files.push(path);
+    }
+    m.textContent = "";
+    await api("dispute-file", { method: "POST", body: { claim, files, name: v.name.value, org: v.org.value, email: v.email.value, listing: v.listing.value, work: v.work.value, details: v.details.value, goodFaith: v.good.checked, website: v.website.value } });
     f.hidden = true; m.parentNode.insertAdjacentHTML("beforeend", "<p><b>Thank you.</b> Your dispute is filed and we have emailed you a reference. The item is off sale while it is looked at, and we will email you the outcome.</p>");
   } catch (err) { m.textContent = err.message; b.disabled = false; }
 });

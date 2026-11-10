@@ -12,7 +12,7 @@ import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, curren
 import { BUNDLE, ALLOWED, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
-import { disputes, fileDispute, respond as respondDispute, decide as decideDispute, STRIKES, RESPOND_DAYS } from "./_disputes.js";
+import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, STRIKES, RESPOND_DAYS } from "./_disputes.js";
 import guidelines from "../lib/guidelines.js";
 
 const ORDER = (id) => `marketplace/orders/${id}.json`;
@@ -56,7 +56,7 @@ async function bundleOK(id) {
 // What a buyer can open without the app: PDF and audio files work anywhere. The rest are for Maestro Pro or other music software.
 const FORMAT = { pdf: "PDF", mp3: "Audio", m4a: "Audio", wav: "Audio", aif: "Audio", aiff: "Audio", caf: "Audio", aac: "Audio", flac: "Audio", musicxml: "MusicXML", mxl: "MusicXML", xml: "MusicXML", mid: "MIDI", midi: "MIDI", kar: "Karaoke", cdg: "Karaoke", lrc: "Lyrics", txt: "Lyrics" };
 const formatsOf = (p) => [...new Set([...(p.review?.files || []).filter((f) => !f.proof), ...(p.extras || [])].map((f) => FORMAT[ext(f.name)]).filter(Boolean))];
-const pub = (p) => ({ formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
+const pub = (p) => ({ code: code(p), formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
 const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
@@ -315,11 +315,12 @@ async function merchant(req, res) {
   const mine = (await products()).filter((p) => p.sellerId === me.id), every = (await readJson(SALES(me.id))) || [], sales = every.filter((x) => !x.refunded);
   const per = (id) => sales.filter((s) => s.listing === id), back = (id) => every.filter((s) => s.refunded && (!id || s.listing === id));
   const gross = sales.reduce((n, s) => n + s.usd, 0), share = me.admin ? 1 : 1 - CUT, charged = (list) => (me.admin ? 0 : list.reduce((n, s) => n + s.usd * CUT, 0));   // the marketplace share of a refunded sale is charged back
+  const allDisputes = await disputes(), allProducts = await products();
   res.status(200).json({
     id: me.id, name: me.name, email: me.email, admin: Boolean(me.admin),
     fee: me.admin ? "paid" : me.fee?.status || "none", feeGBP: FEE_GBP, connected: Boolean(me.admin || me.access), canPublish: ready(me),
     products: mine.slice().reverse().map((p) => ({
-      id: p.id, title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
+      id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
       reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), versions: variantsOf(p).map((v) => v.label).filter(Boolean),
       ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
@@ -328,7 +329,7 @@ async function merchant(req, res) {
     })),
     sales: { count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd })) },
     cut: CUT, maxRefusals: MAX_REFUSALS, strikes: (me.strikes || []).length, maxStrikes: STRIKES, barred: Boolean(me.barred), respondDays: RESPOND_DAYS,
-    disputes: (await disputes()).filter((d) => me.admin || d.sellerId === me.id).reverse().map((d) => ({ id: d.id, created: d.created, status: d.status, title: d.productTitle, claimant: d.claimant.name + (d.claimant.org ? `, ${d.claimant.org}` : ""), ...(me.admin && { email: d.claimant.email, via: d.via }), work: d.work, details: d.details, respondBy: d.respondBy, response: d.response, decision: d.decision })),
+    disputes: allDisputes.filter((d) => me.admin || d.sellerId === me.id).reverse().map((d) => ({ id: d.id, created: d.created, status: d.status, title: d.productTitle, claimant: d.claimant.name + (d.claimant.org ? `, ${d.claimant.org}` : ""), ...(me.admin && { email: d.claimant.email, via: d.via }), code: allProducts.find((p) => p.id === d.productId)?.id.slice(0, 8).toUpperCase(), files: d.files || [], work: d.work, details: d.details, respondBy: d.respondBy, response: d.response, decision: d.decision })),
     ...(me.admin && { escalations: (await products()).filter((p) => p.status === "escalated").map((p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, seller: p.sellerName, history: p.history || [] })) }),
   });
 }
@@ -344,6 +345,7 @@ async function withdraw(req, res) {
 
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
 const EVID = /^marketplace\/evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;
+const DEV = /^marketplace\/dispute-evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // evidence a rights holder uploads with a dispute
 const EVID_EXT = new Set(["pdf", "png", "jpg", "jpeg", "txt"]);
 const bad = (m) => Object.assign(new Error(m), { safe: true });   // an error whose message the merchant may read
 const EXTRA = /^marketplace\/extras\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // downloads that go with an item (printable PDFs and so on)
@@ -376,7 +378,11 @@ async function escalation(req, res) {
 /** An evidence file, for the owner to read (admin key only). */
 async function evidenceFile(req, res) {
   const path = String(req.query.path || "");
-  if (!isAdmin(String(req.headers["x-mp-key"] || "")) || !EVID.test(path)) return fail(res, 401, "No.");
+  if (!EVID.test(path) && !DEV.test(path)) return fail(res, 401, "No.");
+  if (!isAdmin(String(req.headers["x-mp-key"] || ""))) {
+    const me = await who(req);
+    if (!me || !DEV.test(path) || !(await disputes()).some((d) => d.sellerId === me.id && (d.files || []).some((f) => f.path === path))) return fail(res, 401, "No.");
+  }
   const buf = await readBlob(path);
   if (!buf) return fail(res, 404, "Not found.");
   res.setHeader("Content-Type", { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", txt: "text/plain; charset=utf-8" }[ext(path)] || "application/octet-stream");
@@ -389,7 +395,13 @@ async function evidenceFile(req, res) {
 async function disputeFile(req, res) {
   const b = req.body || {};
   if (b.website) return res.status(200).json({ ok: true });   // a field only a robot fills in
-  const r = await fileDispute(b);
+  let evidence = [];
+  if (Array.isArray(b.files) && b.files.length) {
+    const u = await uploaded(b.files, DEV, String(b.claim || ""), EVID_EXT, 5);
+    if (u.error) return fail(res, 400, u.error);
+    evidence = u.files;
+  }
+  const r = await fileDispute({ ...b, evidence });
   if (r.error) return fail(res, r.code || 400, r.error);
   res.status(200).json({ ok: true, id: r.id });
 }
@@ -415,6 +427,10 @@ async function upload(req, res) {
   const json = await handleUpload({
     body: req.body, request: req,
     onBeforeGenerateToken: async (pathname, payload) => {
+      if (DEV.test(pathname)) {   // anyone may attach evidence to a claim: small PDF, PNG, JPG or TXT files only
+        if (!EVID_EXT.has(ext(pathname))) throw bad("That file type isn't allowed. Use PDF, PNG, JPG or TXT.");
+        return { maximumSizeInBytes: 15e6, allowOverwrite: false, addRandomSuffix: false };
+      }
       const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
       if (!user || !ready(user)) throw bad("Not signed in.");
       const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname)), extra = EXTRA.test(pathname) && ALLOWED.has(ext(pathname));

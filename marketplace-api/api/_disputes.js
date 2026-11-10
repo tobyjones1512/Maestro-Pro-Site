@@ -16,11 +16,15 @@ const first = (n) => String(n || "").split(" ")[0] || "there";
 export const disputes = async () => (await readJson(DISPUTES)) || [];
 const open = (d) => d.status === "open" || d.status === "responded";
 
-/** The item a claim names: a Marketplace link or id, or an exact title. */
+/** The ID shown on the Marketplace for an item, for example MP-1A2B3C4D. */
+export const code = (p) => `MP-${p.id.slice(0, 8).toUpperCase()}`;
+/** The item a claim names: a Marketplace link or id, its MP- ID, or an exact title. */
 export function findListing(all, ref) {
   const r = String(ref || "").trim();
   const id = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.exec(r)?.[0]?.toLowerCase();
   if (id) return all.find((p) => p.id === id);
+  const short = /MP-([0-9A-F]{8})\b/i.exec(r)?.[1];
+  if (short) { const hit = all.filter((p) => code(p) === `MP-${short.toUpperCase()}`); return hit.length === 1 ? hit[0] : undefined; }
   const hits = all.filter((p) => p.title.toLowerCase() === r.toLowerCase());
   return hits.length === 1 ? hits[0] : undefined;
 }
@@ -40,13 +44,13 @@ export async function fileDispute(b) {
   const twin = mine.find((d) => d.productId === p.id && open(d));
   if (twin) return { id: twin.id };
   if (mine.filter((d) => Date.now() - d.created < 864e5).length >= 5) return { error: "Too many claims today. Please try again tomorrow.", code: 429 };
-  const d = { id: crypto.randomUUID(), created: Date.now(), status: "open", productId: p.id, productTitle: p.title, sellerId: p.sellerId, claimant, work, details, via: b.via === "support" ? "support" : "form", respondBy: Date.now() + RESPOND_DAYS * 864e5 };
+  const d = { id: crypto.randomUUID(), created: Date.now(), status: "open", productId: p.id, productTitle: p.title, sellerId: p.sellerId, claimant, work, details, files: Array.isArray(b.evidence) ? b.evidence : [], via: b.via === "support" ? "support" : "form", respondBy: Date.now() + RESPOND_DAYS * 864e5 };
   await modify(DISPUTES, (a) => [...(a || []), d]);
   await updateProduct(p.id, (x) => ({ ...x, hold: x.hold || { dispute: d.id, at: Date.now() } }));   // off sale while the dispute is open
   const m = await sellerOf(p);
   const tag = d.id.slice(0, 8).toUpperCase();
   if (m?.email) await sendMail({ to: m.email, idem: `mp-dispute-${d.id}`, subject: `Copyright dispute: ${p.title}`,
-    mail: buildEmail({ name: first(m.name), label: "Dispute Resolution Centre", reply: `A copyright dispute has been filed against **${p.title}** (reference ${tag}). The item is off sale while it is open.\n\n**The work:** ${work}\n**Their claim:** ${details}\n\nYou have ${RESPOND_DAYS} days to respond in the [Dispute Resolution Centre](merchant). We may decide without your response after that. If the dispute is upheld the item is removed and your account gets a copyright strike. Three strikes close a Merchant Account (see [the guidelines](guidelines)).`, buttons: [["Respond", LINKS.merchant]] }) }).catch(() => {});
+    mail: buildEmail({ name: first(m.name), label: "Dispute Resolution Centre", reply: `A copyright dispute has been filed against **${p.title}** (reference ${tag}). The item is off sale while it is open.\n\n**The work:** ${work}\n**Their claim:** ${details}${d.files.length ? `\n**Evidence:** ${d.files.length} file${d.files.length > 1 ? "s" : ""}, in the Dispute Resolution Centre.` : ""}\n\nYou have ${RESPOND_DAYS} days to respond in the [Dispute Resolution Centre](merchant). We may decide without your response after that. If the dispute is upheld the item is removed and your account gets a copyright strike. Three strikes close a Merchant Account (see [the guidelines](guidelines)).`, buttons: [["Respond", LINKS.merchant]] }) }).catch(() => {});
   await sendMail({ to: OWNER, idem: `mp-dispute-o-${d.id}`, subject: `Dispute filed: ${p.title}`,
     mail: buildEmail({ name: "Toby", label: "Dispute Resolution Centre", reply: `${claimant.name} (${claimant.email}) filed a copyright dispute against **${p.title}** by ${p.sellerName}, ${d.via === "support" ? "through the support bot" : "on the website"}. Open the [merchant console](merchant) with your admin key to decide it.\n\n**The work:** ${work}\n**Claim:** ${details}` }) }).catch(() => {});
   await sendMail({ to: claimant.email, idem: `mp-dispute-c-${d.id}`, subject: `We have your copyright dispute (${tag})`,

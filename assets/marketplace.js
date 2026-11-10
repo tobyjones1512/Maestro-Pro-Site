@@ -197,7 +197,7 @@ const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".
 
 /** Fills `table` (a <tbody>) with the products. `act(id, withdrawn)` is called by the withdraw / put back on sale button. */
 export function renderProducts(table, products, act, onAppeal, onEdit) {
-  table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}${p.versions?.length ? ` &middot; ${p.versions.length} versions` : ""}</small></td>
+  table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>ID ${esc(p.code)} &middot; ${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}${p.versions?.length ? ` &middot; ${p.versions.length} versions` : ""}</small></td>
     <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : LABEL[p.status] || esc(p.status)}</span>${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
       ${p.status === "refused" || p.status === "escalated" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul>${p.final ? "<small>Final decision. This can't be appealed.</small>" : p.canAppeal ? `<button class="pay__btn pay__btn--ghost" data-appeal="${esc(p.id)}">Appeal with evidence</button>` : p.status === "escalated" ? "<small>Waiting for a final decision from a person at Maestro Pro.</small>" : ""}</div>` : ""}</td>
     <td>${p.sold}</td><td>${dollars(p.earnedUSD)}</td>
