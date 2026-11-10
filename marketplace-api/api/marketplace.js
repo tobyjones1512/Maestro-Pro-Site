@@ -173,13 +173,22 @@ async function buy(req, res) {
   if (!availableIn(l.regions, country(req))) return fail(res, 403, "This piece isn't available in your country.");
   if (!EMAIL.test(String(email ?? "").trim())) return fail(res, 400, "Enter a valid email address.");
   // An optional tip, as a percentage of the price or an amount in dollars. It is charged with the price.
-  const t = req.body?.tip || {};
+  // The app pays with Apple Pay at the price it showed: the quote (asked for with quote: true) is signed, and its currency and rate are used again here.
+  const wallet = req.body?.applePayToken ? unsign(req.body.quoteToken) : null;
+  if (req.body?.applePayToken && (!wallet || wallet.id !== l.id || wallet.exp < Date.now())) return fail(res, 400, "The price has expired. Try again.");
+  const t = req.body?.tip || {};   // the app sends the same tip (a percentage) with the quote and with the payment; the signed total below holds it to the price shown
   let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   if (!r) { cur = "USD"; r = 1; }
+  if (wallet) ({ cur, r } = wallet);
   const tipUSD = t.local !== undefined ? Number(t.local) / r : t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
   if (!Number.isFinite(tipUSD) || tipUSD < 0 || tipUSD > 500) return fail(res, 400, "A tip can be from $0 to $500.");
   const ip = String(country(req) || "").toUpperCase(), cc = ip, tax = taxFor(cc);   // the country is worked out from the buyer's connection
   let q;
+  if (req.body?.quote) {
+    q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate);
+    return res.status(200).json({ currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, total: q.total, exp: Date.now() + 10 * 60e3 }) });
+  }
+  if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);
   const create = (currency, rt, how) => {
@@ -192,20 +201,32 @@ async function buy(req, res) {
       webhookUrl: `${API}/api/marketplace-webhook?o=${order.id}`,
       metadata: { order: order.id, listing: l.id },
       ...(how && { method: how }),
+      ...(wallet && { applePayPaymentToken: req.body.applePayToken }),
       ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.min(m, Math.max(1, Math.round((q.net + q.tip) * CUT) + q.tax)), currency) }, description: q.tax ? "Maestro Pro marketplace fee (30%) and tax" : "Maestro Pro marketplace fee (30%)" } }),
     });
   };
   // Apple Pay first when asked; then any method; then dollars, for a currency this account can't take.
-  const tries = [...(method === "applepay" ? [[cur, r, "applepay"]] : []), [cur, r], ...(cur !== "USD" ? [["USD", 1]] : [])];
+  const tries = wallet ? [[cur, r, "applepay"]] : [...(method === "applepay" ? [[cur, r, "applepay"]] : []), [cur, r], ...(cur !== "USD" ? [["USD", 1]] : [])];
   let p, used = cur;
   for (const [c, rt, how] of tries) { used = c; p = await create(c, rt, how); if (p.status !== 422) break; }
   const url = p.data?._links?.checkout?.href;
-  if (!url) return fail(res, 502, p.data?.detail || "Couldn't start the payment.");
+  if (wallet ? p.status >= 300 : !url) return fail(res, 502, p.data?.detail || "Couldn't start the payment.");
   order.paymentId = p.data.id; order.currency = used; order.amount = p.data.amount.value;
   order.tax = { cc, ip, name: tax.name, rate: tax.rate, inclusive: tax.inclusive, fx: used === "USD" ? 1 : r, ...q };
   await writeRaw(ORDER(order.id), order);
   await modify(ORDERS_OF(order.email.toLowerCase()), (a) => [...(a || []), { order: order.id, token: order.token, listing: l.id, title: l.title, t: order.created }]).catch(() => {});
+  if (wallet) return res.status(200).json({ status: (await sync(order).catch(() => order)).status, order: order.id, token: order.token });   // paid at once, or failed
   res.status(200).json({ url, order: order.id, token: order.token });
+}
+
+/** Apple Pay on the website only: Mollie's merchant session for the browser's validation URL. (The iOS app has no merchant validation step: its merchant ID is checked by Apple through the entitlement.) */
+async function applePaySession(req, res) {
+  if (!(await buyerWho(req))) return fail(res, 401, "Sign in to your buyer account to buy.");
+  const { validationUrl, domain } = req.body || {};
+  if (!/^https:\/\/[\w.-]+\.apple\.com\//.test(String(validationUrl)) || !["maestro-pro.app", "www.maestro-pro.app"].includes(domain)) return fail(res, 400, "That Apple Pay request isn't valid.");
+  const m = await mollie("POST", "/wallets/applepay/sessions", process.env.MOLLIE_API_KEY, { validationUrl, domain });
+  if (m.status >= 300) return fail(res, 502, m.data?.detail || "Apple Pay couldn't be started.");
+  res.status(200).json(m.data);
 }
 
 const link = (o) => `${API}/api/marketplace-download?o=${o.id}&t=${o.token}`;
@@ -831,7 +852,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
