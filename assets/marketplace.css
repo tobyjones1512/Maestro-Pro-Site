@@ -226,3 +226,4 @@ dialog.mp-viewer::backdrop{background:rgba(10,7,4,.78)}
 .mp-buy__box .field input:focus{outline:0;border-color:var(--hl);box-shadow:0 0 0 3px color-mix(in srgb,var(--hl) 28%,transparent)}
 dialog.mp-gate{width:min(26rem,92vw);padding:24px;border:1px solid var(--hair,#32271C);border-radius:14px;background:var(--card,#1E1710);color:var(--fg,#F3EBDA)}dialog.mp-gate::backdrop{background:rgba(10,7,4,.78)}dialog.mp-gate h2{margin:0 0 .4em;font-size:1.15rem}
 .mp-status--dist{color:#a37a00;border-color:#d9a400}.console .mp-status--dist{color:var(--fg)}.console .mp-status--dist::before{background:#F2C230}
+.plain a.pay__btn{color:var(--walnut);text-decoration:none;display:inline-block;width:auto;text-align:center;margin:0 10px 10px 0}.plain a.pay__btn:hover{color:var(--walnut)}
