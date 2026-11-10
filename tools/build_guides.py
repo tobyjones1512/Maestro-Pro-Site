@@ -63,7 +63,7 @@ def read_overview(slug):
     s = open(f"guide/{slug}/index.html").read()
     title = html.unescape(re.search(r"<h1[^>]*>(.*?)</h1>", s, re.S).group(1))
     lede = html.unescape(re.sub(r"<[^>]+>", "", re.search(r'<p class="guide__lede">(.*?)</p>', s, re.S).group(1)))
-    art = re.search(r'<article class="guide__body">(.*?)</article>', s, re.S).group(1)
+    art = re.sub(r"<!--gs-->.*?<!--/gs-->\n?", "", re.search(r'<article class="guide__body">(.*?)</article>', s, re.S).group(1), flags=re.S)
     return s, title, lede, art
 overview = {}
 for slug, grp in OVERVIEW_GROUP.items():
@@ -134,6 +134,14 @@ def art_to_md(art):
     a = re.sub(r"<[^>]+>", "", a); a = html.unescape(a)
     return re.sub(r"\n{3,}", "\n\n", re.sub(r"[ \t]+\n", "\n", a)).strip()
 
+# ---------- the search box, at the top of every guide page ----------
+SEARCH = ('<!--gs--><form class="gs" role="search" onsubmit="return false"><label class="gs__l" for="gs-q">Search the guide</label>'
+          '<input id="gs-q" type="search" placeholder="Search the guide, for example undo, backing track or sharp" autocomplete="off"><ul id="gs-r" class="gs__r" aria-live="polite"></ul></form>'
+          '<script src="/assets/guide-search.js" defer></script><!--/gs-->\n')
+def with_search(page):
+    page = re.sub(r"<!--gs-->.*?<!--/gs-->\n?", "", page, flags=re.S)
+    return page.replace('<article class="guide__body">\n', '<article class="guide__body">\n' + SEARCH, 1)
+
 # ---------- page chrome, taken from a hand-written page ----------
 TPL = open("guide/getting-started/index.html").read()
 HEAD_T = TPL[:TPL.index("</head>") + 7]
@@ -198,7 +206,7 @@ for slug in order:
     lede = f"<p class=\"guide__lede\">{esc(p['summary'])}</p>\n" if not p["parent"] else ""   # short task pages start straight in
     art = (breadcrumb(p) + f"\n<h1>{esc(p['title'])}</h1>\n" + lede + body_html(p["body"]) + "\n" +
            (kids_html(slug) + "\n" if not p["parent"] else "") + related_html(p) + "\n" + pager(p))
-    page = head(p["title"], p["summary"], slug) + "\n<body class=\"read\">\n" + BODY_TOP + '<main id="main" class="guide">\n' + nav(slug) + '\n<article class="guide__body">\n' + art + "\n</article>\n" + FOOT
+    page = head(p["title"], p["summary"], slug) + "\n<body class=\"read\">\n" + BODY_TOP + '<main id="main" class="guide">\n' + nav(slug) + '\n<article class="guide__body">\n' + SEARCH + art + "\n</article>\n" + FOOT
     os.makedirs(f"guide/{slug}", exist_ok=True); open(f"guide/{slug}/index.html", "w").write(page)
     crumb = " > ".join(["Guide", group_of(p)] + ([allp[p["parent"]]["title"]] if p["parent"] and allp[p["parent"]]["parent"] else []) + ([top["title"]] if p["parent"] else []) )
     path_parts = ["Guide", group_of(p)] + ([top["title"]] if p["parent"] else []) + [p["title"]]
@@ -213,6 +221,7 @@ for slug in order:
 for slug, p in overview.items():
     f = f"guide/{slug}/index.html"; s = open(f).read()
     s = re.sub(r'<details class="guide__nav".*?</details>', lambda m: nav(slug), s, flags=re.S)
+    s = with_search(s)
     s = re.sub(r"\n?<!--children-->.*?<!--/children-->", "", s, flags=re.S)
     k = kids_html(slug)
     if k: s = s.replace('<div class="pager">', k + '\n<div class="pager">', 1) if '<div class="pager">' in s else s.replace("</article>", k + "\n</article>", 1)
@@ -233,7 +242,7 @@ home = head("The guide", "Every part of Maestro Pro, one topic to a page.", None
 old_home = open("guide/index.html").read()
 m = re.search(r"<title>.*?</title>", old_home, re.S); home = re.sub(r"<title>.*?</title>", m.group(0), home, count=1)
 m = re.search(r'<meta name="description" content="[^"]*">', old_home); home = re.sub(r'<meta name="description" content="[^"]*">', m.group(0), home, count=1)
-open("guide/index.html", "w").write(home)
+open("guide/index.html", "w").write(with_search(home))
 all_art = '<a class="back" href="/guide/">← Guide</a>\n<h1>Every guide.</h1>\n<p class="guide__lede">All of the guides, by topic. Each one is a short page about a single thing you can do or a single question.</p>\n'
 for g in GROUPS:
     all_art += f'<h2 class="group">{esc(g)}</h2>\n'
@@ -242,7 +251,7 @@ for g in GROUPS:
         ks = children(t["slug"])
         if ks: all_art += '<ul class="allkids">' + "".join(f'<li><a href="{path(k["slug"])}">{esc(k["title"])}</a></li>' for k in ks) + "</ul>\n"
 os.makedirs("guide/all", exist_ok=True)
-open("guide/all/index.html", "w").write(head("Every guide", "All of the Maestro Pro guides, by topic.", "all") + '\n<body class="read">\n' + BODY_TOP + '<main id="main" class="guide">\n' + nav("__all") + '\n<article class="guide__body">\n' + all_art + "</article>\n" + FOOT)
+open("guide/all/index.html", "w").write(with_search(head("Every guide", "All of the Maestro Pro guides, by topic.", "all") + '\n<body class="read">\n' + BODY_TOP + '<main id="main" class="guide">\n' + nav("__all") + '\n<article class="guide__body">\n' + all_art + "</article>\n" + FOOT))
 
 # ---------- the tree ----------
 def node(p): return dict(slug=p["slug"], title=p["title"], summary=p["summary"], url=url(p["slug"]), md=f"{SITE}/guide/{p['slug']}.md", keywords=p["keywords"], see=p["see"], children=[node(k) for k in children(p["slug"])])

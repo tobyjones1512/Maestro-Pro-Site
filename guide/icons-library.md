@@ -1,7 +1,7 @@
-# Library icons (1 of 2)
+# Library icons
 
-Path: Guide > Settings and help > Buttons and icons > Library icons (1 of 2)
-URL: https://maestro-pro.app/guide/icons-library-1/
+Path: Guide > Settings and help > Buttons and icons > Library icons
+URL: https://maestro-pro.app/guide/icons-library/
 Summary: What each icon does: Settings, Help, Add, Import Score and more.
 
 - {{icon:gearshape}} **Settings**: appearance, playing, listening, accessibility and shortcuts.
@@ -16,6 +16,11 @@ Summary: What each icon does: Settings, Help, Add, Import Score and more.
 - {{icon:shippingbox}} **Tracks from GitHub**: downloads scores and tracks from a GitHub repository.
 - {{icon:printer}} **Print**: prints the score.
 - {{icon:docu2erichtext}} **Export as PDF**: saves the page as a PDF.
+- {{icon:docu2etext}} **Export as MusicXML**: saves the notes as a MusicXML file.
+- {{icon:film}} **Export Video**: makes a movie of the music following along.
+- {{icon:pencil}} **Rename**: changes the score's name.
+- {{icon:plusu2esquareu2eonu2esquare}} **Duplicate**: makes a copy of the score.
+- {{icon:trash}} **Delete from Library**: removes the score.
 
 ## Related
 - [Buttons and icons](https://maestro-pro.app/guide/buttons-and-icons/)

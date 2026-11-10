@@ -1,7 +1,7 @@
-# Score toolbar icons (1 of 2)
+# Score toolbar icons
 
-Path: Guide > Settings and help > Buttons and icons > Score toolbar icons (1 of 2)
-URL: https://maestro-pro.app/guide/icons-score-toolbar-1/
+Path: Guide > Settings and help > Buttons and icons > Score toolbar icons
+URL: https://maestro-pro.app/guide/icons-score-toolbar/
 Summary: What each icon does: Edit Score, Annotate, Wait for Me, Record Myself and more.
 
 - {{icon:musicu2equarternoteu2e3}} **Edit Score**: opens the score editor.
@@ -16,6 +16,13 @@ Summary: What each icon does: Edit Score, Annotate, Wait for Me, Record Myself a
 - {{icon:plusu2emagnifyingglass}} **Zoom In**: makes the music bigger.
 - {{icon:minusu2emagnifyingglass}} **Zoom Out**: makes the music smaller.
 - {{icon:arrowu2eupu2eleftu2eandu2earrowu2edownu2eright}} **Fit to Width**: sizes the page to fill the screen width.
+- {{icon:arrowu2edownu2edoc}} **Follow Playback**: scrolls the page to keep the playing bar in view.
+- {{icon:moon}} **Dark Sheet Music**: shows light notes on a dark page.
+- {{icon:booku2epages}} **Turn Pages Like a Book**: pages turn with a curl instead of scrolling.
+- {{icon:musicu2enote}} **Highlight Notes**: lights up each note as it sounds.
+- {{icon:rectangleu2einsetu2efilled}} **Highlight Bar**: washes the playing bar with colour.
+- {{icon:arrowu2erightu2etou2eline}} **Moving Line**: draws a line that travels along the music.
+- {{icon:ellipsisu2ecircle}} **More**: the rest of the commands for this score.
 
 ## Related
 - [Buttons and icons](https://maestro-pro.app/guide/buttons-and-icons/)

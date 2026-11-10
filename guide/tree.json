@@ -3586,11 +3586,11 @@
        "children": []
       },
       {
-       "slug": "icons-score-toolbar-1",
-       "title": "Score toolbar icons (1 of 2)",
+       "slug": "icons-score-toolbar",
+       "title": "Score toolbar icons",
        "summary": "What each icon does: Edit Score, Annotate, Wait for Me, Record Myself and more.",
-       "url": "https://maestro-pro.app/guide/icons-score-toolbar-1/",
-       "md": "https://maestro-pro.app/guide/icons-score-toolbar-1.md",
+       "url": "https://maestro-pro.app/guide/icons-score-toolbar/",
+       "md": "https://maestro-pro.app/guide/icons-score-toolbar.md",
        "keywords": [
         "annotate",
         "chord view",
@@ -3605,37 +3605,24 @@
         "zoom in",
         "zoom out",
         "icon",
-        "button"
-       ],
-       "see": [],
-       "children": []
-      },
-      {
-       "slug": "icons-score-toolbar-2",
-       "title": "Score toolbar icons (2 of 2)",
-       "summary": "What each icon does: Follow Playback, Dark Sheet Music, Turn Pages Like a Book, Highlight Notes and more.",
-       "url": "https://maestro-pro.app/guide/icons-score-toolbar-2/",
-       "md": "https://maestro-pro.app/guide/icons-score-toolbar-2.md",
-       "keywords": [
+        "button",
         "dark sheet music",
         "follow playback",
         "highlight bar",
         "highlight notes",
         "more",
         "moving line",
-        "turn pages like a book",
-        "icon",
-        "button"
+        "turn pages like a book"
        ],
        "see": [],
        "children": []
       },
       {
-       "slug": "icons-library-1",
-       "title": "Library icons (1 of 2)",
+       "slug": "icons-library",
+       "title": "Library icons",
        "summary": "What each icon does: Settings, Help, Add, Import Score and more.",
-       "url": "https://maestro-pro.app/guide/icons-library-1/",
-       "md": "https://maestro-pro.app/guide/icons-library-1.md",
+       "url": "https://maestro-pro.app/guide/icons-library/",
+       "md": "https://maestro-pro.app/guide/icons-library.md",
        "keywords": [
         "add",
         "export as pdf",
@@ -3650,25 +3637,12 @@
         "settings",
         "tracks from github",
         "icon",
-        "button"
-       ],
-       "see": [],
-       "children": []
-      },
-      {
-       "slug": "icons-library-2",
-       "title": "Library icons (2 of 2)",
-       "summary": "What each icon does: Export as MusicXML, Export Video, Rename, Duplicate and more.",
-       "url": "https://maestro-pro.app/guide/icons-library-2/",
-       "md": "https://maestro-pro.app/guide/icons-library-2.md",
-       "keywords": [
+        "button",
         "delete from library",
         "duplicate",
         "export as musicxml",
         "export video",
-        "rename",
-        "icon",
-        "button"
+        "rename"
        ],
        "see": [],
        "children": []
@@ -3733,11 +3707,11 @@
        "children": []
       },
       {
-       "slug": "icons-editor-notes-1",
-       "title": "Editing window icons for notes (1 of 3)",
+       "slug": "icons-editor-notes",
+       "title": "Editing window icons for notes",
        "summary": "What each icon does: Sharp, Flat, Natural, Tie to the Next Note and more.",
-       "url": "https://maestro-pro.app/guide/icons-editor-notes-1/",
-       "md": "https://maestro-pro.app/guide/icons-editor-notes-1.md",
+       "url": "https://maestro-pro.app/guide/icons-editor-notes/",
+       "md": "https://maestro-pro.app/guide/icons-editor-notes.md",
        "keywords": [
         "copy notes",
         "cut notes",
@@ -3752,18 +3726,7 @@
         "turn into a rest",
         "twice as long",
         "icon",
-        "button"
-       ],
-       "see": [],
-       "children": []
-      },
-      {
-       "slug": "icons-editor-notes-2",
-       "title": "Editing window icons for notes (2 of 3)",
-       "summary": "What each icon does: Pitch, Up, Down, Up an Octave and more.",
-       "url": "https://maestro-pro.app/guide/icons-editor-notes-2/",
-       "md": "https://maestro-pro.app/guide/icons-editor-notes-2.md",
-       "keywords": [
+        "button",
         "articulation",
         "down",
         "down an octave",
@@ -3776,32 +3739,17 @@
         "select all notes on staff",
         "up",
         "up an octave",
-        "icon",
-        "button"
+        "bar"
        ],
        "see": [],
        "children": []
       },
       {
-       "slug": "icons-editor-notes-3",
-       "title": "Editing window icons for notes (3 of 3)",
-       "summary": "What each icon does: Bar.",
-       "url": "https://maestro-pro.app/guide/icons-editor-notes-3/",
-       "md": "https://maestro-pro.app/guide/icons-editor-notes-3.md",
-       "keywords": [
-        "bar",
-        "icon",
-        "button"
-       ],
-       "see": [],
-       "children": []
-      },
-      {
-       "slug": "icons-editor-bars-1",
-       "title": "Editing window icons for bars (1 of 2)",
+       "slug": "icons-editor-bars",
+       "title": "Editing window icons for bars",
        "summary": "What each icon does: Copy Bar, Cut Bar, Paste Bars, Duplicate and more.",
-       "url": "https://maestro-pro.app/guide/icons-editor-bars-1/",
-       "md": "https://maestro-pro.app/guide/icons-editor-bars-1.md",
+       "url": "https://maestro-pro.app/guide/icons-editor-bars/",
+       "md": "https://maestro-pro.app/guide/icons-editor-bars.md",
        "keywords": [
         "add a bar after",
         "add bar after",
@@ -3816,18 +3764,7 @@
         "repeat start",
         "select content",
         "icon",
-        "button"
-       ],
-       "see": [],
-       "children": []
-      },
-      {
-       "slug": "icons-editor-bars-2",
-       "title": "Editing window icons for bars (2 of 2)",
-       "summary": "What each icon does: Longer, Shorter, First and Second Time Bars, Jumps and Signs and more.",
-       "url": "https://maestro-pro.app/guide/icons-editor-bars-2/",
-       "md": "https://maestro-pro.app/guide/icons-editor-bars-2.md",
-       "keywords": [
+        "button",
         "add bass staff",
         "add treble staff",
         "all staves",
@@ -3837,9 +3774,7 @@
         "insert from score",
         "jumps and signs",
         "longer",
-        "shorter",
-        "icon",
-        "button"
+        "shorter"
        ],
        "see": [],
        "children": []

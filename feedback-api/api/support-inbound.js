@@ -129,7 +129,7 @@ async function relevantPages(subject, body) {
     for (const w of want) { let c = 0, at = -1; while (c < 3 && (at = hay.indexOf(w, at + 1)) !== -1) c++; if (c) n += 1 + 0.5 * (c - 1); }
     return { p, n };
   }).filter((x) => x.n >= 4).sort((a, b) => b.n - a.n).slice(0, 4);
-  const top = await Promise.all(scored.map(async ({ p }) => ({ ...p, md: (await guideMd(p)).slice(0, 2300) })));
+  const top = await Promise.all(scored.map(async ({ p }) => ({ ...p, md: (await guideMd(p)).slice(0, p.slug.startsWith("icons-") ? 6500 : 2300) })));
   const outline = groups.map((g) => `## ${g.title}\n` + g.topics.map((t) => `${t.title} (${t.slug})${t.children?.length ? ": " + t.children.map((c) => `${c.title} (${c.slug})`).join("; ") : ""}`).join("\n")).join("\n");
   // A clear match: a good score AND the top page covers at least half of the customer's distinctive words. One shared word
   // such as "iPad" is not enough, and when the guide is not clear the app's code is searched as well.

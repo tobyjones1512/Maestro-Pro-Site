@@ -350,3 +350,4 @@ a.get:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(246,168,40,.3
 .allkids li{break-inside:avoid;padding:2px 0}
 
 .guide__body .ico__img{display:inline-block;vertical-align:middle;width:30px;height:30px;padding:5px;margin:0 .6em .15em 0;box-sizing:border-box;background:#2a241d;border-radius:7px}
+.gs{margin:0 0 1.6rem}.gs__l{position:absolute;left:-9999px}.gs input{width:100%;box-sizing:border-box;padding:.75rem 1rem;font:inherit;color:inherit;background:transparent;border:1px solid var(--hair);border-radius:10px}.gs__r{list-style:none;margin:.4rem 0 0;padding:0}.gs__r a{display:block;padding:.6rem .3rem;text-decoration:none;color:inherit;border-bottom:1px solid var(--hair)}.gs__r b{display:block}.gs__r span{display:block;opacity:.7;font-size:.92em}
