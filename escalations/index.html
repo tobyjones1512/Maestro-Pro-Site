@@ -130,7 +130,7 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
 .set textarea{min-height:420px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
 .set .num{width:90px}.set label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .set .row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.app[data-tab=settings] .panes{grid-template-columns:1fr}.app[data-tab=settings] .list{display:none}
+.app[data-tab=settings] .panes,.app[data-tab=disputes] .panes{grid-template-columns:1fr}.app[data-tab=settings] .list,.app[data-tab=disputes] .list{display:none}
 @media(max-width:820px){
  .panes{grid-template-columns:1fr}
  .list{border-right:0}
@@ -138,7 +138,23 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
  .app:not([data-open=true]) .view{display:none}
  .back{display:inline-flex}
 }
-.app[data-tab=settings] .view{display:block}
+.app[data-tab=settings] .view,.app[data-tab=disputes] .view{display:block}
+.dis{max-width:900px;display:grid;gap:14px}
+.dis h2{font:700 20px var(--serif);margin:0}
+.dis__bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dcase{border:1px solid var(--rule);border-radius:12px;background:var(--walnut-2);padding:16px 18px;display:grid;gap:12px}
+.dcase__head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.dcase__head h3{margin:0;font:700 17px var(--sans)}
+.dcase__sub{margin:2px 0 0;color:var(--brass-dim);font-size:13px}
+.dcase__meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 18px;margin:0}
+.dcase__meta dt{color:var(--brass-dim);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.dcase__meta dd{margin:2px 0 0}
+.dcase__quote{margin:0;padding:10px 14px;border-left:3px solid var(--amber);background:rgba(246,168,40,.06);border-radius:0 8px 8px 0;white-space:pre-wrap}
+.dcase__lbl{color:var(--brass-dim);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px}
+.dcase__files{display:flex;gap:8px;flex-wrap:wrap}
+.dcase textarea{min-height:60px;resize:vertical}
+.dcase__btns{display:flex;gap:10px;flex-wrap:wrap}
+.pill--ok{border-color:var(--ok);color:var(--ok)}.pill--bad{border-color:var(--bad);color:var(--bad)}
 </style>
 </head>
 <body>
@@ -158,6 +174,7 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
     <div class="tabs" role="tablist" aria-label="Desk">
       <button class="tab" role="tab" id="tab-esc" aria-selected="true" data-tab="esc">Escalations<span class="badge" id="openCount" hidden>0</span></button>
       <button class="tab" role="tab" id="tab-all" aria-selected="false" data-tab="all">Support chains</button>
+      <button class="tab" role="tab" id="tab-dis" aria-selected="false" data-tab="disputes">Copyright disputes<span class="badge" id="disCount" hidden>0</span></button>
       <button class="tab" role="tab" id="tab-set" aria-selected="false" data-tab="settings">Settings</button>
     </div>
     <span class="sp"></span>
@@ -211,6 +228,7 @@ function setTab(t){
   $("statusFilter").hidden=t!=="esc";$("app").dataset.tab=t;
   $("app").removeAttribute("data-open");state.cur=null;state.thread=null;$("view").replaceChildren(el("p","empty","Choose a chain."));
   if(t==="settings"){renderSettings();return}
+  if(t==="disputes"){renderDisputes();return}
   renderList();
 }
 function showErr(err){var v=$("view");var n=el("p","err",err.message);v.prepend(n)}
@@ -590,6 +608,78 @@ function renderChips(){
     var c=el("span","chip",p.title),x=el("button",null,"×");x.type="button";x.setAttribute("aria-label","Remove "+p.title);
     x.addEventListener("click",function(){state.picked.splice(i,1);renderChips()});c.append(x);box.append(c);
   });
+}
+// ---- Copyright disputes (the Marketplace's Dispute Resolution Centre). The owner's Marketplace key is asked for once per browser session.
+var MP="https://maestro-marketplace-api.vercel.app/api/marketplace-",MPK="desk-mp-key";
+function mpCall(fn,opts){
+  var key="";try{key=sessionStorage.getItem(MPK)||""}catch(e){}
+  opts=opts||{};
+  return fetch(MP+fn,{method:opts.body?"POST":"GET",headers:Object.assign({"X-MP-Key":key},opts.body?{"Content-Type":"application/json"}:{}),body:opts.body?JSON.stringify(opts.body):undefined})
+   .then(function(r){if(opts.blob&&r.ok)return r.blob();return r.json().catch(function(){return {}}).then(function(j){if(r.status===401){try{sessionStorage.removeItem(MPK)}catch(e){}throw new Error("The Marketplace key was not accepted.")}if(!r.ok)throw new Error(j.error||"Something went wrong.");return j})});
+}
+function disputeCard(d,max,reload){
+  var c=el("article","dcase"),open=d.status==="open"||d.status==="responded";
+  var h=el("div","dcase__head"),l=el("div");l.append(el("h3",null,d.title),el("p","dcase__sub","Item ID "+(d.code?"MP-"+d.code:"unknown")+" · "+d.seller+" · item "+d.itemStatus));
+  var pc=d.status==="upheld"?"pill pill--bad":d.status==="dismissed"?"pill pill--ok":"pill pill--open";
+  h.append(l,el("span",pc,d.status));c.append(h);
+  var m=el("dl","dcase__meta");
+  [["Filed by",d.claimant.name+(d.claimant.org?", "+d.claimant.org:"")+" <"+d.claimant.email+">"+(d.via==="support"?" (support bot)":"")],["Filed",when(d.created)],["Their work",d.work],["Merchant strikes",d.strikes+" of "+max],open?["Merchant must respond by",new Date(d.respondBy).toLocaleDateString("en-GB")]:null].forEach(function(p){
+    if(!p)return;var w=el("div");w.append(el("dt",null,p[0]),el("dd",null,p[1]));m.append(w)});
+  c.append(m,el("blockquote","dcase__quote",d.details));
+  function files(list,label){
+    if(!list||!list.length)return;var w=el("div");w.append(el("span","dcase__lbl",label));var f=el("div","dcase__files");
+    list.forEach(function(x){var b=el("button","btn btn--ghost btn--sm",x.name);b.type="button";b.addEventListener("click",function(){
+      mpCall("evidence-file?path="+encodeURIComponent(x.path),{blob:true}).then(function(bl){window.open(URL.createObjectURL(bl))}).catch(function(e){alert(e.message)})});f.append(b)});
+    w.append(f);c.append(w);
+  }
+  files(d.files,"Claimant evidence");
+  if(d.response){var r=el("div");r.append(el("span","dcase__lbl","Merchant response, "+when(d.response.at)),el("blockquote","dcase__quote",d.response.text));c.append(r);files(d.response.files,"Merchant evidence")}
+  else if(open)c.append(el("p","hint","The merchant has not responded yet."));
+  if(d.decision){c.append(el("p","hint","Decided "+when(d.decision.at)+(d.decision.note?": "+d.decision.note:"")))}
+  if(open){
+    var ta=el("textarea","field");ta.maxLength=600;ta.placeholder="Note to both sides (optional)";ta.setAttribute("aria-label","Note to both sides");
+    var bt=el("div","dcase__btns"),up=el("button","btn","Uphold: remove item and give a strike"),dm=el("button","btn btn--ghost","Dismiss: put back on sale");up.type=dm.type="button";
+    function decide(uphold){
+      if(!confirm(uphold?"Uphold this dispute? The item is removed for good and the merchant gets a strike"+(d.strikes+1>=max?" (this bars the merchant and withdraws all their items)":"")+".":"Dismiss this dispute and put the item back on sale?"))return;
+      up.disabled=dm.disabled=true;
+      mpCall("dispute-decide",{body:{id:d.id,uphold:uphold,note:ta.value}}).then(reload).catch(function(e){alert(e.message);up.disabled=dm.disabled=false});
+    }
+    up.addEventListener("click",function(){decide(true)});dm.addEventListener("click",function(){decide(false)});
+    bt.append(up,dm);c.append(ta,bt);
+  }
+  return c;
+}
+function renderDisputes(show){
+  var v=$("view"),w=el("div","dis");v.replaceChildren(w);
+  var key="";try{key=sessionStorage.getItem(MPK)||""}catch(e){}
+  if(!key){
+    w.append(el("h2",null,"Copyright disputes"),el("p","hint","Enter your Marketplace admin key to manage disputes. It is kept only for this browser session."));
+    var f=el("form"),i=el("input","field");i.type="password";i.required=true;i.setAttribute("aria-label","Marketplace admin key");i.autocomplete="off";
+    var b=el("button","btn","Open disputes");b.type="submit";var m=el("p","err");f.style.cssText="display:grid;gap:10px;max-width:380px";f.append(i,b,m);w.append(f);
+    f.addEventListener("submit",function(e){e.preventDefault();try{sessionStorage.setItem(MPK,i.value)}catch(x){}mpCall("dispute-list").then(function(){renderDisputes()}).catch(function(err){m.textContent=err.message})});
+    return;
+  }
+  w.append(el("p","empty","Loading..."));
+  mpCall("dispute-list").then(function(j){
+    w.replaceChildren();
+    var openN=j.disputes.filter(function(d){return d.status==="open"||d.status==="responded"}).length;
+    var badge=$("disCount");badge.hidden=!openN;badge.textContent=openN;
+    var bar=el("div","dis__bar");bar.append(el("h2",null,"Copyright disputes"));
+    var sel=el("select","field");sel.style.maxWidth="160px";sel.setAttribute("aria-label","Show");
+    [["open","Needs a decision"],["all","All"],["upheld","Upheld"],["dismissed","Dismissed"]].forEach(function(o){var op=el("option",null,o[1]);op.value=o[0];sel.append(op)});
+    var sp=el("span","sp"),rl=el("button","btn btn--ghost btn--sm","Reload");rl.type="button";var ck=el("button","btn btn--ghost btn--sm","Change key");ck.type="button";
+    bar.append(sp,sel,rl,ck);w.append(bar);
+    var list=el("div");list.style.cssText="display:grid;gap:14px";w.append(list);
+    function draw(){
+      list.replaceChildren();
+      var f=sel.value,rows=j.disputes.filter(function(d){return f==="all"||(f==="open"?(d.status==="open"||d.status==="responded"):d.status===f)});
+      if(!rows.length)list.append(el("p","empty",f==="open"?"No disputes need a decision.":"Nothing here."));
+      rows.forEach(function(d){list.append(disputeCard(d,j.max,function(){renderDisputes()}))});
+    }
+    sel.addEventListener("change",draw);rl.addEventListener("click",function(){renderDisputes()});
+    ck.addEventListener("click",function(){try{sessionStorage.removeItem(MPK)}catch(e){}renderDisputes()});
+    draw();
+  }).catch(function(err){w.replaceChildren(el("p","err",err.message));if(/key was not accepted/.test(err.message))renderDisputes()});
 }
 function renderSettings(){
   var v=$("view");v.replaceChildren(el("p","empty","Loading..."));

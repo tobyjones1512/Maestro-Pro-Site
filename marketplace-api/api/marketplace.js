@@ -514,6 +514,16 @@ async function disputeRespond(req, res) {
   if (!(await respondDispute(me.id, id, text, files))) return fail(res, 404, "That dispute can't be answered.");
   res.status(200).json({ ok: true });
 }
+/** Every dispute with everything the owner needs to decide it (owner only). */
+async function disputeList(req, res) {
+  if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
+  const all = await disputes(), prods = await products(), strikes = {};
+  for (const id of new Set(all.map((d) => d.sellerId))) strikes[id] = id === "platform" ? 0 : ((await readJson(SELLER(id)))?.strikes || []).length;
+  res.status(200).json({ max: STRIKES, disputes: all.slice().reverse().map((d) => {
+    const p = prods.find((x) => x.id === d.productId);
+    return { id: d.id, created: d.created, status: d.status, title: d.productTitle, code: p && code(p), itemStatus: p ? (p.withdrawn ? "withdrawn" : p.hold ? "on hold" : p.status) : "deleted", seller: p?.sellerName || "", strikes: strikes[d.sellerId] ?? 0, claimant: d.claimant, via: d.via, work: d.work, details: d.details, files: d.files || [], respondBy: d.respondBy, response: d.response, decision: d.decision };
+  }) });
+}
 async function disputeDecide(req, res) {
   if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
   const b = req.body || {};
@@ -700,7 +710,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
