@@ -10,7 +10,7 @@
 .pay--wide{max-width:36rem}
 .pay__msg{min-height:1.4em;margin-top:.8em}
 .gl{margin-top:2em}
-.gl__toc{columns:2;padding-left:1.2em}
+.gl__toc{columns:2;padding-left:0;list-style:none}
 .gl__item{margin:1.2em 0;scroll-margin-top:5rem}
 .gl__item h3{font-size:1.05rem;margin:0 0 .3em}
 .gl__item h3 a{color:var(--hl);text-decoration:none;font-variant-numeric:tabular-nums;margin-right:.4em}
