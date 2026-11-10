@@ -216,6 +216,26 @@ export function renderProducts(table, products, act, onAppeal, onEdit, onRemove)
 }
 export const productsTable = `<table class="mp-table"><thead><tr><th>Product</th><th>Status</th><th>Sold</th><th>Proceeds</th><th></th></tr></thead><tbody></tbody></table>`;
 
+/** Shows a file (PDF, image or text) in a window on the page instead of opening it in a new tab. */
+export async function showFile(blob, name) {
+  const e = name.split(".").pop().toLowerCase(), type = { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", txt: "text/plain" }[e];
+  let dlg = document.getElementById("mp-file");
+  if (!dlg) {
+    dlg = document.createElement("dialog"); dlg.id = "mp-file"; dlg.className = "mp-viewer"; dlg.setAttribute("aria-label", "File preview"); document.body.append(dlg);
+    dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-x]")) dlg.close(); });
+    dlg.addEventListener("close", () => { if (dlg.dataset.url) URL.revokeObjectURL(dlg.dataset.url); dlg.dataset.url = ""; dlg.replaceChildren(); });
+  }
+  let body;
+  if (!type) body = "<p>There's no preview for this kind of file.</p>";
+  else if (type === "text/plain") { const t = await blob.text(); body = `<pre>${esc(t.length > 200000 ? t.slice(0, 200000) + "\n\n[Shortened]" : t)}</pre>`; }
+  else {
+    const url = URL.createObjectURL(new Blob([blob], { type })); dlg.dataset.url = url;
+    body = type.startsWith("image/") ? `<img alt="${esc(name)}" src="${url}">` : `<iframe title="${esc(name)}" src="${url}#toolbar=0&navpanes=0"></iframe>`;
+  }
+  dlg.innerHTML = `<div class="mp-viewer__bar"><b>${esc(name)}</b><button type="button" class="pay__btn pay__btn--ghost" data-x>Close</button></div><div class="mp-viewer__body">${body}</div>`;
+  dlg.showModal();
+}
+
 /** Uploads the evidence files, then sends the appeal. Throws with a message the merchant can read. */
 export async function sendAppeal({ key, id, text, files, say = () => {} }) {
   const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");

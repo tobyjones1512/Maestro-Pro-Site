@@ -617,6 +617,25 @@ function mpCall(fn,opts){
   return fetch(MP+fn,{method:opts.body?"POST":"GET",headers:Object.assign({"X-MP-Key":key},opts.body?{"Content-Type":"application/json"}:{}),body:opts.body?JSON.stringify(opts.body):undefined})
    .then(function(r){if(opts.blob&&r.ok)return r.blob();return r.json().catch(function(){return {}}).then(function(j){if(r.status===401){try{sessionStorage.removeItem(MPK)}catch(e){}throw new Error("The Marketplace key was not accepted.")}if(!r.ok)throw new Error(j.error||"Something went wrong.");return j})});
 }
+function showBlob(blob,name){
+  var e=name.split(".").pop().toLowerCase(),type={pdf:"application/pdf",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",txt:"text/plain"}[e];
+  var dlg=document.getElementById("viewer");
+  if(!dlg){
+    dlg=document.createElement("dialog");dlg.id="viewer";dlg.className="viewer";dlg.setAttribute("aria-label","Attachment");document.body.append(dlg);
+    dlg.addEventListener("click",function(ev){if(ev.target===dlg)dlg.close()});
+    dlg.addEventListener("close",function(){if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=""}dlg.replaceChildren()});
+  }
+  if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=""}
+  var inn=el("div","viewer__in"),head=el("div","viewer__head");head.append(el("h3",null,name));
+  var cl=el("button","btn btn--ghost btn--sm","Close");cl.type="button";cl.addEventListener("click",function(){dlg.close()});head.append(cl);
+  var tabs=el("div","viewer__tabs");tabs.hidden=true;var body=el("div","viewer__body");inn.append(head,tabs,body);dlg.replaceChildren(inn);
+  if(!dlg.open)dlg.showModal();
+  if(!type){body.append(el("p",null,"There's no preview for this kind of file."));return}
+  if(type==="text/plain"){blob.text().then(function(x){body.append(el("pre",null,x.length>200000?x.slice(0,200000)+"\n\n[Shortened]":x))});return}
+  viewerUrl=URL.createObjectURL(new Blob([blob],{type:type}));
+  if(/^image\//.test(type)){var im=document.createElement("img");im.alt=name;im.src=viewerUrl;body.append(im)}
+  else{var fr=document.createElement("iframe");fr.title=name;fr.src=viewerUrl;body.append(fr)}
+}
 function disputeCard(d,max,reload){
   var c=el("article","dcase"),open=d.status==="open"||d.status==="responded";
   var h=el("div","dcase__head"),l=el("div");l.append(el("h3",null,d.title),el("p","dcase__sub","Item ID "+(d.code?"MP-"+d.code:"unknown")+" · "+d.seller+" · item "+d.itemStatus));
@@ -629,7 +648,7 @@ function disputeCard(d,max,reload){
   function files(list,label){
     if(!list||!list.length)return;var w=el("div");w.append(el("span","dcase__lbl",label));var f=el("div","dcase__files");
     list.forEach(function(x){var b=el("button","btn btn--ghost btn--sm",x.name);b.type="button";b.addEventListener("click",function(){
-      mpCall("evidence-file?path="+encodeURIComponent(x.path),{blob:true}).then(function(bl){window.open(URL.createObjectURL(bl))}).catch(function(e){alert(e.message)})});f.append(b)});
+      mpCall("evidence-file?path="+encodeURIComponent(x.path),{blob:true}).then(function(bl){showBlob(bl,x.name)}).catch(function(e){alert(e.message)})});f.append(b)});
     w.append(f);c.append(w);
   }
   files(d.files,"Claimant evidence");

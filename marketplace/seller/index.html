@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=7">
+<link rel="stylesheet" href="/assets/marketplace.css?v=8">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -78,7 +78,7 @@
   </form></dialog>
 </div>
 <script type="module">
-import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal } from "/assets/marketplace.js?v=7";
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile } from "/assets/marketplace.js?v=8";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");
@@ -179,7 +179,7 @@ $("disps").addEventListener("click", async (e) => {
   if (!b) return;
   if (b.dataset.file) {
     const r = await fetch(API + "evidence-file?path=" + encodeURIComponent(b.dataset.file), { headers: { "X-MP-Key": key } });
-    return r.ok ? window.open(URL.createObjectURL(await r.blob())) : alert("Couldn't open that file.");
+    return r.ok ? showFile(await r.blob(), b.textContent.trim()) : alert("Couldn't open that file.");
   }
   const card = b.closest("[data-id]"), act = b.dataset.act;
   try {
@@ -214,7 +214,7 @@ $("escs").addEventListener("click", async (e) => {
   if (!b) return;
   if (b.dataset.file) {
     const r = await fetch(API + "evidence-file?path=" + encodeURIComponent(b.dataset.file), { headers: { "X-MP-Key": key } });
-    return r.ok ? window.open(URL.createObjectURL(await r.blob())) : alert("Couldn't open that file.");
+    return r.ok ? showFile(await r.blob(), b.textContent.trim()) : alert("Couldn't open that file.");
   }
   if (b.dataset.accept === undefined) return;
   const card = b.closest("[data-id]"), accept = Boolean(b.dataset.accept);

@@ -7,7 +7,7 @@
 <title>Marketplace | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=7">
+<link rel="stylesheet" href="/assets/marketplace.css?v=8">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -36,7 +36,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, local } from "/assets/marketplace.js?v=7";
+import { api, esc, local } from "/assets/marketplace.js?v=8";
 const $ = (id) => document.getElementById(id), grid = $("grid");
 let d;
 const chips = (l) => l.formats.map((f) => `<span class="mp-chip${f === "PDF" || f === "Audio" ? " mp-chip--free" : ""}">${esc(f)}</span>`).join("");
