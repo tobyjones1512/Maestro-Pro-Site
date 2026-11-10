@@ -52,7 +52,10 @@ async function bundleOK(id) {
 }
 
 // ---- Public
-const pub = (p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
+// What a buyer can open without the app: PDF and audio files work anywhere. The rest are for Maestro Pro or other music software.
+const FORMAT = { pdf: "PDF", mp3: "Audio", m4a: "Audio", wav: "Audio", aif: "Audio", aiff: "Audio", caf: "Audio", aac: "Audio", flac: "Audio", musicxml: "MusicXML", mxl: "MusicXML", xml: "MusicXML", mid: "MIDI", midi: "MIDI", kar: "Karaoke", cdg: "Karaoke", lrc: "Lyrics", txt: "Lyrics" };
+const formatsOf = (p) => [...new Set([...(p.review?.files || []).filter((f) => !f.proof), ...(p.extras || [])].map((f) => FORMAT[ext(f.name)]).filter(Boolean))];
+const pub = (p) => ({ formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
 const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
@@ -126,8 +129,9 @@ async function sync(order) {
   if (s === "paid") {
     const sale = { id: order.id, t: Date.now(), listing: order.listing, title: order.title, usd: order.usd, currency: order.currency, amount: order.amount };
     await modify(SALES(order.sellerId || "platform"), (a) => ((a || []).some((x) => x.id === sale.id) ? undefined : [...(a || []), sale])).catch(() => {});
-    await sendMail({ to: order.email, idem: `mp-${order.id}`, subject: `Your download: ${order.title}`,
-      mail: buildEmail({ name: "there", label: "Marketplace", reply: `Thank you for your purchase.\n\nYour download of **${order.title}** is ready. Download it, then open the file in Maestro Pro. It is yours to keep, and you can use this link to download it again at any time.`, buttons: [["Download", link(order)]] }) });
+    const seller = (await products()).find((x) => x.id === order.listing)?.sellerName || "Maestro Pro";
+    await sendMail({ to: order.email, idem: `mp-${order.id}`, subject: `Your receipt: ${order.title}`,
+      mail: buildEmail({ name: "there", label: "Marketplace receipt", reply: `Thank you for your purchase. This is your receipt.\n\n- Item: **${order.title}**\n- Seller: ${seller}\n- Amount paid: **${order.amount} ${order.currency}**\n- Date: ${new Date().toUTCString().slice(0, 16)}\n- Order number: ${order.id.slice(0, 8).toUpperCase()}\n\nYour download is ready. Download it, then open the file in Maestro Pro, or use the files on their own. It is yours to keep, and you can use this link to download it again at any time.\n\nYou can cancel for a full refund within ${REFUND_DAYS} days from your [buyer account](account), under the [refund rules](refunds).`, buttons: [["Download", link(order)]] }) });
   }
   return order;
 }
@@ -339,6 +343,7 @@ async function withdraw(req, res) {
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
 const EVID = /^marketplace\/evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;
 const EVID_EXT = new Set(["pdf", "png", "jpg", "jpeg", "txt"]);
+const bad = (m) => Object.assign(new Error(m), { safe: true });   // an error whose message the merchant may read
 const EXTRA = /^marketplace\/extras\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // downloads that go with an item (printable PDFs and so on)
 async function appeal(req, res) {
   const me = await who(req);
@@ -357,7 +362,6 @@ async function appeal(req, res) {
   const p = await updateProduct(String(b.id), (x) => (x.sellerId === me.id && x.status === "refused" && !x.final && (x.refusals || 0) < MAX_REFUSALS
     ? { ...x, status: "scanning", lock: 0, appeal: { at: Date.now(), text, files }, review: { ...x.review, tries: 0, error: undefined } } : undefined));
   if (!p || p.status !== "scanning") return fail(res, 409, "This product can't be appealed.");
-  await step(p.id);
   res.status(200).json({ ok: true });
 }
 /** The owner's final decision on an escalated item (admin key only). */
@@ -386,9 +390,9 @@ async function upload(req, res) {
     body: req.body, request: req,
     onBeforeGenerateToken: async (pathname, payload) => {
       const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
-      if (!user || !ready(user)) throw new Error("Not signed in.");
+      if (!user || !ready(user)) throw bad("Not signed in.");
       const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname)), extra = EXTRA.test(pathname) && ALLOWED.has(ext(pathname));
-      if (!evid && !extra && !/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw new Error("Bad file name.");
+      if (!evid && !extra && !/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw bad(pathname.startsWith("marketplace/evidence/") ? "That file type isn't allowed. Use PDF, PNG, JPG or TXT." : "That file isn't allowed.");
       return { maximumSizeInBytes: evid ? 25e6 : extra ? 60e6 : 150e6, allowOverwrite: false, addRandomSuffix: false };
     },
   });
@@ -546,5 +550,5 @@ export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
   if (!fn) return fail(res, 404, "Not found.");
-  try { await fn(req, res); } catch (e) { if (!res.headersSent) fail(res, 500, e?.message?.startsWith("Seller") ? e.message : "Something went wrong. Please try again."); }
+  try { await fn(req, res); } catch (e) { console.error(req.query?.fn, e); if (!res.headersSent) fail(res, 500, e?.safe || e?.message?.startsWith("Seller") ? e.message : "Something went wrong. Please try again."); }
 }

@@ -13,13 +13,21 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="top">
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/account/">Account</a><a class="top__sell" href="/marketplace/onboard/">Sell</a></nav>
 </header>
 <main id="main" class="plain">
 <h1>Marketplace</h1>
 <p>Sheet music, backing tracks and karaoke for Maestro Pro. Buy a piece, download it, and open the file in the app.</p>
+<p class="mp-legend"><span class="mp-chip mp-chip--free">PDF</span> <span class="mp-chip mp-chip--free">Audio</span> files open on any device, with or without Maestro Pro. <span class="mp-chip">MusicXML</span> <span class="mp-chip">MIDI</span> <span class="mp-chip">Karaoke</span> <span class="mp-chip">Lyrics</span> files play along in Maestro Pro, and open in other music software too.</p>
 <p id="where" class="mp-note"></p>
-<p class="mp-note">Every item is checked and reviewed before it goes on sale. Make music? <a href="/marketplace/onboard/">Sell on the Marketplace</a>, and read the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a>.</p>
+<form id="tools" class="mp-tools" role="search" onsubmit="return false">
+  <input id="q" type="search" placeholder="Search title, composer or seller" aria-label="Search">
+  <select id="fmt" aria-label="Format"><option value="">All formats</option><option>PDF</option><option>Audio</option><option>MusicXML</option><option>MIDI</option><option>Karaoke</option><option>Lyrics</option></select>
+  <select id="max" aria-label="Price"><option value="">Any price</option><option value="1">Up to $1</option><option value="2.5">Up to $2.50</option><option value="5">Up to $5</option><option value="10">Up to $10</option></select>
+  <label><input id="free" type="checkbox"> Works without the app</label>
+  <select id="sort" aria-label="Sort"><option value="new">Newest</option><option value="low">Price, low to high</option><option value="high">Price, high to low</option><option value="az">Title, A to Z</option></select>
+</form>
+<p id="count" class="mp-note" aria-live="polite"></p>
 <div id="grid" class="mp-grid" aria-live="polite">Loading…</div>
 </main>
 <footer class="foot">
@@ -29,12 +37,24 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, local, dollars } from "/assets/marketplace.js";
-const grid = document.getElementById("grid");
+import { api, esc, local } from "/assets/marketplace.js";
+const $ = (id) => document.getElementById(id), grid = $("grid");
+let d;
+const chips = (l) => l.formats.map((f) => `<span class="mp-chip${f === "PDF" || f === "Audio" ? " mp-chip--free" : ""}">${esc(f)}</span>`).join("");
+function show() {
+  const q = $("q").value.trim().toLowerCase(), fmt = $("fmt").value, max = Number($("max").value) || Infinity, free = $("free").checked;
+  const list = d.listings.filter((l) => (!q || [l.title, l.composer, l.sellerName, l.description].join(" ").toLowerCase().includes(q))
+    && (!fmt || l.formats.includes(fmt)) && l.priceUSD <= max && (!free || l.anywhere));
+  const by = { new: (a, b) => b.created - a.created, low: (a, b) => a.priceUSD - b.priceUSD, high: (a, b) => b.priceUSD - a.priceUSD, az: (a, b) => a.title.localeCompare(b.title) }[$("sort").value];
+  list.sort(by);
+  $("count").textContent = d.listings.length ? `${list.length} of ${d.listings.length} items` : "";
+  grid.innerHTML = list.length ? list.map((l) => `<a class="mp-card" href="/marketplace/item/?id=${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.composer)}</small><small>${esc(l.contents)}${l.versions?.length ? ` (${l.versions.map(esc).join(", ")})` : ""}</small><div class="mp-chips">${chips(l)}</div><div class="mp-price">${esc(local(l.priceUSD, d))}</div></a>`).join("") : `<p>${d.listings.length ? "Nothing matches. Try a different search or filter." : "Nothing for sale yet."}</p>`;
+}
 try {
-  const d = await api("list");
-  document.getElementById("where").textContent = d.currency === "USD" ? "Prices are in US dollars." : `Prices are shown in ${d.currency}, the currency you will be charged in.`;
-  grid.innerHTML = d.listings.length ? d.listings.map((l) => `<a class="mp-card" href="/marketplace/item/?id=${esc(l.id)}"><b>${esc(l.title)}</b><small>${esc(l.composer)}</small><small>${esc(l.contents)}</small><div class="mp-price">${esc(local(l.priceUSD, d))}</div></a>`).join("") : "<p>Nothing for sale yet.</p>";
+  d = await api("list");
+  $("where").textContent = d.currency === "USD" ? "Prices are in US dollars." : `Prices are shown in ${d.currency}, the currency you will be charged in.`;
+  $("tools").addEventListener("input", show);
+  show();
 } catch (e) { grid.textContent = e.message; }
 </script>
 </body>

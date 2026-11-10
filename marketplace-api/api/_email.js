@@ -7,6 +7,8 @@ export const LINKS = {
   guidelines: `${SITE}/marketplace/guidelines/`,
   merchant: `${SITE}/marketplace/seller/`,
   marketplace: `${SITE}/marketplace/`,
+  account: `${SITE}/marketplace/account/`,
+  refunds: `${SITE}/marketplace/guidelines/#s7`,
   support: `mailto:${SUPPORT}`,
 };
 export const resolve = (t) => LINKS[t] || (t.startsWith(LINKS.guidelines) ? t : null);

@@ -153,7 +153,7 @@ export function mountBuilder(form, { getKey, onDone }) {
       }
       const extras = keptPaths($("[data-kept=extras]", form)), proof = keptPaths($("[data-kept=proof]", form));
       for (const file of [...f.extras.files]) { const path = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); extras.push(path); }
-      for (const file of [...f.proofFiles.files]) { const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
+      for (const file of [...f.proofFiles.files]) { if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed as proof. Use PDF, PNG, JPG or TXT.`); const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
       const contents = [variants.length > 1 ? `${variants.length} versions` : "Score", extras.length && `${extras.length} download${extras.length > 1 ? "s" : ""}`].filter(Boolean).join(", ");
       await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, proof: { text: f.proofText.value, files: proof } } });
       clear(); say("Submitted for review. Every file is checked, then the whole product is reviewed against the guidelines. You will be emailed the result.");
@@ -206,13 +206,14 @@ export function renderProducts(table, products, act, onAppeal, onEdit) {
   table.querySelectorAll("button[data-appeal]").forEach((b) => b.addEventListener("click", () => onAppeal?.(products.find((p) => p.id === b.dataset.appeal))));
   table.querySelectorAll("button[data-id]").forEach((b) => b.addEventListener("click", () => act(b.dataset.id, Boolean(b.dataset.w))));
 }
-export const productsTable = `<table class="mp-table"><thead><tr><th>Product</th><th>Status</th><th>Sold</th><th>Your share</th><th></th></tr></thead><tbody></tbody></table>`;
+export const productsTable = `<table class="mp-table"><thead><tr><th>Product</th><th>Status</th><th>Sold</th><th>Proceeds</th><th></th></tr></thead><tbody></tbody></table>`;
 
 /** Uploads the evidence files, then sends the appeal. Throws with a message the merchant can read. */
 export async function sendAppeal({ key, id, text, files, say = () => {} }) {
   const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");
   const paths = [];
   for (const f of files) {
+    if (!/\.(pdf|png|jpe?g|txt)$/i.test(f.name)) throw new Error(`${f.name} isn't allowed. Use PDF, PNG, JPG or TXT.`);
     const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${f.name.replace(/[^\w.\- ()]+/g, "_").slice(-100)}`;
     say(`Uploading ${f.name}…`);
     await upload(path, f, { access: "private", handleUploadUrl: API + "upload", clientPayload: JSON.stringify({ key }), contentType: f.type || "application/octet-stream" });
