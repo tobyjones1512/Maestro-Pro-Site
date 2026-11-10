@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=13">
+<link rel="stylesheet" href="/assets/marketplace.css?v=14">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -84,8 +84,18 @@ let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K)
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");
 if (once) {   // the one-time link from the sign-in email
   history.replaceState(null, "", location.pathname);
-  try { key = (await api("signin-verify", { method: "POST", body: { t: once } })).key; localStorage.setItem(K, key); }
-  catch (err) { setTimeout(() => { const m = $("si").querySelector("p"); if (m) m.textContent = err.message; }, 0); }
+  // The link is only used when the person presses the button, so a mail scanner that opens the link can't use it up.
+  const gate = document.createElement("dialog");
+  gate.className = "mp-gate"; gate.setAttribute("aria-label", "Sign in");
+  gate.innerHTML = '<h2>Sign in to your Merchant Account</h2><p class="mp-note">Press the button to finish signing in on this device.</p><button class="pay__btn" type="button">Sign in</button><p class="pay__msg" role="alert"></p>';
+  document.body.append(gate); gate.showModal();
+  const go = gate.querySelector("button"), msg = gate.querySelector(".pay__msg");
+  for (;;) {
+    await new Promise((r) => go.addEventListener("click", r, { once: true }));
+    go.disabled = true; msg.textContent = "";
+    try { key = (await api("signin-verify", { method: "POST", body: { t: once } })).key; try { localStorage.setItem(K, key); } catch {} gate.close(); break; }
+    catch (err) { msg.textContent = err.message; go.disabled = false; if (/expired|valid/.test(err.message)) { go.hidden = true; gate.querySelector("p").textContent = "Close this and ask for a new link on the sign-in page."; setTimeout(() => gate.close(), 4000); break; } }
+  }
 }
 if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
 const out = () => { $("out").hidden = false; $("in").hidden = true; };
