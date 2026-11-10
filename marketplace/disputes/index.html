@@ -7,7 +7,7 @@
 <title>Report a copyright problem | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=4">
+<link rel="stylesheet" href="/assets/marketplace.css?v=6">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -17,7 +17,13 @@
 </header>
 <main id="main" class="plain">
 <h1>Dispute Resolution Centre</h1>
-<p>If something on the Marketplace uses your work without your permission, tell us here. The item goes off sale while we look at it, the merchant is asked to respond, and a person at Maestro Pro decides. If the dispute is upheld the item is removed for good and the merchant gets a copyright strike. Three strikes close their account. Read <a href="/marketplace/guidelines/#s8">the rules</a>.</p>
+<p id="intro">If something on the Marketplace uses your work without your permission, tell us here. The item goes off sale while we look at it, the merchant is asked to respond, and a person at Maestro Pro decides. If the dispute is upheld the item is removed for good and the merchant gets a copyright strike. Three strikes close their account. Read <a href="/marketplace/guidelines/#s8">the rules</a>.</p>
+<section id="done" class="mp-done" tabindex="-1" role="status" hidden>
+  <h2>We have received your complaint</h2>
+  <p>Your copyright complaint is filed. Your reference is <b id="ref"></b>. We have emailed a confirmation to <b id="to"></b>.</p>
+  <ul><li>The item has been taken off sale while it is looked at.</li><li>The merchant has been told and has 7 days to respond.</li><li>A person at Maestro Pro then decides, and we will email you the outcome.</li></ul>
+  <p><a href="/marketplace/">Back to the Marketplace</a></p>
+</section>
 <form id="f" class="pay pay--wide">
   <label class="field">Your name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
   <label class="field">Company or rights holder you act for (optional)<input name="org" type="text" maxlength="80"></label>
@@ -58,8 +64,13 @@ f.addEventListener("submit", async (e) => {
       files.push(path);
     }
     m.textContent = "";
-    await api("dispute-file", { method: "POST", body: { claim, files, name: v.name.value, org: v.org.value, email: v.email.value, listing: v.listing.value, work: v.work.value, details: v.details.value, goodFaith: v.good.checked, website: v.website.value } });
-    f.hidden = true; m.parentNode.insertAdjacentHTML("beforeend", "<p><b>Thank you.</b> Your dispute is filed and we have emailed you a reference. The item is off sale while it is looked at, and we will email you the outcome.</p>");
+    const r = await api("dispute-file", { method: "POST", body: { claim, files, name: v.name.value, org: v.org.value, email: v.email.value, listing: v.listing.value, work: v.work.value, details: v.details.value, goodFaith: v.good.checked, website: v.website.value } });
+    document.getElementById("ref").textContent = String(r.id).slice(0, 8).toUpperCase();
+    document.getElementById("to").textContent = v.email.value;
+    f.hidden = true;
+    document.getElementById("intro").hidden = true;
+    const done = document.getElementById("done");
+    done.hidden = false; done.focus(); scrollTo(0, 0);
   } catch (err) { m.textContent = err.message; b.disabled = false; }
 });
 </script>

@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=4">
+<link rel="stylesheet" href="/assets/marketplace.css?v=6">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -126,15 +126,26 @@ async function load() {
   $("n-disp").hidden = !live.length; $("n-disp").textContent = live.length; $("rd").textContent = s.respondDays;
   $("strikes").innerHTML = stat("Copyright strikes", `${s.strikes} of ${s.maxStrikes}`) + stat("Open disputes", live.length);
   const ST = { open: "Open", responded: "Responded", upheld: "Upheld", dismissed: "Dismissed" }, day = (t) => new Date(t).toLocaleDateString();
-  $("disps").innerHTML = D.length ? D.map((d) => `<div class="card form" data-id="${esc(d.id)}"><h2>${esc(d.title)} <span class="mp-status mp-status--${d.status === "upheld" ? "refused" : d.status === "dismissed" ? "ready" : "wait"}">${ST[d.status]}</span></h2>
-    <p><b>Filed by:</b> ${esc(d.claimant)}${d.email ? ` (${esc(d.email)}${d.via === "support" ? ", through the support bot" : ""})` : ""}, ${day(d.created)}</p>
-    <p><b>Item ID:</b> MP-${esc(d.code || "")}</p><p><b>The work:</b> ${esc(d.work)}</p><p>${esc(d.details)}</p>
-    ${(d.files || []).length ? `<p><b>Evidence:</b> ${d.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join(" ")}</p>` : ""}
-    ${d.response ? `<p><b>Merchant response:</b> ${esc(d.response.text)}</p>` : ""}
-    ${d.decision ? `<p><b>Decision:</b> ${ST[d.status]}, ${day(d.decision.at)}${d.decision.note ? `. ${esc(d.decision.note)}` : ""}</p>` : ""}
-    ${d.status === "open" || d.status === "responded" ? (s.admin
-      ? `<label class="field">Note to both sides (optional)<textarea rows="2" maxlength="600" data-note></textarea></label><div class="row"><button class="pay__btn" type="button" data-act="uphold">Uphold: remove item and give a strike</button><button class="pay__btn pay__btn--ghost" type="button" data-act="dismiss">Dismiss: put back on sale</button></div>`
-      : `<p class="sub">Respond by ${day(d.respondBy)}.</p><label class="field">Your response<textarea rows="3" maxlength="2000" data-text>${esc(d.response?.text || "")}</textarea></label><button class="pay__btn" type="button" data-act="respond">Send response</button>`) : ""}</div>`).join("") : '<div class="card empty">No disputes.</div>';
+  $("disps").innerHTML = D.length ? D.map((d) => {
+    const isOpen = d.status === "open" || d.status === "responded";
+    return `<article class="card dcard" data-id="${esc(d.id)}">
+      <header class="dcard__head"><div><h2>${esc(d.title)}</h2><p class="dcard__sub">Item ID MP-${esc(d.code || "")}</p></div>
+        <span class="mp-status mp-status--${d.status === "upheld" ? "refused" : d.status === "dismissed" ? "ready" : "wait"}">${ST[d.status]}</span></header>
+      <dl class="dcard__meta">
+        <div><dt>Filed by</dt><dd>${esc(d.claimant)}${d.email ? `<br><small>${esc(d.email)}${d.via === "support" ? ", through the support bot" : ""}</small>` : ""}</dd></div>
+        <div><dt>Filed on</dt><dd>${day(d.created)}</dd></div>
+        <div><dt>Their work</dt><dd>${esc(d.work)}</dd></div>
+        ${isOpen ? `<div><dt>Respond by</dt><dd>${day(d.respondBy)}</dd></div>` : ""}
+      </dl>
+      <blockquote class="dcard__claim">${esc(d.details)}</blockquote>
+      ${(d.files || []).length ? `<div class="dcard__row"><span class="dcard__lbl">Evidence</span>${d.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button>`).join("")}</div>` : ""}
+      ${d.response ? `<div class="dcard__resp"><span class="dcard__lbl">Merchant response</span><p>${esc(d.response.text)}</p></div>` : ""}
+      ${d.decision ? `<div class="dcard__resp"><span class="dcard__lbl">Decision, ${day(d.decision.at)}</span><p>${ST[d.status]}${d.decision.note ? `. ${esc(d.decision.note)}` : ""}</p></div>` : ""}
+      ${isOpen ? (s.admin
+        ? `<div class="dcard__act"><label class="dcard__lbl" for="n-${esc(d.id)}">Note to both sides (optional)</label><textarea id="n-${esc(d.id)}" rows="2" maxlength="600" data-note></textarea><div class="dcard__btns"><button class="pay__btn" type="button" data-act="uphold">Uphold: remove item and give a strike</button><button class="pay__btn pay__btn--ghost" type="button" data-act="dismiss">Dismiss: put back on sale</button></div></div>`
+        : `<div class="dcard__act"><label class="dcard__lbl" for="r-${esc(d.id)}">Your response</label><textarea id="r-${esc(d.id)}" rows="4" maxlength="2000" data-text placeholder="Explain why the item is yours to sell, for example a licence or proof that you wrote it.">${esc(d.response?.text || "")}</textarea><div class="dcard__btns"><button class="pay__btn" type="button" data-act="respond">${d.response ? "Update response" : "Send response"}</button></div></div>`) : ""}
+    </article>`;
+  }).join("") : '<div class="card empty">No disputes.</div>';
   const E = s.escalations || [];
   $("t-esc").hidden = !s.admin; $("n-esc").hidden = !E.length; $("n-esc").textContent = E.length;
   $("escs").innerHTML = E.length ? E.map((p) => `<div class="card form" data-id="${esc(p.id)}"><h2>${esc(p.title)} <small>${esc(p.composer || "")}</small></h2>
