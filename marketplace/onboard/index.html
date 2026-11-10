@@ -77,7 +77,8 @@ async function load(waitForFee) {
     if (waitForFee && me.fee === "open") { say("Checking your payment…"); await new Promise((r) => setTimeout(r, 3000)); return load(--waitForFee); }
     $("s2t").textContent = me.fee === "open" ? "Your fee payment is waiting to be completed." : "Your last fee payment didn't go through. Nothing was charged.";
     say("");
-  } else show(me.connected ? 4 : 3);
+  } else if (me.connected && !q.get("error")) location.replace("/marketplace/seller/");   // already a merchant: go to the console
+  else show(me.connected ? 4 : 3);
 }
 $("f").addEventListener("submit", async (e) => {
   e.preventDefault();

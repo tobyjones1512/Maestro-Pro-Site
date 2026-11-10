@@ -9,59 +9,55 @@
 <link rel="stylesheet" href="/assets/maestro.css">
 <link rel="stylesheet" href="/assets/marketplace.css">
 </head>
-<body class="read">
-<a class="skip" href="#main">Skip to content</a>
-<header class="top">
-  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
-  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
-</header>
-<main id="main" class="asc">
-<div id="out" hidden class="plain">
-  <h1>Merchant account</h1>
-  <p>Sign in with the link we email you, or <a href="/marketplace/onboard/">open a Merchant Account</a>.</p>
-  <form id="si" class="pay"><label class="field">Email<input name="email" type="email" required autocomplete="email"></label><button class="pay__btn" type="submit">Email me a sign-in link</button><p class="pay__msg" role="status"></p></form>
+<body class="console">
+<div id="out" class="signin" hidden>
+  <div class="card">
+    <img src="/assets/app-icon-160.png" alt="">
+    <h1>Merchant account</h1>
+    <p class="sub">Sign in with the link we email you, or <a href="/marketplace/onboard/">open a Merchant Account</a>.</p>
+    <form id="si" class="pay"><label class="field">Email<input name="email" type="email" required autocomplete="email"></label><button class="pay__btn" type="submit">Email me a sign-in link</button><p class="pay__msg" role="status"></p></form>
+    <p class="mp-note"><a href="/marketplace/">Back to the Marketplace</a></p>
+  </div>
 </div>
-<div id="in" hidden>
-  <div class="asc__head"><h1>Merchant account</h1><span class="asc__who"><b id="who"></b> <button id="bye" class="pay__btn pay__btn--ghost" type="button">Sign out</button></span></div>
-  <p id="todo" class="notice asc__banner" hidden></p>
-  <div class="asc__body">
-    <div class="asc__nav" role="tablist" aria-label="Merchant account">
-      <button role="tab" id="t-products" data-tab="products" aria-selected="true">Products <i id="n-products" hidden></i></button>
+<div id="in" class="app" hidden>
+  <header class="bar">
+    <a class="brand" href="/marketplace/"><img src="/assets/app-icon-160.png" alt="">Maestro Pro Marketplace</a>
+    <span class="sp"></span>
+    <span class="who" id="who"></span>
+    <button id="bye" class="pay__btn pay__btn--ghost" type="button">Sign out</button>
+  </header>
+  <div class="shell">
+    <nav class="side" role="tablist" aria-label="Merchant account">
+      <small>Merchant</small>
+      <button role="tab" id="t-products" data-tab="products" aria-selected="true"><span>Products</span> <i id="n-products" hidden></i></button>
       <button role="tab" id="t-sales" data-tab="sales" aria-selected="false">Sales and Trends</button>
       <button role="tab" id="t-add" data-tab="add" aria-selected="false">Add Product</button>
       <button role="tab" id="t-account" data-tab="account" aria-selected="false">Account</button>
-    </div>
-    <div>
-      <section class="asc__pane" id="p-products" role="tabpanel" aria-labelledby="t-products">
-        <div class="asc__bar"><h2>Products</h2><button class="pay__btn" type="button" data-tab="add" id="new">Add Product</button></div>
-        <p class="mp-note">Every item is checked and reviewed against the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a>. You are emailed the result. Anything you withdraw from sale stays available to the people who already bought it.</p>
-        <div class="asc__panel" id="list"></div>
+    </nav>
+    <main class="page" id="main">
+      <p id="todo" class="notice" hidden></p>
+      <section id="p-products" role="tabpanel" aria-labelledby="t-products">
+        <div class="row"><div><h1>Products</h1><p class="sub">Every item is checked and reviewed against the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a>, and you are emailed the result. Anything you withdraw from sale stays available to the people who already bought it.</p></div><button class="pay__btn" type="button" data-tab="add" id="new">Add Product</button></div>
+        <div class="card" id="list"></div>
       </section>
-      <section class="asc__pane" id="p-sales" role="tabpanel" aria-labelledby="t-sales" hidden>
-        <h2>Sales and Trends</h2>
-        <div class="asc__stats" id="stats"></div>
+      <section id="p-sales" role="tabpanel" aria-labelledby="t-sales" hidden>
+        <h1>Sales and Trends</h1><p class="sub">Your share is what is left after Maestro Pro's <span class="cut">30</span>% and before payment processing fees.</p>
+        <div class="stats" id="stats"></div>
         <h2>Recent sales</h2>
-        <div class="asc__panel" id="recent"></div>
+        <div class="card" id="recent"></div>
       </section>
-      <section class="asc__pane" id="p-add" role="tabpanel" aria-labelledby="t-add" hidden>
-        <h2>Add Product</h2>
-        <p>You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span id="cut">30</span>% of each sale and the rest is paid out to you.</p>
-        <div class="asc__panel"><form id="f" class="pay pay--wide"></form></div>
+      <section id="p-add" role="tabpanel" aria-labelledby="t-add" hidden>
+        <h1>Add Product</h1><p class="sub">You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span class="cut">30</span>% of each sale and the rest is paid out to you.</p>
+        <div class="card form"><form id="f" class="pay pay--wide"></form></div>
       </section>
-      <section class="asc__pane" id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
-        <h2>Account</h2>
-        <div class="asc__panel"><dl class="asc__list" id="acct"></dl></div>
+      <section id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
+        <h1>Account</h1><p class="sub">Your Merchant Account details.</p>
+        <div class="card"><dl id="acct"></dl></div>
+        <p class="mp-note">Need help? <a href="/support/">Contact support</a> or read the <a href="/marketplace/guidelines/">guidelines</a>.</p>
       </section>
-    </div>
+    </main>
   </div>
 </div>
-</main>
-<footer class="foot">
-  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
-  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
-</footer>
-<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
-<script src="/assets/nav.js" defer></script>
 <script type="module">
 import { api, mountBuilder, builderFields, dollars, renderProducts, productsTable, inReview, esc } from "/assets/marketplace.js";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account"];
@@ -73,10 +69,11 @@ function tab(name) {
   if (!TABS.includes(name)) name = "products";
   if (name === "add" && !canPublish) name = "products";
   for (const t of TABS) { $("p-" + t).hidden = t !== name; $("t-" + t).setAttribute("aria-selected", String(t === name)); }
+  scrollTo(0, 0);
   try { sessionStorage.setItem("mp-tab", name); } catch {}
 }
 document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => tab(b.dataset.tab)));
-const stat = (l, v) => `<div class="asc__stat"><small>${l}</small><b>${v}</b></div>`;
+const stat = (l, v) => `<div class="stat"><small>${l}</small><b>${v}</b></div>`;
 const usd = (n) => "$" + Number(n).toFixed(2);
 async function load() {
   clearTimeout(timer);
@@ -85,20 +82,20 @@ async function load() {
   try { s = await api("merchant", { key }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return out(); }
   canPublish = s.canPublish;
   $("out").hidden = true; $("in").hidden = false;
-  $("who").textContent = s.name; $("cut").textContent = Math.round(s.cut * 100);
+  $("who").textContent = s.name; document.querySelectorAll(".cut").forEach((e) => (e.textContent = Math.round(s.cut * 100)));
   const todo = $("todo");
   todo.hidden = s.canPublish;
   todo.innerHTML = s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts</a>. You can add products after that.`;
   $("t-add").hidden = $("new").hidden = !s.canPublish;
   const n = s.products.filter(inReview).length;
   $("n-products").hidden = !n; $("n-products").textContent = n;
-  $("list").innerHTML = s.products.length ? productsTable : "<p>No products yet. Add your first one to send it for review.</p>";
+  $("list").innerHTML = s.products.length ? productsTable : `<div class="empty">No products yet.${s.canPublish ? " Add your first one to send it for review." : ""}</div>`;
   if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); });
   const x = s.sales;
   $("stats").innerHTML = stat("Units sold", x.count) + stat("Sales", usd(x.grossUSD)) + stat("Your proceeds", usd(x.earnedUSD)) + stat("Refunded", x.refunded);
   $("recent").innerHTML = x.recent?.length
     ? `<table class="mp-table"><thead><tr><th>Product</th><th>Date</th><th>Price</th></tr></thead><tbody>${x.recent.map((r) => `<tr><td>${esc(r.title)}</td><td>${new Date(r.t).toLocaleDateString()}</td><td>${usd(r.usd)}</td></tr>`).join("")}</tbody></table>`
-    : "<p>No sales yet.</p>";
+    : `<div class="empty">No sales yet.</div>`;
   $("acct").innerHTML = [["Name", esc(s.name)], ["Email", esc(s.email)], ["Technology fee", s.fee === "paid" ? "Paid" : "Not paid"], ["Payouts", s.connected ? "Set up" : "Not set up"], ["Marketplace share", Math.round(s.cut * 100) + "% of each sale"]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
   let t = "products"; try { t = sessionStorage.getItem("mp-tab") || t; } catch {}
