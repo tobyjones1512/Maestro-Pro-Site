@@ -348,3 +348,5 @@ a.get:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(246,168,40,.3
 .alltopic{font-family:var(--serif);font-size:1.15rem;margin:1.2em 0 .3em}
 .allkids{columns:2 16rem;column-gap:2rem;margin:0 0 1em;padding-left:1.1em}
 .allkids li{break-inside:avoid;padding:2px 0}
+
+.guide__body .ico__img{display:inline-block;vertical-align:middle;width:30px;height:30px;padding:5px;margin:0 .6em .15em 0;box-sizing:border-box;background:#2a241d;border-radius:7px}

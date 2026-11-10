@@ -93,6 +93,7 @@ path = lambda slug: f"/guide/{slug}/"
 def inline_html(t):
     t = esc(t)
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
+    t = re.sub(r"!\[[^\]]*\]\((/assets/icons/[A-Za-z0-9]+\.png)\)", r'<img class="ico__img" src="\1" alt="" width="30" height="30" loading="lazy">', t)   # an icon picture
     def link(m):
         txt, tgt = m.group(1), html.unescape(m.group(2))
         if re.match(r"^[a-z0-9-]+$", tgt):
@@ -116,6 +117,8 @@ def body_md(b):
     def link(m):
         txt, tgt = m.group(1), m.group(2)
         return f"[{txt}]({url(tgt) if re.match(r'^[a-z0-9-]+$', tgt) else (SITE + tgt if tgt.startswith('/') else tgt)})"
+    # An icon picture is written {{icon:file}} for the support assistant, which turns it into the picture in its emails.
+    b = re.sub(r"!\[[^\]]*\]\(/assets/icons/([A-Za-z0-9]+)\.png\)", r"{{icon:\1}}", b)
     return re.sub(r"\[([^\]]+)\]\(([^)]+)\)", link, b.replace("### ", "## "))
 def art_to_md(art):
     a = re.sub(r'<div class="pager">.*?</div>', "", art, flags=re.S); a = re.sub(r'<a class="back".*?</a>', "", a)
@@ -187,7 +190,7 @@ def pager(p):
 
 # ---------- plain text of every guide, for the support assistant's search ----------
 search = {}
-def plain_text(md): return re.sub(r"\s+", " ", re.sub(r"\*\*|[#>`]", "", re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", md))).strip()
+def plain_text(md): return re.sub(r"\s+", " ", re.sub(r"\*\*|[#>`]", "", re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", re.sub(r"!\[[^\]]*\]\([^)]*\)|\{\{icon:[A-Za-z0-9]+\}\}", "", md)))).strip()
 
 # ---------- write the new pages ----------
 for slug in order:

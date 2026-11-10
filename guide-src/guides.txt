@@ -1364,3 +1364,196 @@ keywords: feedback privacy, public board, fider, feedback public
 see: provide-feedback
 
 Provide Feedback in Settings posts what you type, the title and description, to the public feedback board at thecaffeinemediacompany.fider.io, tagged for Maestro Pro. Anything you send there can be read by anyone, so please leave out personal details. Nothing else is sent with it.
+
+## buttons-and-icons | group:Settings and help | Buttons and icons
+summary: Every button and icon in Maestro Pro, with a picture of it and what it does.
+keywords: icon, icons, button, buttons, symbol, toolbar, what does this button do, what is this icon, picture, image, undo, redo, sharp, flat, mute, solo, hide
+see: troubleshooting, keyboard-shortcuts
+
+Every button in Maestro Pro has an icon. These pages show each icon as a picture, with its name and what it does. Choose the part of the app you are looking at.
+
+
+## icons-playback-bar | buttons-and-icons | Playback bar icons
+summary: What each icon does: Go to Beginning, Previous Bar, Play, Next Bar and more.
+keywords: down a tone, go to beginning, key, metronome, next bar, play, previous bar, up a tone, icon, button
+
+- ![Go to Beginning](/assets/icons/backwardu2eendu2efill.png) **Go to Beginning**: jumps back to the start of the score.
+- ![Previous Bar](/assets/icons/backwardu2efill.png) **Previous Bar**: moves back one bar.
+- ![Play](/assets/icons/playu2efill.png) **Play**: starts the music and the page follows along. It becomes a Pause button while playing.
+- ![Next Bar](/assets/icons/forwardu2efill.png) **Next Bar**: moves forward one bar.
+- ![Metronome](/assets/icons/metronome.png) **Metronome**: switches the click on or off.
+- ![Key](/assets/icons/tuningfork.png) **Key**: opens the key menu for a backing track or karaoke file, to move the music up or down in semitones.
+- ![Down a Tone](/assets/icons/chevronu2edownu2e2.png) **Down a Tone**: in the key menu, lowers the music by two semitones.
+- ![Up a Tone](/assets/icons/chevronu2eupu2e2.png) **Up a Tone**: in the key menu, raises the music by two semitones.
+
+## icons-score-toolbar-1 | buttons-and-icons | Score toolbar icons (1 of 2)
+summary: What each icon does: Edit Score, Annotate, Wait for Me, Record Myself and more.
+keywords: annotate, chord view, edit score, fit to width, inspector, play together, record myself, show lyrics instead of music, tuner, wait for me, zoom in, zoom out, icon, button
+
+- ![Edit Score](/assets/icons/musicu2equarternoteu2e3.png) **Edit Score**: opens the score editor.
+- ![Annotate](/assets/icons/pencilu2etipu2ecropu2ecircle.png) **Annotate**: draw on the page with Apple Pencil.
+- ![Wait for Me](/assets/icons/earu2eandu2ewaveform.png) **Wait for Me**: the music waits until it hears you play the next note.
+- ![Record Myself](/assets/icons/recordu2ecircle.png) **Record Myself**: records you with the microphone so you can review the take.
+- ![Tuner](/assets/icons/tuningfork.png) **Tuner**: tells you how far in tune the note you play is.
+- ![Inspector](/assets/icons/slideru2ehorizontalu2e3.png) **Inspector**: opens the panel with this score's settings: key, tempo, backing tracks, staves and appearance.
+- ![Chord View](/assets/icons/squareu2egridu2e2x2.png) **Chord View**: shows the chords of the score as a grid.
+- ![Show Lyrics Instead of Music](/assets/icons/quoteu2ebubble.png) **Show Lyrics Instead of Music**: swaps the page for the words.
+- ![Play Together](/assets/icons/personu2e2u2ewaveu2e2.png) **Play Together**: plays in time with other devices.
+- ![Zoom In](/assets/icons/plusu2emagnifyingglass.png) **Zoom In**: makes the music bigger.
+- ![Zoom Out](/assets/icons/minusu2emagnifyingglass.png) **Zoom Out**: makes the music smaller.
+- ![Fit to Width](/assets/icons/arrowu2eupu2eleftu2eandu2earrowu2edownu2eright.png) **Fit to Width**: sizes the page to fill the screen width.
+
+## icons-score-toolbar-2 | buttons-and-icons | Score toolbar icons (2 of 2)
+summary: What each icon does: Follow Playback, Dark Sheet Music, Turn Pages Like a Book, Highlight Notes and more.
+keywords: dark sheet music, follow playback, highlight bar, highlight notes, more, moving line, turn pages like a book, icon, button
+
+- ![Follow Playback](/assets/icons/arrowu2edownu2edoc.png) **Follow Playback**: scrolls the page to keep the playing bar in view.
+- ![Dark Sheet Music](/assets/icons/moon.png) **Dark Sheet Music**: shows light notes on a dark page.
+- ![Turn Pages Like a Book](/assets/icons/booku2epages.png) **Turn Pages Like a Book**: pages turn with a curl instead of scrolling.
+- ![Highlight Notes](/assets/icons/musicu2enote.png) **Highlight Notes**: lights up each note as it sounds.
+- ![Highlight Bar](/assets/icons/rectangleu2einsetu2efilled.png) **Highlight Bar**: washes the playing bar with colour.
+- ![Moving Line](/assets/icons/arrowu2erightu2etou2eline.png) **Moving Line**: draws a line that travels along the music.
+- ![More](/assets/icons/ellipsisu2ecircle.png) **More**: the rest of the commands for this score.
+
+## icons-library-1 | buttons-and-icons | Library icons (1 of 2)
+summary: What each icon does: Settings, Help, Add, Import Score and more.
+keywords: add, export as pdf, help, import score, new blank score, new set-list, print, scales & arpeggios, scan sheet music, search scores, settings, tracks from github, icon, button
+
+- ![Settings](/assets/icons/gearshape.png) **Settings**: appearance, playing, listening, accessibility and shortcuts.
+- ![Help](/assets/icons/questionmarku2ecircle.png) **Help**: opens this guide.
+- ![Add](/assets/icons/plus.png) **Add**: add a score, a set-list or a file.
+- ![Import Score](/assets/icons/squareu2eandu2earrowu2edown.png) **Import Score**: brings a PDF, MusicXML or other score into the library.
+- ![Scan Sheet Music](/assets/icons/camerau2eviewfinder.png) **Scan Sheet Music**: photographs a printed page and reads it.
+- ![New Blank Score](/assets/icons/docu2ebadgeu2eplus.png) **New Blank Score**: starts an empty score to write in.
+- ![Search Scores](/assets/icons/magnifyingglass.png) **Search Scores**: finds classical pieces and jazz tunes to download.
+- ![Scales & Arpeggios](/assets/icons/pianokeys.png) **Scales & Arpeggios**: makes a practice score for a scale or arpeggio in any key.
+- ![New Set-List](/assets/icons/musicu2enoteu2elist.png) **New Set-List**: makes a list of scores to play in order.
+- ![Tracks from GitHub](/assets/icons/shippingbox.png) **Tracks from GitHub**: downloads scores and tracks from a GitHub repository.
+- ![Print](/assets/icons/printer.png) **Print**: prints the score.
+- ![Export as PDF](/assets/icons/docu2erichtext.png) **Export as PDF**: saves the page as a PDF.
+
+## icons-library-2 | buttons-and-icons | Library icons (2 of 2)
+summary: What each icon does: Export as MusicXML, Export Video, Rename, Duplicate and more.
+keywords: delete from library, duplicate, export as musicxml, export video, rename, icon, button
+
+- ![Export as MusicXML](/assets/icons/docu2etext.png) **Export as MusicXML**: saves the notes as a MusicXML file.
+- ![Export Video](/assets/icons/film.png) **Export Video**: makes a movie of the music following along.
+- ![Rename](/assets/icons/pencil.png) **Rename**: changes the score's name.
+- ![Duplicate](/assets/icons/plusu2esquareu2eonu2esquare.png) **Duplicate**: makes a copy of the score.
+- ![Delete from Library](/assets/icons/trash.png) **Delete from Library**: removes the score.
+
+## icons-editor-toolbar | buttons-and-icons | Editor toolbar icons
+summary: What each icon does: Listen, Help, Undo, Redo and more.
+keywords: deselect, help, history, listen, options, redo, undo, icon, button
+
+- ![Listen](/assets/icons/playu2efill.png) **Listen**: plays the music from the chosen note or bar. It becomes a Stop button while playing.
+- ![Help](/assets/icons/questionmarku2ecircle.png) **Help**: opens this guide at the editor pages.
+- ![Undo](/assets/icons/arrowu2euturnu2ebackward.png) **Undo**: takes back the last change.
+- ![Redo](/assets/icons/arrowu2euturnu2eforward.png) **Redo**: puts back a change you undid.
+- ![Options](/assets/icons/ellipsisu2ecircle.png) **Options**: the sound used for listening, beats per bar, editing with the Pencil only, history and more.
+- ![History](/assets/icons/clocku2earrowu2ecirclepath.png) **History**: saved versions and branches of the score.
+- ![Deselect](/assets/icons/xmarku2ecircle.png) **Deselect**: clears whatever is chosen. It shows in the middle of the toolbar while something is chosen.
+
+## icons-editing-modes | buttons-and-icons | Editing mode icons
+summary: What each icon does: Notes, Rests, Marks, Dynamics and more.
+keywords: bars, draw, dynamics, erase, form, marks, medley, notes, rests, icon, button
+
+- ![Notes](/assets/icons/pencilu2etip.png) **Notes**: put in and move notes, and set how long they last.
+- ![Rests](/assets/icons/pause.png) **Rests**: add, change and remove rests.
+- ![Marks](/assets/icons/textformatu2eabc.png) **Marks**: accidentals, ties and articulations.
+- ![Dynamics](/assets/icons/speakeru2ewaveu2e2.png) **Dynamics**: loud and soft, crescendo and diminuendo.
+- ![Bars](/assets/icons/repeat.png) **Bars**: repeat signs, and adding or removing bars.
+- ![Form](/assets/icons/arrowu2euturnu2eright.png) **Form**: first and second time bars, jumps and tempo.
+- ![Medley](/assets/icons/docu2eonu2edoc.png) **Medley**: copy, cut, paste and insert bars, even from other scores.
+- ![Erase](/assets/icons/eraser.png) **Erase**: rub out notes and rests.
+- ![Draw](/assets/icons/scribbleu2evariable.png) **Draw**: write over the music with Apple Pencil.
+
+## icons-editor-window | buttons-and-icons | Editing window buttons
+summary: What each icon does: Close, Minimise, Fit to Contents, Back.
+keywords: back, close, fit to contents, minimise, icon, button
+
+- ![Close](/assets/icons/xmark.png) **Close**: the red button closes the editing window.
+- ![Minimise](/assets/icons/minus.png) **Minimise**: the yellow button shrinks the window to its title bar. Double-tap the title bar to bring it back.
+- ![Fit to Contents](/assets/icons/arrowu2eupu2eleftu2eandu2earrowu2edownu2eright.png) **Fit to Contents**: the green button sizes the window to show everything in it.
+- ![Back](/assets/icons/chevronu2eleft.png) **Back**: goes back from a submenu to the list.
+
+## icons-editor-notes-1 | buttons-and-icons | Editing window icons for notes (1 of 3)
+summary: What each icon does: Sharp, Flat, Natural, Tie to the Next Note and more.
+keywords: copy notes, cut notes, dotted, duplicate notes, flat, half as long, natural, paste notes, sharp, tie to the next note, turn into a rest, twice as long, icon, button
+
+- ![Sharp](/assets/icons/mu3aE262.png) **Sharp**: puts a sharp on the chosen notes.
+- ![Flat](/assets/icons/mu3aE260.png) **Flat**: puts a flat on the chosen notes.
+- ![Natural](/assets/icons/mu3aE261.png) **Natural**: puts a natural on the chosen notes.
+- ![Tie to the Next Note](/assets/icons/tu3aTie.png) **Tie to the Next Note**: joins a note to the next one of the same pitch.
+- ![Dotted](/assets/icons/tu3au2022.png) **Dotted**: makes the note half as long again.
+- ![Copy Notes](/assets/icons/docu2eonu2edoc.png) **Copy Notes**: copies the chosen notes.
+- ![Cut Notes](/assets/icons/scissors.png) **Cut Notes**: copies the chosen notes and removes them.
+- ![Paste Notes](/assets/icons/docu2eonu2eclipboard.png) **Paste Notes**: opens a choice. Overwrite writes the copied notes over the ones already there and removes them. Insert puts them into new bars after this one.
+- ![Duplicate Notes](/assets/icons/plusu2esquareu2eonu2esquare.png) **Duplicate Notes**: opens a choice: Inline puts the copy straight after, On Stave Below or To Stave Above puts it on the next staff, and To New Stave makes a new staff for it.
+- ![Turn into a Rest](/assets/icons/trash.png) **Turn into a Rest**: replaces the chosen notes with a rest. For a rest, it takes the rest off the page.
+- ![Half as Long](/assets/icons/minus.png) **Half as Long**: halves the length of the chosen notes.
+- ![Twice as Long](/assets/icons/plus.png) **Twice as Long**: doubles the length of the chosen notes.
+
+## icons-editor-notes-2 | buttons-and-icons | Editing window icons for notes (2 of 3)
+summary: What each icon does: Pitch, Up, Down, Up an Octave and more.
+keywords: articulation, down, down an octave, dynamic, follow the key signature, generate harmony, pitch, select all bars, select all notes, select all notes on staff, up, up an octave, icon, button
+
+- ![Pitch](/assets/icons/arrowu2eupu2earrowu2edown.png) **Pitch**: three rows of buttons to move the chosen notes up or down by a Half Step, a Full Step or an Octave.
+- ![Up](/assets/icons/arrowu2eup.png) **Up**: raises the notes by the step named in its row.
+- ![Down](/assets/icons/arrowu2edown.png) **Down**: lowers the notes by the step named in its row.
+- ![Up an Octave](/assets/icons/arrowu2eupu2etou2eline.png) **Up an Octave**: raises the notes by an octave.
+- ![Down an Octave](/assets/icons/arrowu2edownu2etou2eline.png) **Down an Octave**: lowers the notes by an octave.
+- ![Generate Harmony](/assets/icons/musicu2enoteu2elist.png) **Generate Harmony**: writes a harmony a third, fourth, fifth, sixth or octave above or below on an empty staff, or a new one.
+- ![Select All Notes](/assets/icons/checklistu2echecked.png) **Select All Notes**: chooses every note in the piece.
+- ![Select All Notes on Staff](/assets/icons/checklist.png) **Select All Notes on Staff**: chooses every note on one staff.
+- ![Select All Bars](/assets/icons/rectangleu2esplitu2e3x1.png) **Select All Bars**: chooses every bar, so bar actions apply to all of them.
+- ![Articulation](/assets/icons/chevronu2erightu2e2.png) **Articulation**: staccato, accent, tenuto, marcato, fermata and more.
+- ![Dynamic](/assets/icons/speakeru2ewaveu2e2.png) **Dynamic**: sets a dynamic at the note, from ppp to fff.
+- ![Follow the Key Signature](/assets/icons/arrowu2ecounterclockwise.png) **Follow the Key Signature**: takes off a note's own accidental so the key signature decides.
+
+## icons-editor-notes-3 | buttons-and-icons | Editing window icons for notes (3 of 3)
+summary: What each icon does: Bar.
+keywords: bar, icon, button
+
+- ![Bar](/assets/icons/rectangleu2esplitu2e3x1.png) **Bar**: opens the settings for the note's bar in a second window.
+
+## icons-editor-bars-1 | buttons-and-icons | Editing window icons for bars (1 of 2)
+summary: What each icon does: Copy Bar, Cut Bar, Paste Bars, Duplicate and more.
+keywords: add a bar after, add bar after, add bar before, copy bar, crescendo and diminuendo, cut bar, delete bar, duplicate, paste bars, repeat end, repeat start, select content, icon, button
+
+- ![Copy Bar](/assets/icons/docu2eonu2edoc.png) **Copy Bar**: copies the chosen bars.
+- ![Cut Bar](/assets/icons/scissors.png) **Cut Bar**: copies the chosen bars and removes them.
+- ![Paste Bars](/assets/icons/docu2eonu2eclipboard.png) **Paste Bars**: opens a choice. Overwrite replaces the chosen bars with the copied ones. Insert puts the copied bars in after the chosen ones.
+- ![Duplicate](/assets/icons/plusu2esquareu2eonu2esquare.png) **Duplicate**: opens a choice of Inline, On Stave Below, To Stave Above or To New Stave.
+- ![Delete Bar](/assets/icons/trash.png) **Delete Bar**: removes the chosen bars. The last bar of a piece always stays.
+- ![Repeat start](/assets/icons/tu3au2016u3a.png) **Repeat start**: puts a repeat sign at the start of the bar.
+- ![Repeat end](/assets/icons/tu3au3au2016.png) **Repeat end**: puts a repeat sign at the end of the bar, and cycles through the number of times.
+- ![Add a bar after](/assets/icons/plus.png) **Add a bar after**: adds an empty bar after this one.
+- ![Add Bar After](/assets/icons/plusu2erectangle.png) **Add Bar After**: adds an empty bar after the chosen bar.
+- ![Add Bar Before](/assets/icons/plusu2erectangleu2eonu2erectangle.png) **Add Bar Before**: adds an empty bar before the chosen bar.
+- ![Select Content](/assets/icons/checklist.png) **Select Content**: chooses all the notes in the chosen bars.
+- ![Crescendo and Diminuendo](/assets/icons/chevronu2eleftu2eforwardslashu2echevronu2eright.png) **Crescendo and Diminuendo**: puts a hairpin over the bar.
+
+## icons-editor-bars-2 | buttons-and-icons | Editing window icons for bars (2 of 2)
+summary: What each icon does: Longer, Shorter, First and Second Time Bars, Jumps and Signs and more.
+keywords: add bass staff, add treble staff, all staves, delete staff, expand repeats, first and second time bars, insert from score, jumps and signs, longer, shorter, icon, button
+
+- ![Longer](/assets/icons/arrowu2erightu2etou2eline.png) **Longer**: stretches a hairpin or bracket over more bars.
+- ![Shorter](/assets/icons/arrowu2eleftu2etou2eline.png) **Shorter**: shortens a hairpin or bracket.
+- ![First and Second Time Bars](/assets/icons/squareu2esplitu2e2x1.png) **First and Second Time Bars**: first time, second time and bracket length.
+- ![Jumps and Signs](/assets/icons/arrowu2euturnu2eright.png) **Jumps and Signs**: Segno, Coda, To Coda, D.C., D.S. and Fine.
+- ![Insert from Score](/assets/icons/squareu2eandu2earrowu2edownu2eonu2esquare.png) **Insert from Score**: takes bars from another score in your library.
+- ![Expand Repeats](/assets/icons/rectangleu2eexpandu2evertical.png) **Expand Repeats**: writes the piece out as it is played.
+- ![All Staves](/assets/icons/rectangleu2esplitu2e1x2.png) **All Staves**: actions that take the bar from every staff at once.
+- ![Add Treble Staff](/assets/icons/plus.png) **Add Treble Staff**: adds a staff with a treble clef.
+- ![Add Bass Staff](/assets/icons/plus.png) **Add Bass Staff**: adds a staff with a bass clef.
+- ![Delete Staff](/assets/icons/trash.png) **Delete Staff**: removes one staff and its notes, leaving the others.
+
+## icons-staves | buttons-and-icons | Mute, solo and hide staff icons
+summary: What each icon does: Mute, Solo, Hide Staff, Show Staff.
+keywords: hide staff, mute, show staff, solo, icon, button
+
+- ![Mute](/assets/icons/tu3aM.png) **Mute**: silences a staff while the music plays.
+- ![Solo](/assets/icons/tu3aS.png) **Solo**: plays only the staves marked Solo.
+- ![Hide Staff](/assets/icons/eye.png) **Hide Staff**: takes a staff off the page. It stays off in exported and printed PDFs, so you can print one part.
+- ![Show Staff](/assets/icons/eyeu2eslash.png) **Show Staff**: puts a hidden staff back.

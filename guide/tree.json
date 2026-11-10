@@ -1,7 +1,7 @@
 {
  "site": "https://maestro-pro.app",
  "about": "Every Maestro Pro guide, grouped. Each page has an HTML url and a Markdown url.",
- "generated": "2026-11-08",
+ "generated": "2026-11-10",
  "groups": [
   {
    "title": "Start here",
@@ -3530,6 +3530,335 @@
         "the-nine-editor-modes",
         "editor-notes-mode"
        ],
+       "children": []
+      }
+     ]
+    },
+    {
+     "slug": "buttons-and-icons",
+     "title": "Buttons and icons",
+     "summary": "Every button and icon in Maestro Pro, with a picture of it and what it does.",
+     "url": "https://maestro-pro.app/guide/buttons-and-icons/",
+     "md": "https://maestro-pro.app/guide/buttons-and-icons.md",
+     "keywords": [
+      "icon",
+      "icons",
+      "button",
+      "buttons",
+      "symbol",
+      "toolbar",
+      "what does this button do",
+      "what is this icon",
+      "picture",
+      "image",
+      "undo",
+      "redo",
+      "sharp",
+      "flat",
+      "mute",
+      "solo",
+      "hide"
+     ],
+     "see": [
+      "troubleshooting",
+      "keyboard-shortcuts"
+     ],
+     "children": [
+      {
+       "slug": "icons-playback-bar",
+       "title": "Playback bar icons",
+       "summary": "What each icon does: Go to Beginning, Previous Bar, Play, Next Bar and more.",
+       "url": "https://maestro-pro.app/guide/icons-playback-bar/",
+       "md": "https://maestro-pro.app/guide/icons-playback-bar.md",
+       "keywords": [
+        "down a tone",
+        "go to beginning",
+        "key",
+        "metronome",
+        "next bar",
+        "play",
+        "previous bar",
+        "up a tone",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-score-toolbar-1",
+       "title": "Score toolbar icons (1 of 2)",
+       "summary": "What each icon does: Edit Score, Annotate, Wait for Me, Record Myself and more.",
+       "url": "https://maestro-pro.app/guide/icons-score-toolbar-1/",
+       "md": "https://maestro-pro.app/guide/icons-score-toolbar-1.md",
+       "keywords": [
+        "annotate",
+        "chord view",
+        "edit score",
+        "fit to width",
+        "inspector",
+        "play together",
+        "record myself",
+        "show lyrics instead of music",
+        "tuner",
+        "wait for me",
+        "zoom in",
+        "zoom out",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-score-toolbar-2",
+       "title": "Score toolbar icons (2 of 2)",
+       "summary": "What each icon does: Follow Playback, Dark Sheet Music, Turn Pages Like a Book, Highlight Notes and more.",
+       "url": "https://maestro-pro.app/guide/icons-score-toolbar-2/",
+       "md": "https://maestro-pro.app/guide/icons-score-toolbar-2.md",
+       "keywords": [
+        "dark sheet music",
+        "follow playback",
+        "highlight bar",
+        "highlight notes",
+        "more",
+        "moving line",
+        "turn pages like a book",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-library-1",
+       "title": "Library icons (1 of 2)",
+       "summary": "What each icon does: Settings, Help, Add, Import Score and more.",
+       "url": "https://maestro-pro.app/guide/icons-library-1/",
+       "md": "https://maestro-pro.app/guide/icons-library-1.md",
+       "keywords": [
+        "add",
+        "export as pdf",
+        "help",
+        "import score",
+        "new blank score",
+        "new set-list",
+        "print",
+        "scales & arpeggios",
+        "scan sheet music",
+        "search scores",
+        "settings",
+        "tracks from github",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-library-2",
+       "title": "Library icons (2 of 2)",
+       "summary": "What each icon does: Export as MusicXML, Export Video, Rename, Duplicate and more.",
+       "url": "https://maestro-pro.app/guide/icons-library-2/",
+       "md": "https://maestro-pro.app/guide/icons-library-2.md",
+       "keywords": [
+        "delete from library",
+        "duplicate",
+        "export as musicxml",
+        "export video",
+        "rename",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-toolbar",
+       "title": "Editor toolbar icons",
+       "summary": "What each icon does: Listen, Help, Undo, Redo and more.",
+       "url": "https://maestro-pro.app/guide/icons-editor-toolbar/",
+       "md": "https://maestro-pro.app/guide/icons-editor-toolbar.md",
+       "keywords": [
+        "deselect",
+        "help",
+        "history",
+        "listen",
+        "options",
+        "redo",
+        "undo",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editing-modes",
+       "title": "Editing mode icons",
+       "summary": "What each icon does: Notes, Rests, Marks, Dynamics and more.",
+       "url": "https://maestro-pro.app/guide/icons-editing-modes/",
+       "md": "https://maestro-pro.app/guide/icons-editing-modes.md",
+       "keywords": [
+        "bars",
+        "draw",
+        "dynamics",
+        "erase",
+        "form",
+        "marks",
+        "medley",
+        "notes",
+        "rests",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-window",
+       "title": "Editing window buttons",
+       "summary": "What each icon does: Close, Minimise, Fit to Contents, Back.",
+       "url": "https://maestro-pro.app/guide/icons-editor-window/",
+       "md": "https://maestro-pro.app/guide/icons-editor-window.md",
+       "keywords": [
+        "back",
+        "close",
+        "fit to contents",
+        "minimise",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-notes-1",
+       "title": "Editing window icons for notes (1 of 3)",
+       "summary": "What each icon does: Sharp, Flat, Natural, Tie to the Next Note and more.",
+       "url": "https://maestro-pro.app/guide/icons-editor-notes-1/",
+       "md": "https://maestro-pro.app/guide/icons-editor-notes-1.md",
+       "keywords": [
+        "copy notes",
+        "cut notes",
+        "dotted",
+        "duplicate notes",
+        "flat",
+        "half as long",
+        "natural",
+        "paste notes",
+        "sharp",
+        "tie to the next note",
+        "turn into a rest",
+        "twice as long",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-notes-2",
+       "title": "Editing window icons for notes (2 of 3)",
+       "summary": "What each icon does: Pitch, Up, Down, Up an Octave and more.",
+       "url": "https://maestro-pro.app/guide/icons-editor-notes-2/",
+       "md": "https://maestro-pro.app/guide/icons-editor-notes-2.md",
+       "keywords": [
+        "articulation",
+        "down",
+        "down an octave",
+        "dynamic",
+        "follow the key signature",
+        "generate harmony",
+        "pitch",
+        "select all bars",
+        "select all notes",
+        "select all notes on staff",
+        "up",
+        "up an octave",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-notes-3",
+       "title": "Editing window icons for notes (3 of 3)",
+       "summary": "What each icon does: Bar.",
+       "url": "https://maestro-pro.app/guide/icons-editor-notes-3/",
+       "md": "https://maestro-pro.app/guide/icons-editor-notes-3.md",
+       "keywords": [
+        "bar",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-bars-1",
+       "title": "Editing window icons for bars (1 of 2)",
+       "summary": "What each icon does: Copy Bar, Cut Bar, Paste Bars, Duplicate and more.",
+       "url": "https://maestro-pro.app/guide/icons-editor-bars-1/",
+       "md": "https://maestro-pro.app/guide/icons-editor-bars-1.md",
+       "keywords": [
+        "add a bar after",
+        "add bar after",
+        "add bar before",
+        "copy bar",
+        "crescendo and diminuendo",
+        "cut bar",
+        "delete bar",
+        "duplicate",
+        "paste bars",
+        "repeat end",
+        "repeat start",
+        "select content",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-editor-bars-2",
+       "title": "Editing window icons for bars (2 of 2)",
+       "summary": "What each icon does: Longer, Shorter, First and Second Time Bars, Jumps and Signs and more.",
+       "url": "https://maestro-pro.app/guide/icons-editor-bars-2/",
+       "md": "https://maestro-pro.app/guide/icons-editor-bars-2.md",
+       "keywords": [
+        "add bass staff",
+        "add treble staff",
+        "all staves",
+        "delete staff",
+        "expand repeats",
+        "first and second time bars",
+        "insert from score",
+        "jumps and signs",
+        "longer",
+        "shorter",
+        "icon",
+        "button"
+       ],
+       "see": [],
+       "children": []
+      },
+      {
+       "slug": "icons-staves",
+       "title": "Mute, solo and hide staff icons",
+       "summary": "What each icon does: Mute, Solo, Hide Staff, Show Staff.",
+       "url": "https://maestro-pro.app/guide/icons-staves/",
+       "md": "https://maestro-pro.app/guide/icons-staves.md",
+       "keywords": [
+        "hide staff",
+        "mute",
+        "show staff",
+        "solo",
+        "icon",
+        "button"
+       ],
+       "see": [],
        "children": []
       }
      ]
