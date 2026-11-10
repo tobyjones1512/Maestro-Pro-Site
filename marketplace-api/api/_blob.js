@@ -9,7 +9,7 @@ export async function readVersioned(path) {
     const r = await get(path, { access: ACCESS(), useCache: false });
     if (!r || r.statusCode !== 200) return { data: null, etag: null };
     return { data: JSON.parse(await new Response(r.stream).text()), etag: r.blob.etag };
-  } catch { return { data: null, etag: null }; }
+  } catch (e) { console.error("blob read", path, e?.message); return { data: null, etag: null }; }
 }
 export const readJson = async (path) => (await readVersioned(path)).data;
 
@@ -27,7 +27,8 @@ export const writeRaw = (path, data) => put(path, JSON.stringify(data), { access
 
 /** Read, change and write a JSON file, trying again if someone else wrote in between. `change` gets the current value (or null) and returns the new one. */
 export async function modify(path, change) {
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 12; i++) {
+    if (i) await new Promise((r) => setTimeout(r, Math.random() * 120 * i));   // back off so competing writers stop colliding
     const { data, etag } = await readVersioned(path);
     const next = change(data);
     if (next === undefined) return data;   // nothing to change
