@@ -33,7 +33,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, local, dollars, where } from "/assets/marketplace.js";
+import { api, esc, local, dollars, where } from "/assets/marketplace.js?v=5";
 const id = new URLSearchParams(location.search).get("id"), box = document.getElementById("item"), f = document.getElementById("f");
 try {
   const d = await api("list"), l = d.listings.find((x) => x.id === id);

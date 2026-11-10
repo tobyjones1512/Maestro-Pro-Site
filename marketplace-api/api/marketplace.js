@@ -6,7 +6,7 @@
 // Nothing here deletes a bundle or an order: once someone has paid they can download again, whatever happens to the listing.
 import { Readable } from "node:stream";
 import { get } from "@vercel/blob";
-import { readJson, writeRaw, modify, products, addProduct, updateProduct } from "./_blob.js";
+import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
 import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
 import { BUNDLE, ALLOWED, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
@@ -339,7 +339,7 @@ async function merchant(req, res) {
       id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
       reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), versions: variantsOf(p).map((v) => v.label).filter(Boolean),
-      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
+      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
       guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
@@ -357,6 +357,26 @@ async function withdraw(req, res) {
   const p = await updateProduct(String(id), (x) => (x.sellerId === me.id && x.status === "ready" ? { ...x, withdrawn: Boolean(withdrawn) } : undefined));
   if (!p || p.sellerId !== me.id) return fail(res, 404, "Product not found.");
   res.status(200).json({ ok: true, withdrawn: Boolean(p.withdrawn) });   // only stops new sales: buyers keep their downloads
+}
+
+/** A submission that never went on sale can be cancelled or removed: while it is in review, after a refusal, or while it waits for a final decision. */
+const removable = (p) => ["scanning", "reviewing", "refused", "escalated"].includes(p.status) && !p.final && !p.hold && !p.published && !p.withdrawn;
+async function remove(req, res) {
+  const me = await who(req);
+  if (!me) return fail(res, 401, "Not signed in.");
+  let gone = null;
+  await modify(INDEX, (all) => {
+    const p = (all || []).find((x) => x.id === String(req.body?.id));
+    if (!p || p.sellerId !== me.id || !removable(p)) return undefined;
+    gone = p;
+    return all.filter((x) => x.id !== p.id);
+  });
+  if (!gone) return fail(res, 409, "This can't be removed. Items that have been on sale can only be withdrawn from sale.");
+  try {   // tidy up the uploaded files
+    const { del } = await import("@vercel/blob");
+    await del([...variantsOf(gone).map((v) => BUNDLE(v.id)), ...(gone.extras || []).map((e) => e.path), ...(gone.proof?.files || []).map((f) => f.path), ...(gone.appeal?.files || []).map((f) => f.path)]);
+  } catch { /* leftover files are harmless */ }
+  res.status(200).json({ ok: true });
 }
 
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
@@ -609,7 +629,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

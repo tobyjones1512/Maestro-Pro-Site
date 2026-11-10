@@ -86,7 +86,6 @@ const keptPaths = (box) => [...box.querySelectorAll("input:checked")].map((i) =>
 
 /** Returns { edit(product), clear() }. */
 export function mountBuilder(form, { getKey, onDone }) {
-  if (location.hash.includes("debug")) form.querySelector("#debugfield")?.removeAttribute("hidden");
   const msg = $(".pay__msg", form), submit = $("button[type=submit]", form), say = (t, bad) => { msg.textContent = t; msg.style.color = bad ? "#c0392b" : ""; };
   const some = form.elements.where, vs = $(".mp-vers", form), list = $(".mp-regions", form);
   let editing = null;
@@ -191,7 +190,7 @@ export const builderFields = `
     <label><input type="radio" name="where" value="all" checked> Worldwide</label>
     <label><input type="radio" name="where" value="some"> Only these countries (you must hold the rights there; see guideline 2.9)</label>
     <div class="mp-regions" hidden></div></fieldset>
-  <label class="field" id="debugfield" hidden>Debug code (testing only)<input name="debugCode" type="password" autocomplete="off"></label>
+  <details class="mp-note"><summary>Testing</summary><label class="field">Debug code<input name="debugCode" type="password" autocomplete="off"></label></details>
   <label class="field"><input name="rights" type="checkbox" required> I wrote this, or I own the rights to sell all of it, and I have read the <a href="/marketplace/guidelines/" target="_blank">Merchant Content Review Guidelines</a>.</label>
   <div class="row"><button class="pay__btn" type="submit">Submit for review</button><button class="pay__btn pay__btn--ghost" type="button" data-cancel hidden>Cancel</button></div>
   <p class="pay__msg" role="status"></p>`;
@@ -202,12 +201,13 @@ export const inReview = (p) => p.status === "scanning" || p.status === "reviewin
 const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".", "-")}" target="_blank" rel="noopener">Guideline ${esc(g.id)}: ${esc(g.title)}</a></li>`;
 
 /** Fills `table` (a <tbody>) with the products. `act(id, withdrawn)` is called by the withdraw / put back on sale button. */
-export function renderProducts(table, products, act, onAppeal, onEdit) {
+export function renderProducts(table, products, act, onAppeal, onEdit, onRemove) {
   table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>ID ${esc(p.code)} &middot; ${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}${p.versions?.length ? ` &middot; ${p.versions.length} versions` : ""}</small></td>
     <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : LABEL[p.status] || esc(p.status)}</span>${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
       ${p.status === "refused" || p.status === "escalated" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul>${p.final ? "<small>Final decision. This can't be appealed.</small>" : p.canAppeal ? `<button class="pay__btn pay__btn--ghost" data-appeal="${esc(p.id)}">Appeal with evidence</button>` : p.status === "escalated" ? "<small>Waiting for a final decision from a person at Maestro Pro.</small>" : ""}</div>` : ""}</td>
     <td>${p.sold}</td><td>${dollars(p.earnedUSD)}</td>
-    <td>${p.editable ? `<button class="pay__btn pay__btn--ghost" data-edit="${esc(p.id)}">Edit</button> ` : ""}${p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;
+    <td>${p.editable ? `<button class="pay__btn pay__btn--ghost" data-edit="${esc(p.id)}">Edit</button> ` : ""}${p.removable ? `<button class="pay__btn pay__btn--ghost" data-remove="${esc(p.id)}">${inReview(p) ? "Cancel" : "Remove"}</button> ` : ""}${p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;
+  table.querySelectorAll("button[data-remove]").forEach((b) => b.addEventListener("click", () => onRemove?.(products.find((p) => p.id === b.dataset.remove))));
   table.querySelectorAll("button[data-edit]").forEach((b) => b.addEventListener("click", () => onEdit?.(products.find((p) => p.id === b.dataset.edit))));
   table.querySelectorAll("button[data-appeal]").forEach((b) => b.addEventListener("click", () => onAppeal?.(products.find((p) => p.id === b.dataset.appeal))));
   table.querySelectorAll("button[data-id]").forEach((b) => b.addEventListener("click", () => act(b.dataset.id, Boolean(b.dataset.w))));
