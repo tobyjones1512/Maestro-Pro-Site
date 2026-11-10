@@ -21,7 +21,9 @@ export const TAX = {
   // Americas, Africa and the Middle East
   CA: ["GST", .05, 0], MX: ["VAT", .16, 1], CL: ["VAT", .19, 1], CO: ["VAT", .19, 1], ZA: ["VAT", .15, 1], AE: ["VAT", .05, 1], SA: ["VAT", .15, 1],
 };
-export const taxFor = (cc) => { const t = TAX[String(cc || "").toUpperCase()]; return t ? { name: t[0], rate: t[1], inclusive: Boolean(t[2]) } : { name: "", rate: 0, inclusive: false }; };
+/** Tax is off while sales are under the registration threshold: set to true to collect it again (the rates, ledger and checkout breakdown all stay as they are). */
+export const TAX_ON = false;
+export const taxFor = (cc) => { const t = TAX_ON ? TAX[String(cc || "").toUpperCase()] : null; return t ? { name: t[0], rate: t[1], inclusive: Boolean(t[2]) } : { name: "", rate: 0, inclusive: false }; };
 
 /** What a buyer pays, in minor units of their currency, and how it breaks down. The price with its tax is rounded up to the next quarter; the tip is the exact amount, not rounded up. */
 export function quote(priceUSD, tipUSD, cur, fx, rate) {
