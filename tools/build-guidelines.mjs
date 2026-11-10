@@ -28,7 +28,7 @@ writeFileSync(new URL("../marketplace/guidelines/index.html", import.meta.url), 
 </header>
 <main id="main" class="plain">
 <h1>Marketplace Merchant Content Review Guidelines</h1>
-<p class="pay__fine">Last updated ${esc(g.updated)}</p>
+<p class="mp-note">Last updated ${esc(g.updated)}</p>
 ${g.intro.map((p) => `<p>${esc(p)}</p>`).join("\n")}
 <nav aria-label="Sections"><ol class="gl__toc">${toc}</ol></nav>
 ${body}

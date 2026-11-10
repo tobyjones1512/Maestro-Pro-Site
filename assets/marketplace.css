@@ -21,3 +21,4 @@
 .mp-reason{margin:6px 0 0;padding:10px 14px;border-left:3px solid #c0392b;background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%);font-size:.92rem}
 @media(max-width:600px){.gl__toc{columns:1}}
 .pay fieldset{border:0;padding:0;margin:1em 0}.pay fieldset label{display:block;margin:.3em 0}.pay select[multiple]{display:block;width:100%;margin-top:8px;font:inherit}
+.mp-note{margin:1em 0 0;font-size:.85rem;line-height:1.5;color:var(--fg2)}
