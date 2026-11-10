@@ -20,13 +20,13 @@ assert.deepEqual(cleanRegions(undefined), []); assert.deepEqual(cleanRegions(["g
 for (const v of ["GB", ["GBR"], ["g"], [1], "x"]) assert.equal(cleanRegions(v), null, String(v));
 assert.ok(availableIn([], "JP")); assert.ok(availableIn(undefined, undefined)); assert.ok(availableIn(["GB"], "gb")); assert.equal(availableIn(["GB"], "US"), false); assert.equal(availableIn(["GB"], undefined), false);
 
-// Refunds: 14 days, once per item (buying it again, even after a refund, loses the right)
+// Refunds: 14 days; lost for a purchase made after a refund of the same item
 const T = Date.now(), D = 864e5;
-assert.ok(refundable({ status: "paid", paidAt: T - 13 * D, same: 1 }, T));
-assert.equal(refundable({ status: "paid", paidAt: T - 15 * D, same: 1 }, T), false);
-assert.equal(refundable({ status: "paid", paidAt: T, same: 2 }, T), false);
-assert.equal(refundable({ status: "refunded", paidAt: T, same: 1 }, T), false);
-assert.equal(refundable({ status: "open", paidAt: T, same: 1 }, T), false);
+assert.ok(refundable({ status: "paid", paidAt: T - 13 * D, refundedBefore: false }, T));
+assert.equal(refundable({ status: "paid", paidAt: T - 15 * D, refundedBefore: false }, T), false);
+assert.equal(refundable({ status: "paid", paidAt: T, refundedBefore: true }, T), false);
+assert.equal(refundable({ status: "refunded", paidAt: T, refundedBefore: false }, T), false);
+assert.equal(refundable({ status: "open", paidAt: T, refundedBefore: false }, T), false);
 
 // VirusTotal verdicts
 assert.equal(verdictFrom({ harmless: 60, undetected: 10 }).status, "clean");

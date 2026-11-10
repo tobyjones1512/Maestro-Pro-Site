@@ -265,8 +265,8 @@ async function merchant(req, res) {
   const waiting = (await products()).find((p) => p.sellerId === me.id && inReview(p));
   if (waiting) await step(waiting.id);
   const mine = (await products()).filter((p) => p.sellerId === me.id), every = (await readJson(SALES(me.id))) || [], sales = every.filter((x) => !x.refunded);
-  const per = (id) => sales.filter((s) => s.listing === id);
-  const gross = sales.reduce((n, s) => n + s.usd, 0), share = me.admin ? 1 : 1 - CUT;
+  const per = (id) => sales.filter((s) => s.listing === id), back = (id) => every.filter((s) => s.refunded && (!id || s.listing === id));
+  const gross = sales.reduce((n, s) => n + s.usd, 0), share = me.admin ? 1 : 1 - CUT, charged = (list) => (me.admin ? 0 : list.reduce((n, s) => n + s.usd * CUT, 0));   // the marketplace share of a refunded sale is charged back
   res.status(200).json({
     id: me.id, name: me.name, email: me.email, admin: Boolean(me.admin),
     fee: me.admin ? "paid" : me.fee?.status || "none", feeGBP: FEE_GBP, connected: Boolean(me.admin || me.access), canPublish: ready(me),
@@ -275,9 +275,9 @@ async function merchant(req, res) {
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
       reason: p.status === "refused" ? p.review?.reason : undefined,
       guidelines: p.status === "refused" ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
-      sold: per(p.id).length, earnedUSD: Math.round(per(p.id).reduce((n, s) => n + s.usd, 0) * share * 100) / 100,
+      sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
-    sales: { count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round(gross * share * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd })) },
+    sales: { count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd })) },
     cut: CUT,
   });
 }
@@ -378,14 +378,14 @@ async function ordersOf(email) {
   }
   return out;
 }
-const sameItem = (all, o) => all.filter((x) => x.listing === o.listing).length;   // paid or refunded orders for this item, this order included
+const refundedBefore = (all, o) => all.some((x) => x.id !== o.id && x.listing === o.listing && x.status === "refunded" && (x.refundedAt || 0) <= (o.paidAt || o.created));   // an earlier purchase of this item was refunded
 async function buyerPurchases(req, res) {
   const b = await buyerWho(req);
   if (!b) return fail(res, 401, "Not signed in.");
   const all = await ordersOf(b.email);
   res.status(200).json({ email: b.email, purchases: all.map((o) => {
     const paidAt = o.paidAt || o.created;
-    return { order: o.id, token: o.token, listing: o.listing, title: o.title, paidAt, status: o.status, refundable: refundable({ status: o.status, paidAt, same: sameItem(all, o) }), refundBy: paidAt + REFUND_DAYS * 864e5 };
+    return { order: o.id, token: o.token, listing: o.listing, title: o.title, paidAt, status: o.status, refundable: refundable({ status: o.status, paidAt, refundedBefore: refundedBefore(all, o) }), refundBy: paidAt + REFUND_DAYS * 864e5 };
   }) });
 }
 
@@ -393,9 +393,9 @@ async function buyerPurchases(req, res) {
 async function refund(req, res) {
   const o = await owned({ query: { o: req.body?.o, t: req.body?.t } });
   if (!o) return fail(res, 404, "Order not found.");
-  const same = sameItem(await ordersOf(o.email.toLowerCase()), o), paidAt = o.paidAt || o.created;
-  if (!refundable({ status: o.status, paidAt, same })) {
-    return fail(res, 403, o.status === "refunded" ? "This purchase has already been refunded." : same > 1 ? "You have bought this item more than once, so the right to cancel no longer applies (guideline 7.2)." : `The ${REFUND_DAYS} days to cancel this purchase have passed.`);
+  const before = refundedBefore(await ordersOf(o.email.toLowerCase()), o), paidAt = o.paidAt || o.created;
+  if (!refundable({ status: o.status, paidAt, refundedBefore: before })) {
+    return fail(res, 403, o.status === "refunded" ? "This purchase has already been refunded." : before ? "You were refunded for this item before, so the right to cancel no longer applies to this purchase (guideline 7.2)." : `The ${REFUND_DAYS} days to cancel this purchase have passed.`);
   }
   const pay = await payee(o.sellerId);
   const r = await mollie("POST", `/payments/${o.paymentId}/refunds`, pay.token, { amount: { currency: o.currency, value: o.amount }, description: `Refund: ${o.title}`, ...(pay.seller && { testmode: !live() }) });
@@ -406,7 +406,7 @@ async function refund(req, res) {
   await sendMail({ to: o.email, idem: `mp-refund-${o.id}`, subject: `Refund for ${o.title}`,
     mail: buildEmail({ name: "there", label: "Marketplace", reply: `Your purchase of **${o.title}** has been refunded in full (${o.amount} ${o.currency}). The money goes back to the payment method you used and can take a few days to arrive.\n\nYour access to this item has ended.` }) });
   if (m?.email) await sendMail({ to: m.email, idem: `mp-refund-m-${o.id}`, subject: `A buyer cancelled: ${o.title}`,
-    mail: buildEmail({ name: String(m.name).split(" ")[0], label: "Merchant account", reply: `A buyer has cancelled their purchase of **${o.title}** within ${REFUND_DAYS} days and been refunded ${o.amount} ${o.currency}.\n\nUnder [guideline 7.3](${LINKS.guidelines}#g7-3), the refund and the refund fee Mollie charges for it are taken from your Mollie account. The sale no longer counts in your earnings.` }) });
+    mail: buildEmail({ name: String(m.name).split(" ")[0], label: "Merchant account", reply: `A buyer has cancelled their purchase of **${o.title}** within ${REFUND_DAYS} days and been refunded ${o.amount} ${o.currency}.\n\nUnder [guideline 7.3](${LINKS.guidelines}#g7-3), the full refund, including Maestro Pro's 30% share of the sale, and the refund fee Mollie charges for it are taken from your Mollie account. Maestro Pro keeps its share of the sale.` }) });
   res.status(200).json({ ok: true });
 }
 

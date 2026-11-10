@@ -104,7 +104,7 @@ export function cleanRegions(v) {
 }
 export const availableIn = (regions, country) => !regions?.length || regions.includes(String(country || "").toUpperCase());
 
-// ---- Refunds. A buyer may withdraw within 14 days of paying, once per item: if they have bought the same item again (even after a refund), neither purchase can be refunded.
+// ---- Refunds. A buyer may withdraw within 14 days of paying. The right is lost for a purchase made after a refund of the same item (guideline 7.2).
 export const REFUND_DAYS = 14;
-/** same: how many orders by this buyer for this item are paid or refunded (this one included). */
-export const refundable = ({ status, paidAt, same }, now = Date.now()) => status === "paid" && same === 1 && now - paidAt < REFUND_DAYS * 864e5;
+/** refundedBefore: this buyer already had a refund for this item before paying for this order. */
+export const refundable = ({ status, paidAt, refundedBefore }, now = Date.now()) => status === "paid" && !refundedBefore && now - paidAt < REFUND_DAYS * 864e5;

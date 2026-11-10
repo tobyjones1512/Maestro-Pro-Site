@@ -176,18 +176,18 @@ export default {
     },
     {
      "id": "7.2",
-     "title": "One refund per item",
-     "text": "The right to cancel is lost if the buyer buys the same item again. If the same buyer has paid for an item more than once, including buying it again after a refund, none of those purchases can be refunded under this section."
+     "title": "No refund after buying again",
+     "text": "The right to cancel is lost if the buyer has already had a refund for the same item from the same merchant and then buys it again. A purchase made after a refund of the same item cannot be refunded under this section."
     },
     {
      "id": "7.3",
      "title": "Refunds are paid by the merchant",
-     "text": "A refund is taken from the merchant's Mollie account, as the seller of the item. The merchant must also pay the refund fee that Mollie charges for processing it. The marketplace share on a refunded sale is not kept by Maestro Pro. A merchant cannot refuse, delay or reduce a refund that is due under section 7."
+     "text": "A refund is taken from the merchant's Mollie account, as the seller of the item. The merchant is charged the entire value of the refund, including the 30% marketplace share that Maestro Pro kept from the sale, and must also pay the refund fee that Mollie charges for processing it. A merchant cannot refuse, delay or reduce a refund that is due under section 7."
     },
     {
      "id": "7.4",
      "title": "What a refund does",
-     "text": "When a purchase is refunded, the buyer's access to that purchase ends and it no longer counts as a sale in the merchant's earnings. A buyer who needs the item again must buy it again."
+     "text": "When a purchase is refunded, the buyer's access to that purchase ends. In the merchant's earnings the sale is replaced by a charge for the full refund, so a refunded sale costs the merchant the marketplace share as well. A buyer who needs the item again must buy it again."
     },
     {
      "id": "7.5",
