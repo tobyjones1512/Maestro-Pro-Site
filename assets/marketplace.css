@@ -218,3 +218,9 @@ dialog.mp-viewer::backdrop{background:rgba(10,7,4,.78)}
 @media(max-width:600px){.mp-track{grid-template-columns:1fr}}
 .mp-dist__when{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}.mp-dist label{display:block;margin:.3em 0}
 .mp-genres{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:2px 12px}.mp-genres legend{grid-column:1/-1}.mp-genres label{margin:.15em 0}.mp-chip--genre{opacity:.85}
+/* Checkout email field: same look as the site's other inputs */
+.mp-buy__box .field{display:block;margin:0 0 1em;font-weight:600;font-size:.92rem;color:var(--fg)}
+.mp-buy__box .field input{display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:12px 14px;font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1.5px solid var(--hair);border-radius:9px;transition:border-color .2s,box-shadow .2s}
+.mp-buy__box .field input::placeholder{color:var(--fg2)}
+.mp-buy__box .field input:hover{border-color:var(--fg2)}
+.mp-buy__box .field input:focus{outline:0;border-color:var(--hl);box-shadow:0 0 0 3px color-mix(in srgb,var(--hl) 28%,transparent)}

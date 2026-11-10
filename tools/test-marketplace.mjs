@@ -13,7 +13,7 @@ for (const v of ["1", "1.00", "4.25", "4.5", "4.50", "4.75", "999.75", "12", "0.
 for (const v of ["4.10", "4.99", "4.01", "4.26", "0", "0.10", "0.24", "0.99", "-1", "1e1", "", "1000", "999.76", "4.255", "abc", "4,25"]) { assert.equal(validPrice(v), false, v); assert.equal(price(v), null, v); }
 assert.equal(price("4.5"), 4.5); assert.equal(price("4.75"), 4.75);
 assert.equal(currencyFor("GB"), "GBP"); assert.equal(currencyFor("DE"), "EUR"); assert.equal(currencyFor("US"), "USD"); assert.equal(currencyFor(undefined), "USD");
-assert.equal(fmt(minor(5, "JPY", 150.3), "JPY"), "752"); assert.equal(fmt(minor(4.25, "GBP", 0.75), "GBP"), "3.19"); assert.equal(fmt(minor(4.25, "USD", 1), "USD"), "4.25");
+assert.equal(fmt(minor(5, "JPY", 150.3), "JPY"), "752"); assert.equal(fmt(minor(4.25, "GBP", 0.75), "GBP"), "3.25"); assert.equal(fmt(minor(0.25, "GBP", 0.75), "GBP"), "0.25"); assert.equal(fmt(minor(0.25, "GBP", 0.76), "GBP"), "0.25"); assert.equal(fmt(minor(0.25, "GBP", 1.05), "GBP"), "0.50"); assert.equal(fmt(minor(1, "EUR", 0.26), "EUR"), "0.50"); assert.equal(fmt(minor(1, "EUR", 0.19), "EUR"), "0.25"); assert.equal(fmt(minor(1, "EUR", 0.25), "EUR"), "0.25"); assert.equal(fmt(minor(4.25, "USD", 1), "USD"), "4.25");
 
 // Where an item is sold
 assert.deepEqual(cleanRegions(undefined), []); assert.deepEqual(cleanRegions(["gb", "GB", "de"]), ["GB", "DE"]);

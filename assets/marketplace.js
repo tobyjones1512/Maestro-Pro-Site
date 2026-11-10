@@ -14,9 +14,9 @@ export async function api(fn, { method = "GET", body, query = {}, key, header = 
 }
 
 /** US dollars -> the buyer's currency, rounded up the way the server rounds it. */
-export function local(usd, { currency, rate }) {
-  const dec = currency === "JPY" || currency === "ISK" ? 0 : 2;
-  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Math.ceil(usd * rate * 10 ** dec - 1e-6) / 10 ** dec);
+export function local(usd, { currency, rate }, base = 0) {
+  const whole = currency === "JPY" || currency === "ISK", amt = (u) => (whole ? Math.ceil(u * rate - 1e-6) : Math.ceil(u * rate * 4 - 1e-6) / 4);   // rounded up to the next quarter (0.19 -> 0.25, 0.26 -> 0.50)
+  return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amt(usd + base) - (base ? amt(base) : 0));   // base: the price the amount is added to, so a tip is shown as the total minus the price
 }
 export const dollars = (n) => "$" + Number(n).toFixed(2) + " USD";
 

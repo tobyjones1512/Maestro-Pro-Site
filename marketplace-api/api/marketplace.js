@@ -169,7 +169,7 @@ async function buy(req, res) {
   let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   if (!r) { cur = "USD"; r = 1; }
   const create = (currency, rt, how) => {
-    const m = minor(l.priceUSD, currency, rt) + (tipUSD ? minor(tipUSD, currency, rt) : 0);
+    const m = minor(l.priceUSD + (tipUSD || 0), currency, rt);   // the total is rounded up, so the price and tip shown add up to it
     return mollie("POST", "/payments", pay.token, {
       amount: { currency, value: fmt(m, currency) },
       description: `${l.title} (Maestro Pro marketplace)`,

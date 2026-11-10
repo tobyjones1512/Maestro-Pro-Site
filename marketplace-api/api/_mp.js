@@ -61,7 +61,8 @@ export async function rate(cur) {
   return rates.v[cur] || null;
 }
 /** US dollars -> the charge in minor units of `cur`, rounded up. */
-export const minor = (usd, cur, r) => Math.ceil(usd * r * 10 ** decimals(cur) - 1e-6);
+/** A price in a buyer's currency, in minor units, rounded UP to the next quarter (0.19 becomes 0.25, 0.26 becomes 0.50). Currencies without cents round up to a whole unit. */
+export const minor = (usd, cur, r) => (decimals(cur) ? Math.ceil(usd * r * 4 - 1e-6) * 25 : Math.ceil(usd * r - 1e-6));
 export const fmt = (m, cur) => (m / 10 ** decimals(cur)).toFixed(decimals(cur));
 
 /** A price from $0.25 to $999.75 that ends in .00, .25, .50 or .75, as a number of dollars, or null. Any other cent amount is refused, never rounded. */

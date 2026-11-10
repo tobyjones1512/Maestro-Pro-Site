@@ -7,7 +7,7 @@
 <title>Buy | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=12">
+<link rel="stylesheet" href="/assets/marketplace.css?v=13">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -29,7 +29,7 @@
   </section>
   <form id="f" class="mp-buy__box" novalidate>
     <h2>Checkout</h2>
-    <label class="field">Email, for your download link<input name="email" type="email" autocomplete="email" required></label>
+    <label class="field">Email, for your download link<input name="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
     <fieldset class="mp-tip">
       <legend>Add a tip (optional)</legend>
       <div class="mp-tip__opts">
@@ -61,7 +61,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, local, dollars, where } from "/assets/marketplace.js?v=13";
+import { api, esc, local, dollars, where } from "/assets/marketplace.js?v=14";
 const $ = (id) => document.getElementById(id), id = new URLSearchParams(location.search).get("id"), f = $("f");
 const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
 let d, l;
@@ -73,7 +73,7 @@ const tipUSD = () => {
 function totals() {
   const t = tipUSD();
   $("cw").hidden = f.tip.value !== "custom";
-  $("sp").textContent = local(l.priceUSD, d); $("st").textContent = t ? local(t, d) : "None"; $("sx").textContent = local(l.priceUSD + t, d);
+  $("sp").textContent = local(l.priceUSD, d); $("st").textContent = t ? local(t, d, l.priceUSD) : "None"; $("sx").textContent = local(l.priceUSD + t, d);
 }
 function preview(file, name) {
   const box = $("pv");
