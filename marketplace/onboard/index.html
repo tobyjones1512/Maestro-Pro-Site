@@ -7,7 +7,7 @@
 <title>Open a Merchant Account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=9">
+<link rel="stylesheet" href="/assets/marketplace.css?v=10">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -61,7 +61,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api } from "/assets/marketplace.js?v=9";
+import { api } from "/assets/marketplace.js?v=10";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
 const show = (n) => [1, 2, 3, 4].forEach((i) => ($("s" + i).hidden = i !== n));

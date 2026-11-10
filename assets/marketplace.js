@@ -124,8 +124,10 @@ export function mountBuilder(form, { getKey, onDone }) {
   };
   $("[data-addt]", form).addEventListener("click", () => tracksEl.children.length < 40 && addTrack());
   form.querySelectorAll("input[name=kind]").forEach((r) => r.addEventListener("change", syncKind));
+  const syncDist = () => { $(".mp-dist__when", form).hidden = form.elements.dist.value !== "date"; };
+  form.querySelectorAll("input[name=dist]").forEach((r) => r.addEventListener("change", syncDist));
   const clear = () => {
-    editing = null; form.reset(); vs.innerHTML = ""; tracksEl.innerHTML = ""; addVersion(); setRegions([]); sync(); syncKind();
+    editing = null; form.reset(); vs.innerHTML = ""; tracksEl.innerHTML = ""; addVersion(); setRegions([]); sync(); syncKind(); syncDist();
     keptBoxes($("[data-kept=proof]", form), []); keptBoxes($("[data-kept=cover]", form), []);
     submit.textContent = "Submit for review"; $("[data-cancel]", form).hidden = true; say("");
   };
@@ -142,6 +144,9 @@ export function mountBuilder(form, { getKey, onDone }) {
       keptBoxes($("[data-kept=cover]", form), p.edit.extras.filter((x) => x.cover));
     } else form.elements.kind.value = "score";
     syncKind();
+    const rl = p.edit.release || { mode: "auto" };
+    form.elements.dist.value = rl.mode; if (rl.mode === "date") { const d = new Date(rl.at).toISOString(); f.relDate.value = d.slice(0, 10); f.relTime.value = d.slice(11, 16); }
+    syncDist();
     // each download stays with its own version (older items had them in one list: they go with the first version)
     [...vs.children].forEach((el, i) => keptBoxes($("[data-kept=vx]", el), p.edit.extras.filter((x) => (x.v ? x.v === el.dataset.keep : i === 0))));
     keptBoxes($("[data-kept=proof]", form), p.edit.proof.files || []);
@@ -155,6 +160,13 @@ export function mountBuilder(form, { getKey, onDone }) {
     const key = getKey();
     if (!key) return say("Sign in first.", true);
     if (!validPrice(form.price.value)) return say(PRICE_RULE, true);
+    let release = { mode: form.elements.dist.value };
+    if (release.mode === "date") {
+      const at = Date.parse(`${form.relDate.value}T${form.relTime.value || "00:00"}:00Z`);   // the date and time are GMT
+      if (!form.relDate.value || !Number.isFinite(at)) return say("Choose the release date (GMT).", true);
+      if (at < Date.now()) return say("The release date must be in the future (GMT).", true);
+      release.at = at;
+    }
     const regions = some.value === "some" ? [...list.querySelectorAll("input[name=region]:checked")].map((i) => i.value) : [];
     if (some.value === "some" && !regions.length) return say("Tick at least one country, or sell worldwide.", true);
     submit.disabled = true;
@@ -181,7 +193,7 @@ export function mountBuilder(form, { getKey, onDone }) {
       }
       const proof = keptPaths($("[data-kept=proof]", form));
       for (const file of [...f.proofFiles.files]) { if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed as proof. Use PDF, PNG, JPG or TXT.`); const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
-      let release = {};
+      let relBody = {};
       if (music) {
         const rows = [...tracksEl.children], tracks = [], range = { single: [1, 3], ep: [3, 6], album: [7, 40] }[f.format.value];
         if (rows.length < range[0] || rows.length > range[1]) throw new Error(`Add ${range[0]} to ${range[1]} tracks for a ${f.format.value === "ep" ? "EP" : f.format.value}.`);
@@ -197,10 +209,10 @@ export function mountBuilder(form, { getKey, onDone }) {
         let cover = keptPaths($("[data-kept=cover]", form))[0] || "";
         const art = f.cover.files[0];
         if (art) { if (!/\.(png|jpe?g)$/i.test(art.name)) throw new Error("Cover art must be a PNG or JPG."); cover = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(art.name)}`; await up(cover, art, "the cover art"); }
-        release = { kind: "music", format: f.format.value, tracks, cover };
+        relBody = { kind: "music", format: f.format.value, tracks, cover };
       }
       const contents = [variants.length > 1 ? `${variants.length} versions` : "Score", extras.length && `${extras.length} download${extras.length > 1 ? "s" : ""}`].filter(Boolean).join(", ");
-      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, ...release, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
+      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, release: { ...release }, variants, extras, ...relBody, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
       clear(); say("Submitted for review. Every file is checked, then the whole product is reviewed against the guidelines. You will be emailed the result.");
       onDone?.();
     } catch (err) { say(err.message, true); }
@@ -234,6 +246,12 @@ export const builderFields = `
     <label class="field">How do you hold the rights?<textarea name="proofText" rows="2" maxlength="1500"></textarea></label>
     <div class="mp-kept" data-kept="proof"></div>
     <input name="proofFiles" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" multiple></fieldset>
+  <fieldset class="field mp-dist"><legend>Distribution</legend>
+    <label><input type="radio" name="dist" value="auto" checked> Automatically: on sale as soon as it is approved</label>
+    <label><input type="radio" name="dist" value="manual"> Manually: I will release it myself once it is approved</label>
+    <label><input type="radio" name="dist" value="date"> Automatically on a specific date (GMT)</label>
+    <div class="mp-dist__when" hidden><label class="field">Date (GMT)<input name="relDate" type="date"></label><label class="field">Time (GMT)<input name="relTime" type="time" value="00:00"></label></div>
+    <p class="mp-note">An approved item that has not been released yet shows as Awaiting Distribution.</p></fieldset>
   <fieldset class="field"><legend>Where is this sold?</legend>
     <label><input type="radio" name="where" value="all" checked> Worldwide</label>
     <label><input type="radio" name="where" value="some"> Only these countries (you must hold the rights there; see guideline 2.9)</label>
@@ -249,12 +267,14 @@ export const inReview = (p) => p.status === "scanning" || p.status === "reviewin
 const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".", "-")}" target="_blank" rel="noopener">Guideline ${esc(g.id)}: ${esc(g.title)}</a></li>`;
 
 /** Fills `table` (a <tbody>) with the products. `act(id, withdrawn)` is called by the withdraw / put back on sale button. */
-export function renderProducts(table, products, act, onAppeal, onEdit, onRemove) {
+export const gmt = (t) => new Date(t).toLocaleString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " GMT";
+export function renderProducts(table, products, act, onAppeal, onEdit, onRemove, onRelease) {
   table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>ID ${esc(p.code)} &middot; ${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}${p.versions?.length ? ` &middot; ${p.versions.length} versions` : ""}</small></td>
-    <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : LABEL[p.status] || esc(p.status)}</span>${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
+    <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : p.awaiting ? "Awaiting Distribution" : LABEL[p.status] || esc(p.status)}</span>${p.awaiting ? `<br><small>${p.release.mode === "date" ? "Goes on sale " + gmt(p.release.at) : "Release it when you are ready."}</small>` : ""}${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
       ${p.status === "refused" || p.status === "escalated" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul>${p.final ? "<small>Final decision. This can't be appealed.</small>" : p.canAppeal ? `<button class="pay__btn pay__btn--ghost" data-appeal="${esc(p.id)}">Appeal with evidence</button>` : p.status === "escalated" ? "<small>Waiting for a final decision from a person at Maestro Pro.</small>" : ""}</div>` : ""}</td>
     <td>${p.sold}</td><td>${dollars(p.earnedUSD)}</td>
-    <td>${p.editable ? `<button class="pay__btn pay__btn--ghost" data-edit="${esc(p.id)}">Edit</button> ` : ""}${p.removable ? `<button class="pay__btn pay__btn--ghost" data-remove="${esc(p.id)}">${inReview(p) ? "Cancel" : "Remove"}</button> ` : ""}${p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;
+    <td>${p.editable ? `<button class="pay__btn pay__btn--ghost" data-edit="${esc(p.id)}">Edit</button> ` : ""}${p.removable ? `<button class="pay__btn pay__btn--ghost" data-remove="${esc(p.id)}">${inReview(p) ? "Cancel" : "Remove"}</button> ` : ""}${p.awaiting ? `<button class="pay__btn" data-release="${esc(p.id)}">Release now</button>` : p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;
+  table.querySelectorAll("button[data-release]").forEach((b) => b.addEventListener("click", () => onRelease?.(products.find((p) => p.id === b.dataset.release))));
   table.querySelectorAll("button[data-remove]").forEach((b) => b.addEventListener("click", () => onRemove?.(products.find((p) => p.id === b.dataset.remove))));
   table.querySelectorAll("button[data-edit]").forEach((b) => b.addEventListener("click", () => onEdit?.(products.find((p) => p.id === b.dataset.edit))));
   table.querySelectorAll("button[data-appeal]").forEach((b) => b.addEventListener("click", () => onAppeal?.(products.find((p) => p.id === b.dataset.appeal))));

@@ -161,4 +161,14 @@ assert.ok(emails.some((m) => /Merchant Account has been closed/.test(m.subject))
   assert.match(llm.last.messages[1].content, /<release type="single" tracks="2" cover-art="yes">/);
   assert.equal((await import("../marketplace-api/api/_bundle.js")).variantsOf(m).length, 0);
 }
+// 10. distribution: a manual or dated release is accepted but announced as awaiting distribution
+{
+  const id = "ffffffff-ffff-4fff-8fff-ffffffffffff", path = `marketplace/extras/${id}/f1111111-1111-1111-1111-111111111111-t1.mp3`;
+  await put(path, "audio ".repeat(120));
+  await addProduct({ ...base, id, title: "Later", contents: "Single, 1 track", kind: "music", format: "single", variants: [], created: 60, release: { mode: "date", at: Date.now() + 5 * 864e5 },
+    extras: [{ name: "t1.mp3", size: 720, path, title: "Later", n: 1 }] });
+  llm.answer = '{"decision":"accept","guidelines":[],"reason":"Original."}';
+  assert.equal((await run(id)).status, "ready");
+  assert.ok(emails.some((m) => /Later/.test(m.subject || "") && /Awaiting Distribution/.test(m.html || m.text || "")));
+}
 console.log("ok");

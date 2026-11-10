@@ -28,7 +28,20 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const clip = (s, n) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 const fail = (res, code, error) => res.status(code).json({ error });
 const inReview = (p) => p.status === "scanning" || p.status === "reviewing";
-const onSale = (p) => p.status === "ready" && !p.withdrawn && !p.hold;   // a dispute puts an item on hold
+/** Distribution: "auto" puts an accepted item on sale straight away, "manual" waits for the merchant to release it, "date" waits for a date and time in GMT. */
+const released = (p) => p.released === true || !p.release || p.release.mode === "auto" || (p.release.mode === "date" && Date.now() >= p.release.at);
+const onSale = (p) => p.status === "ready" && !p.withdrawn && !p.hold && released(p);   // a dispute puts an item on hold
+const awaiting = (p) => p.status === "ready" && !p.withdrawn && !released(p);
+function releaseOf(r) {
+  const mode = r?.mode;
+  if (!mode || mode === "auto") return { release: { mode: "auto" } };
+  if (mode === "manual") return { release: { mode: "manual" } };
+  const at = Number(r?.at);
+  if (mode !== "date" || !Number.isFinite(at)) return { error: "Choose the release date and time." };
+  if (at < Date.now() - 6e4) return { error: "The release date must be in the future (GMT)." };
+  if (at > Date.now() + 2 * 365 * 864e5) return { error: "The release date can be at most two years away." };
+  return { release: { mode: "date", at } };
+}
 const first = (name) => String(name || "").split(" ")[0] || "there";
 
 async function who(req) {
@@ -397,10 +410,10 @@ async function merchant(req, res) {
     id: me.id, name: me.name, email: me.email, admin: Boolean(me.admin),
     fee: me.admin ? "paid" : me.fee?.status || "none", feeGBP: FEE_GBP, connected: Boolean(me.admin || me.access), canPublish: ready(me),
     products: mine.slice().reverse().map((p) => ({
-      id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
+      id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), release: p.release || { mode: "auto" }, awaiting: awaiting(p), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
       reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), versions: variantsOf(p).map((v) => v.label).filter(Boolean),
-      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { kind: p.kind === "music" ? "music" : "score", format: p.format, description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
+      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { release: p.release || { mode: "auto" }, kind: p.kind === "music" ? "music" : "score", format: p.format, description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
       guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
@@ -411,6 +424,14 @@ async function merchant(req, res) {
   });
 }
 
+/** Puts an accepted item that is awaiting distribution on sale now. */
+async function release(req, res) {
+  const me = await who(req);
+  if (!me) return fail(res, 401, "Not signed in.");
+  const p = await updateProduct(String(req.body?.id), (x) => (x.sellerId === me.id && x.status === "ready" && !x.withdrawn && !released(x) ? { ...x, released: true, releasedAt: Date.now() } : undefined));
+  if (!p || p.sellerId !== me.id || !released(p)) return fail(res, 409, "This item isn't awaiting distribution.");
+  res.status(200).json({ ok: true });
+}
 async function withdraw(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
@@ -582,6 +603,8 @@ async function content(b) {
   if (!usd) return { error: "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed." };
   const regions = cleanRegions(b.regions);
   if (!regions) return { error: "Choose the countries from the list, or sell worldwide." };
+  const rel = releaseOf(b.release);
+  if (rel.error) return { error: rel.error };
   if (b.rights !== true) return { error: "Confirm that you own the rights to sell this content." };
   const title = clip(b.title, 100);
   if (title.length < 2) return { error: "Give the piece a title." };
@@ -597,7 +620,7 @@ async function content(b) {
     const proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
     if (audio.error || art.error || proof.error) return { error: audio.error || art.error || proof.error };
     const extras = [...audio.files.map((f, i) => ({ ...f, title: ts[i].title, n: i + 1 })), ...art.files.map((f) => ({ ...f, cover: true }))];
-    return { fields: { kind: "music", format: b.format, title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: `${TYPE[b.format]}, ${ts.length} track${ts.length > 1 ? "s" : ""}`, regions, variants: [], extras, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
+    return { fields: { release: rel.release, kind: "music", format: b.format, title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: `${TYPE[b.format]}, ${ts.length} track${ts.length > 1 ? "s" : ""}`, regions, variants: [], extras, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
   }
   const variants = (Array.isArray(b.variants) ? b.variants : []).slice(0, 12).map((v) => ({ id: String(v?.id || ""), label: clip(v?.label, 40) }));
   if (!variants.length || variants.some((v) => !/^[0-9a-f-]{36}$/.test(v.id)) || new Set(variants.map((v) => v.id)).size !== variants.length) return { error: "Add at least one version." };
@@ -607,7 +630,7 @@ async function content(b) {
   const extras = await uploaded(xs.map((e) => e.path), EXTRA, b.id, ALLOWED, 10), proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
   if (extras.error || proof.error) return { error: extras.error || proof.error };
   extras.files = extras.files.map((f, i) => (variants.some((v) => v.id === xs[i].v) ? { ...f, v: xs[i].v } : f));   // each download belongs to one version
-  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, kind: undefined, format: undefined, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
+  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, release: rel.release, kind: undefined, format: undefined, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
 }
 
 /** Testing only: the code in MARKETPLACE_DEBUG_CODE makes a submission skip scanning and review and be accepted. Off while the variable is unset. */
@@ -638,7 +661,7 @@ async function edit(req, res) {
   await updateProduct(String(b.id), (x) => {
     if (x.sellerId !== me.id || !["ready", "refused"].includes(x.status) || x.final) return undefined;
     done = true;
-    return { ...x, ...c.fields, published: x.published || (x.status === "ready" ? { variants: variantsOf(x), extras: x.extras || [] } : undefined), status: "scanning", lock: 0, appeal: undefined, debug: debugOK(b) || undefined, review: { rightsConfirmed: Date.now() } };
+    return { ...x, ...c.fields, published: x.published || (x.status === "ready" ? { variants: variantsOf(x), extras: x.extras || [] } : undefined), status: "scanning", released: undefined, lock: 0, appeal: undefined, debug: debugOK(b) || undefined, review: { rightsConfirmed: Date.now() } };
   });
   if (!done) return fail(res, 409, "This product can't be edited right now.");
   res.status(200).json({ ok: true });
@@ -727,7 +750,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

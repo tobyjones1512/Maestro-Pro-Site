@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=9">
+<link rel="stylesheet" href="/assets/marketplace.css?v=10">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -78,7 +78,7 @@
   </form></dialog>
 </div>
 <script type="module">
-import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile } from "/assets/marketplace.js?v=9";
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile } from "/assets/marketplace.js?v=10";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");
@@ -114,7 +114,7 @@ async function load() {
   const n = s.products.filter(inReview).length;
   $("n-products").hidden = !n; $("n-products").textContent = n;
   $("list").innerHTML = s.products.length ? productsTable : `<div class="empty">No products yet.${s.canPublish ? " Add your first one to send it for review." : ""}</div>`;
-  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); }, openAppeal, openEdit, async (p) => { if (!confirm(`${p.status === "scanning" || p.status === "reviewing" ? "Cancel" : "Remove"} "${p.title}"? It is deleted for good.`)) return; try { await api("remove", { method: "POST", key, body: { id: p.id } }); } catch (err) { alert(err.message); } load(); });
+  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); }, openAppeal, openEdit, async (p) => { if (!confirm(`${p.status === "scanning" || p.status === "reviewing" ? "Cancel" : "Remove"} "${p.title}"? It is deleted for good.`)) return; try { await api("remove", { method: "POST", key, body: { id: p.id } }); } catch (err) { alert(err.message); } load(); }, async (p) => { try { await api("release", { method: "POST", key, body: { id: p.id } }); } catch (err) { alert(err.message); } load(); });
   const x = s.sales;
   $("stats").innerHTML = stat("Units sold", x.count) + stat("Sales", usd(x.grossUSD)) + stat("Your proceeds", usd(x.earnedUSD)) + stat("Tips", usd(x.tipsUSD || 0)) + stat("Refunded", x.refunded);
   $("recent").innerHTML = x.recent?.length
