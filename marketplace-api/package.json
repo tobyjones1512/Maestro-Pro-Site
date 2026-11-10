@@ -1,1 +1,1 @@
-{"name":"maestro-marketplace-api","private":true,"dependencies":{"@vercel/blob":"2.8.2","unpdf":"1.9.1"}}
+{"name":"maestro-marketplace-api","private":true,"dependencies":{"@vercel/blob":"2.8.2","pdf-lib":"1.17.1","unpdf":"1.9.1"}}

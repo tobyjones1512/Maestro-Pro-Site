@@ -63,6 +63,59 @@ async function list(req, res) {
   const r = await rate(cur);
   res.status(200).json({ listings: (await products()).filter((p) => onSale(p) && availableIn(p.regions, country(req))).reverse().map(pub), currency: r ? cur : "USD", rate: r || 1, cut: CUT });
 }
+/** One item for its page: the files in each version, with a preview where one is safe to show. */
+async function item(req, res) {
+  const cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
+  const p = (await products()).find((x) => x.id === String(req.query.id) && onSale(x) && availableIn(x.regions, country(req)));
+  if (!p) return fail(res, 404, "That piece isn't for sale.");
+  const kind = (n) => ({ pdf: "pdf", mp3: "audio" })[ext(n)] || "", ex = p.extras || [];
+  const url = (q) => `${API}/api/marketplace-preview?id=${p.id}&${q}`;
+  const detail = await Promise.all(variantsOf(p).map(async (v, i) => ({ id: v.id, label: v.label || "", files: [
+    ...(((await bundleInfo(v.id).catch(() => null))?.files) || []).map((f) => ({ name: f.name, size: f.size, type: FORMAT[ext(f.name)] || "", kind: kind(f.name), preview: kind(f.name) ? url(`v=${v.id}&f=${encodeURIComponent(f.name)}`) : "" })),
+    ...ex.map((e, k) => [e, k]).filter(([e]) => (e.v ? e.v === v.id : i === 0)).map(([e, k]) => ({ name: e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })),
+  ] })));
+  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1 });
+}
+const CLIP = 450000;   // about 30 seconds of a typical MP3
+/** A preview that is no use as a copy: the first page of a PDF with a PREVIEW watermark across it, or the first 30 seconds or so of an MP3. */
+async function preview(req, res) {
+  const p = (await products()).find((x) => x.id === String(req.query.id) && onSale(x));
+  if (!p) return fail(res, 404, "Not found.");
+  const { v, f, x } = req.query;
+  let name, buf;
+  if (x !== undefined) {
+    const e = (p.extras || [])[Number(x)];
+    if (!e || e.size > 40e6) return fail(res, 404, "No preview.");
+    name = e.name;
+    const r = await get(e.path, { access: process.env.BLOB_ACCESS === "public" ? "public" : "private", useCache: false }).catch(() => null);
+    if (!r || r.statusCode !== 200) return fail(res, 404, "No preview.");
+    const reader = r.stream.getReader(), parts = [], want = ext(name) === "mp3" ? CLIP : Infinity;
+    let n = 0;
+    while (n < want) { const { value, done } = await reader.read(); if (done) break; parts.push(value); n += value.length; }
+    reader.cancel().catch(() => {});
+    buf = Buffer.concat(parts).subarray(0, want === Infinity ? undefined : want);
+  } else {
+    const info = variantsOf(p).some((a) => a.id === v) && (await bundleInfo(String(v)).catch(() => null)), file = info?.files.find((a) => a.name === f);
+    if (!file || file.size > 40e6) return fail(res, 404, "No preview.");
+    name = file.name;
+    buf = await readRange(String(v), file.offset, file.offset + (ext(name) === "mp3" ? Math.min(file.size, CLIP) : file.size));
+  }
+  if (!buf) return fail(res, 404, "No preview.");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Cache-Control", "public, max-age=300");
+  if (ext(name) === "mp3") { res.setHeader("Content-Type", "audio/mpeg"); return res.status(200).send(buf); }
+  if (ext(name) !== "pdf") return fail(res, 404, "No preview.");
+  const { PDFDocument, StandardFonts, rgb, degrees } = await import("pdf-lib");
+  const src = await PDFDocument.load(buf, { ignoreEncryption: true }), out = await PDFDocument.create();
+  const [pg] = await out.copyPages(src, [0]);
+  out.addPage(pg);
+  const font = await out.embedFont(StandardFonts.HelveticaBold), { width, height } = pg.getSize(), size = Math.min(width, height) / 5;
+  pg.drawText("PREVIEW", { x: width * 0.12, y: height * 0.28, size, font, color: rgb(0.45, 0.45, 0.45), opacity: 0.28, rotate: degrees(40) });
+  pg.drawText(`Preview: page 1 of ${src.getPageCount()}`, { x: 24, y: 14, size: 9, font, color: rgb(0.35, 0.35, 0.35) });
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", 'inline; filename="preview.pdf"');
+  res.status(200).send(Buffer.from(await out.save()));
+}
 const guidelinesInfo = (req, res) => res.status(200).json(guidelines);
 
 // ---- Paying
@@ -88,12 +141,16 @@ async function buy(req, res) {
   if (!l || !onSale(l)) return fail(res, 404, "That piece isn't for sale any more.");
   if (!availableIn(l.regions, country(req))) return fail(res, 403, "This piece isn't available in your country.");
   if (!EMAIL.test(String(email ?? "").trim())) return fail(res, 400, "Enter a valid email address.");
-  const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, status: "open", created: Date.now() };
+  // An optional tip, as a percentage of the price or an amount in dollars. It is charged with the price.
+  const t = req.body?.tip || {};
+  const tipUSD = t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
+  if (!Number.isFinite(tipUSD) || tipUSD < 0 || tipUSD > 500) return fail(res, 400, "A tip can be from $0 to $500.");
+  const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);
   let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   if (!r) { cur = "USD"; r = 1; }
   const create = (currency, rt, how) => {
-    const m = minor(l.priceUSD, currency, rt);
+    const m = minor(l.priceUSD, currency, rt) + (tipUSD ? minor(tipUSD, currency, rt) : 0);
     return mollie("POST", "/payments", pay.token, {
       amount: { currency, value: fmt(m, currency) },
       description: `${l.title} (Maestro Pro marketplace)`,
@@ -128,11 +185,11 @@ async function sync(order) {
   if (s === "paid") order.paidAt = Date.now();
   await writeRaw(ORDER(order.id), order);
   if (s === "paid") {
-    const sale = { id: order.id, t: Date.now(), listing: order.listing, title: order.title, usd: order.usd, currency: order.currency, amount: order.amount };
+    const sale = { id: order.id, t: Date.now(), listing: order.listing, title: order.title, usd: order.usd, ...(order.tipUSD && { tipUSD: order.tipUSD }), currency: order.currency, amount: order.amount };
     await modify(SALES(order.sellerId || "platform"), (a) => ((a || []).some((x) => x.id === sale.id) ? undefined : [...(a || []), sale])).catch(() => {});
     const seller = (await products()).find((x) => x.id === order.listing)?.sellerName || "Maestro Pro";
     await sendMail({ to: order.email, idem: `mp-${order.id}`, subject: `Your receipt: ${order.title}`,
-      mail: buildEmail({ name: "there", label: "Marketplace receipt", reply: `Thank you for your purchase. This is your receipt.\n\n- Item: **${order.title}**\n- Seller: ${seller}\n- Amount paid: **${order.amount} ${order.currency}**\n- Date: ${new Date().toUTCString().slice(0, 16)}\n- Order number: ${order.id.slice(0, 8).toUpperCase()}\n\nYour download is ready. Download it, then open the file in Maestro Pro, or use the files on their own. It is yours to keep, and you can use this link to download it again at any time.\n\nYou can cancel for a full refund within ${REFUND_DAYS} days from your [buyer account](account), under the [refund rules](refunds).`, buttons: [["Download", link(order)]] }) });
+      mail: buildEmail({ name: "there", label: "Marketplace receipt", reply: `Thank you for your purchase. This is your receipt.\n\n- Item: **${order.title}**\n- Seller: ${seller}\n- Amount paid: **${order.amount} ${order.currency}**${order.tipUSD ? ` (includes a tip of $${order.tipUSD.toFixed(2)} USD)` : ""}\n- Date: ${new Date().toUTCString().slice(0, 16)}\n- Order number: ${order.id.slice(0, 8).toUpperCase()}\n\nYour download is ready. Download it, then open the file in Maestro Pro, or use the files on their own. It is yours to keep, and you can use this link to download it again at any time.\n\nYou can cancel for a full refund within ${REFUND_DAYS} days from your [buyer account](account), under the [refund rules](refunds).`, buttons: [["Download", link(order)]] }) });
   }
   return order;
 }
@@ -330,7 +387,7 @@ async function merchant(req, res) {
   if (waiting) await step(waiting.id);
   const mine = (await products()).filter((p) => p.sellerId === me.id), every = (await readJson(SALES(me.id))) || [], sales = every.filter((x) => !x.refunded);
   const per = (id) => sales.filter((s) => s.listing === id), back = (id) => every.filter((s) => s.refunded && (!id || s.listing === id));
-  const gross = sales.reduce((n, s) => n + s.usd, 0), share = me.admin ? 1 : 1 - CUT, charged = (list) => (me.admin ? 0 : list.reduce((n, s) => n + s.usd * CUT, 0));   // the marketplace share of a refunded sale is charged back
+  const gross = sales.reduce((n, s) => n + s.usd, 0), share = me.admin ? 1 : 1 - CUT, charged = (list) => (me.admin ? 0 : list.reduce((n, s) => n + (s.usd + (s.tipUSD || 0)) * CUT, 0));   // the marketplace share of a refunded sale is charged back
   const allDisputes = await disputes(), allProducts = await products();
   res.status(200).json({
     id: me.id, name: me.name, email: me.email, admin: Boolean(me.admin),
@@ -343,7 +400,7 @@ async function merchant(req, res) {
       guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
-    sales: { count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd })) },
+    sales: { tipsUSD: Math.round(sales.reduce((n, s) => n + (s.tipUSD || 0), 0) * share * 100) / 100, tipCount: sales.filter((s) => s.tipUSD).length, count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd, tip: Math.round((s.tipUSD || 0) * share * 100) / 100 })) },
     cut: CUT, maxRefusals: MAX_REFUSALS, strikes: (me.strikes || []).length, maxStrikes: STRIKES, barred: Boolean(me.barred), respondDays: RESPOND_DAYS,
     disputes: allDisputes.filter((d) => me.admin || d.sellerId === me.id).reverse().map((d) => ({ id: d.id, created: d.created, status: d.status, title: d.productTitle, claimant: d.claimant.name + (d.claimant.org ? `, ${d.claimant.org}` : ""), ...(me.admin && { email: d.claimant.email, via: d.via }), code: allProducts.find((p) => p.id === d.productId)?.id.slice(0, 8).toUpperCase(), files: d.files || [], work: d.work, details: d.details, respondBy: d.respondBy, response: d.response, decision: d.decision })),
     ...(me.admin && { escalations: (await products()).filter((p) => p.status === "escalated").map((p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, seller: p.sellerName, history: p.history || [] })) }),
@@ -629,7 +686,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
