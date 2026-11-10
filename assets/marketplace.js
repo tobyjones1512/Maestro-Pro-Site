@@ -78,6 +78,8 @@ const VER = (n) => `<fieldset class="mp-ver"><legend>${n ? "Another version" : "
   <label class="field">Sheet music, karaoke or lyrics file<input name="vscore" type="file" accept="${accept.score}"></label>
   <label class="field">Backing tracks (optional, the first is the main one)<input name="vtracks" type="file" accept="${accept.audio}" multiple></label>
   <label class="field">Lyrics (optional, .lrc or .txt)<input name="vlyrics" type="file" accept="${accept.lyrics}"></label>
+  <div class="mp-kept" data-kept="vx"></div>
+  <label class="field">PDFs and other downloads for this version (optional, for buyers to use outside Maestro Pro)<input name="vextras" type="file" accept=".pdf,${accept.score},${accept.audio}" multiple></label>
   ${n ? '<button class="pay__btn pay__btn--ghost" type="button" data-rm>Remove this version</button>' : ""}</fieldset>`;
 const keptBoxes = (box, files) => { box.innerHTML = files.length ? files.map((f) => `<label><input type="checkbox" checked value="${esc(f.path)}"> ${esc(f.name)}</label>`).join("") : ""; };
 const keptPaths = (box) => [...box.querySelectorAll("input:checked")].map((i) => i.value);
@@ -112,7 +114,7 @@ export function mountBuilder(form, { getKey, onDone }) {
   $("[data-addv]", form).addEventListener("click", () => vs.children.length < 12 && addVersion());
   const clear = () => {
     editing = null; form.reset(); vs.innerHTML = ""; addVersion(); setRegions([]); sync();
-    keptBoxes($("[data-kept=extras]", form), []); keptBoxes($("[data-kept=proof]", form), []);
+    keptBoxes($("[data-kept=proof]", form), []);
     submit.textContent = "Submit for review"; $("[data-cancel]", form).hidden = true; say("");
   };
   $("[data-cancel]", form).addEventListener("click", () => { clear(); onDone?.(); });
@@ -122,7 +124,9 @@ export function mountBuilder(form, { getKey, onDone }) {
     f.title.value = p.title; f.composer.value = p.composer || ""; f.description.value = p.edit.description || ""; f.price.value = Number(p.priceUSD).toFixed(2);
     some.value = p.regions.length ? "some" : "all"; setRegions(p.regions); sync();
     vs.innerHTML = ""; p.edit.variants.forEach((v) => addVersion(v));
-    keptBoxes($("[data-kept=extras]", form), p.edit.extras); keptBoxes($("[data-kept=proof]", form), p.edit.proof.files || []);
+    // each download stays with its own version (older items had them in one list: they go with the first version)
+    [...vs.children].forEach((el, i) => keptBoxes($("[data-kept=vx]", el), p.edit.extras.filter((x) => (x.v ? x.v === el.dataset.keep : i === 0))));
+    keptBoxes($("[data-kept=proof]", form), p.edit.proof.files || []);
     f.proofText.value = p.edit.proof.text || "";
     submit.textContent = "Resubmit for review"; $("[data-cancel]", form).hidden = false;
     say("Saving sends the whole product back through review, and it is off sale until it is accepted.");
@@ -141,19 +145,23 @@ export function mountBuilder(form, { getKey, onDone }) {
       const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");
       const up = (path, blob, what) => upload(path, blob, { access: "private", handleUploadUrl: API + "upload", clientPayload: JSON.stringify({ key }), multipart: blob.size > 8e6,
         contentType: blob.type || "application/octet-stream", onUploadProgress: (p) => say(`Uploading ${what}… ${Math.round(p.percentage)}%`) });
-      const blocks = [...vs.children], variants = [];
+      const blocks = [...vs.children], variants = [], extras = [];
       for (const el of blocks) {
         const label = $("[name=vlabel]", el).value.trim(), score = $("[name=vscore]", el).files[0];
-        if (!score && el.dataset.keep) { variants.push({ id: el.dataset.keep, label }); continue; }
+        const addExtras = async (vid) => {   // this version's downloads: the kept ones, then any new files
+          for (const path of keptPaths($("[data-kept=vx]", el))) extras.push({ path, v: vid });
+          for (const file of [...$("[name=vextras]", el).files]) { const path = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); extras.push({ path, v: vid }); }
+        };
+        if (!score && el.dataset.keep) { variants.push({ id: el.dataset.keep, label }); await addExtras(el.dataset.keep); continue; }
         if (blocks.length > 1 && !label) throw new Error("Name each version, for example the key or the instrument.");
         const tracks = [...$("[name=vtracks]", el).files], lyrics = $("[name=vlyrics]", el).files[0];
         const bundle = await makeBundle({ title: blocks.length > 1 && label ? `${title} (${label})` : title, score, tracks, lyrics });
         const vid = crypto.randomUUID();
         await up(`marketplace/bundles/${vid}.maestropro`, bundle, label || "the music");
         variants.push({ id: vid, label });
+        await addExtras(vid);
       }
-      const extras = keptPaths($("[data-kept=extras]", form)), proof = keptPaths($("[data-kept=proof]", form));
-      for (const file of [...f.extras.files]) { const path = `marketplace/extras/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); extras.push(path); }
+      const proof = keptPaths($("[data-kept=proof]", form));
       for (const file of [...f.proofFiles.files]) { if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed as proof. Use PDF, PNG, JPG or TXT.`); const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
       const contents = [variants.length > 1 ? `${variants.length} versions` : "Score", extras.length && `${extras.length} download${extras.length > 1 ? "s" : ""}`].filter(Boolean).join(", ");
       await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, variants, extras, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
@@ -173,11 +181,7 @@ export const builderFields = `
   <label class="field">Price in US dollars (.00, .25, .50 or .75)<input name="price" type="number" inputmode="decimal" min="0.25" max="999.75" step="0.25" required></label>
   <div class="mp-vers"></div>
   <button class="pay__btn pay__btn--ghost" type="button" data-addv>Add another version (a different key or instrument)</button>
-  <p class="mp-note">Buyers get every version. Put different keys or instruments of the same piece here, not in separate products.</p>
-  <fieldset class="field"><legend>Downloads for use outside Maestro Pro (optional)</legend>
-    <p class="mp-note">Printable PDFs or other files buyers can download and use for themselves. Buyers can also download every file in each version.</p>
-    <div class="mp-kept" data-kept="extras"></div>
-    <input name="extras" type="file" accept=".pdf,${accept.score},${accept.audio}" multiple></fieldset>
+  <p class="mp-note">Buyers get every version. Put different keys or instruments of the same piece here, not in separate products. Add each version's PDFs to that version.</p>
   <fieldset class="field"><legend>Proof that you own the rights (optional)</legend>
     <p class="mp-note">A licence, a letter of permission, a copyright registration, or dated drafts or project files that show you wrote it. PDF, PNG, JPG or TXT, 25 MB each, up to 5 files.</p>
     <label class="field">How do you hold the rights?<textarea name="proofText" rows="2" maxlength="1500"></textarea></label>
@@ -233,6 +237,6 @@ export function downloadsHtml(o) {
     <p class="mp-note">Open the downloaded file in Maestro Pro. It is added to your library, and so is every version.</p>
     <h2>For use outside Maestro Pro</h2>
     ${(o.extras || []).length ? `<ul>${o.extras.map((x) => `<li><a href="${esc(x.url)}">${esc(x.name)}</a> <small>${size(x.size)}</small></li>`).join("")}</ul>` : ""}
-    ${v.map((x) => `<details><summary>Every file in ${esc(o.title)}${label(x)}</summary><ul>${x.files.map((f) => `<li><a href="${esc(f.url)}">${esc(f.name)}</a> <small>${size(f.size)}</small></li>`).join("")}</ul></details>`).join("")}
+    ${v.map((x) => `${v.length > 1 ? `<h3>${esc(x.label || "Main version")}</h3>` : ""}${(x.extras || []).length ? `<ul>${x.extras.map((e) => `<li><a href="${esc(e.url)}">${esc(e.name)}</a> <small>${size(e.size)}</small></li>`).join("")}</ul>` : ""}<details><summary>Every file in ${esc(o.title)}${label(x)}</summary><ul>${x.files.map((f) => `<li><a href="${esc(f.url)}">${esc(f.name)}</a> <small>${size(f.size)}</small></li>`).join("")}</ul></details>`).join("")}
     <p class="mp-note">You may use these files for yourself: to play, practise and print a copy. You may not resell or share them (<a href="/marketplace/guidelines/#g6-3">guideline 6.3</a>).</p>`;
 }

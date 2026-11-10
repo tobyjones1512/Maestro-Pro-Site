@@ -161,8 +161,9 @@ async function order(req, res) {
   const out = { status: o.status, title: o.title };
   if (o.status === "paid") {
     const pk = packageOf(o, await products()), u = link(o);
-    Object.assign(out, { download: u, extras: pk.extras.map((e, i) => ({ name: e.name, size: e.size, url: `${u}&x=${i}` })),
-      variants: await Promise.all(pk.variants.map(async (v) => ({ id: v.id, label: v.label || "", url: `${u}&v=${v.id}`,
+    const xurl = (e, i) => ({ name: e.name, size: e.size, url: `${u}&x=${i}` });
+    Object.assign(out, { download: u, extras: pk.extras.map((e, i) => [e, i]).filter(([e]) => !pk.variants.some((v) => v.id === e.v)).map(([e, i]) => xurl(e, i)),
+      variants: await Promise.all(pk.variants.map(async (v) => ({ id: v.id, label: v.label || "", url: `${u}&v=${v.id}`, extras: pk.extras.map((e, i) => [e, i]).filter(([e]) => e.v === v.id).map(([e, i]) => xurl(e, i)),
         files: ((await bundleInfo(v.id).catch(() => null))?.files || []).map((f) => ({ name: f.name, size: f.size, url: `${u}&v=${v.id}&f=${encodeURIComponent(f.name)}` })) }))) });
   }
   res.status(200).json(out);
@@ -484,8 +485,10 @@ async function content(b) {
   if (!variants.length || variants.some((v) => !/^[0-9a-f-]{36}$/.test(v.id)) || new Set(variants.map((v) => v.id)).size !== variants.length) return { error: "Add at least one version." };
   if (variants.length > 1 && variants.some((v) => !v.label)) return { error: "Name each version, for example the key or the instrument." };
   for (const v of variants) if (!(await bundleOK(v.id))) return { error: "A version didn't upload properly. Try again." };
-  const extras = await uploaded(b.extras, EXTRA, b.id, ALLOWED, 10), proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
+  const xs = (Array.isArray(b.extras) ? b.extras : []).slice(0, 10).map((e) => (typeof e === "string" ? { path: e } : { path: String(e?.path || ""), v: String(e?.v || "") }));
+  const extras = await uploaded(xs.map((e) => e.path), EXTRA, b.id, ALLOWED, 10), proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
   if (extras.error || proof.error) return { error: extras.error || proof.error };
+  extras.files = extras.files.map((f, i) => (variants.some((v) => v.id === xs[i].v) ? { ...f, v: xs[i].v } : f));   // each download belongs to one version
   return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
 }
 

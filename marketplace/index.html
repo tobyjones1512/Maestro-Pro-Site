@@ -24,7 +24,6 @@
   <input id="q" type="search" placeholder="Search title, composer, seller or ID" aria-label="Search">
   <select id="fmt" aria-label="Format"><option value="">All formats</option><option>PDF</option><option>Audio</option><option>MusicXML</option><option>MIDI</option><option>Karaoke</option><option>Lyrics</option></select>
   <select id="max" aria-label="Price"><option value="">Any price</option><option value="1">Up to $1</option><option value="2.5">Up to $2.50</option><option value="5">Up to $5</option><option value="10">Up to $10</option></select>
-  <label><input id="free" type="checkbox"> Works without the app</label>
   <select id="sort" aria-label="Sort"><option value="new">Newest</option><option value="low">Price, low to high</option><option value="high">Price, high to low</option><option value="az">Title, A to Z</option></select>
 </form>
 <p id="count" class="mp-note" aria-live="polite"></p>
@@ -42,9 +41,9 @@ const $ = (id) => document.getElementById(id), grid = $("grid");
 let d;
 const chips = (l) => l.formats.map((f) => `<span class="mp-chip${f === "PDF" || f === "Audio" ? " mp-chip--free" : ""}">${esc(f)}</span>`).join("");
 function show() {
-  const q = $("q").value.trim().toLowerCase(), fmt = $("fmt").value, max = Number($("max").value) || Infinity, free = $("free").checked;
+  const q = $("q").value.trim().toLowerCase(), fmt = $("fmt").value, max = Number($("max").value) || Infinity;
   const list = d.listings.filter((l) => (!q || [l.title, l.composer, l.sellerName, l.description, l.code].join(" ").toLowerCase().includes(q))
-    && (!fmt || l.formats.includes(fmt)) && l.priceUSD <= max && (!free || l.anywhere));
+    && (!fmt || l.formats.includes(fmt)) && l.priceUSD <= max);
   const by = { new: (a, b) => b.created - a.created, low: (a, b) => a.priceUSD - b.priceUSD, high: (a, b) => b.priceUSD - a.priceUSD, az: (a, b) => a.title.localeCompare(b.title) }[$("sort").value];
   list.sort(by);
   $("count").textContent = d.listings.length ? `${list.length} of ${d.listings.length} items` : "";
