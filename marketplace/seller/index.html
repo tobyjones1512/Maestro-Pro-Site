@@ -15,24 +15,44 @@
   <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro</a>
   <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a href="/marketplace/account/">Account</a></nav>
 </header>
-<main id="main" class="plain">
-<h1>Merchant account</h1>
-<div id="out" hidden>
+<main id="main" class="asc">
+<div id="out" hidden class="plain">
+  <h1>Merchant account</h1>
   <p>Sign in with the link we email you, or <a href="/marketplace/onboard/">open a Merchant Account</a>.</p>
   <form id="si" class="pay"><label class="field">Email<input name="email" type="email" required autocomplete="email"></label><button class="pay__btn" type="submit">Email me a sign-in link</button><p class="pay__msg" role="status"></p></form>
 </div>
 <div id="in" hidden>
-  <p>Signed in as <b id="who"></b>. <button id="bye" class="pay__btn pay__btn--ghost" type="button">Sign out</button></p>
-  <p id="todo" class="notice" hidden></p>
-  <h2>Sales</h2>
-  <p id="sum"></p>
-  <h2>Your products</h2>
-  <p class="mp-note">Every item is checked with VirusTotal and reviewed against the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a>. You are emailed the result. Anything you withdraw from sale stays available to the people who already bought it.</p>
-  <div id="list"></div>
-  <div id="add" hidden>
-    <h2>Add a product</h2>
-    <p>You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span id="cut">30</span>% of each sale and Mollie pays the rest to you.</p>
-    <form id="f" class="pay pay--wide"></form>
+  <div class="asc__head"><h1>Merchant account</h1><span class="asc__who"><b id="who"></b> <button id="bye" class="pay__btn pay__btn--ghost" type="button">Sign out</button></span></div>
+  <p id="todo" class="notice asc__banner" hidden></p>
+  <div class="asc__body">
+    <div class="asc__nav" role="tablist" aria-label="Merchant account">
+      <button role="tab" id="t-products" data-tab="products" aria-selected="true">Products <i id="n-products" hidden></i></button>
+      <button role="tab" id="t-sales" data-tab="sales" aria-selected="false">Sales and Trends</button>
+      <button role="tab" id="t-add" data-tab="add" aria-selected="false">Add Product</button>
+      <button role="tab" id="t-account" data-tab="account" aria-selected="false">Account</button>
+    </div>
+    <div>
+      <section class="asc__pane" id="p-products" role="tabpanel" aria-labelledby="t-products">
+        <div class="asc__bar"><h2>Products</h2><button class="pay__btn" type="button" data-tab="add" id="new">Add Product</button></div>
+        <p class="mp-note">Every item is checked and reviewed against the <a href="/marketplace/guidelines/">Merchant Content Review Guidelines</a>. You are emailed the result. Anything you withdraw from sale stays available to the people who already bought it.</p>
+        <div class="asc__panel" id="list"></div>
+      </section>
+      <section class="asc__pane" id="p-sales" role="tabpanel" aria-labelledby="t-sales" hidden>
+        <h2>Sales and Trends</h2>
+        <div class="asc__stats" id="stats"></div>
+        <h2>Recent sales</h2>
+        <div class="asc__panel" id="recent"></div>
+      </section>
+      <section class="asc__pane" id="p-add" role="tabpanel" aria-labelledby="t-add" hidden>
+        <h2>Add Product</h2>
+        <p>You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span id="cut">30</span>% of each sale and the rest is paid out to you.</p>
+        <div class="asc__panel"><form id="f" class="pay pay--wide"></form></div>
+      </section>
+      <section class="asc__pane" id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
+        <h2>Account</h2>
+        <div class="asc__panel"><dl class="asc__list" id="acct"></dl></div>
+      </section>
+    </div>
   </div>
 </div>
 </main>
@@ -43,36 +63,56 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, mountBuilder, builderFields, dollars, renderProducts, productsTable, inReview } from "/assets/marketplace.js";
-const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f");
-let key = "", timer = 0; try { key = localStorage.getItem(K) || ""; } catch {}
+import { api, mountBuilder, builderFields, dollars, renderProducts, productsTable, inReview, esc } from "/assets/marketplace.js";
+const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account"];
+let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const fromLink = new URLSearchParams(location.hash.slice(1)).get("k");
 if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
 const out = () => { $("out").hidden = false; $("in").hidden = true; };
+function tab(name) {
+  if (!TABS.includes(name)) name = "products";
+  if (name === "add" && !canPublish) name = "products";
+  for (const t of TABS) { $("p-" + t).hidden = t !== name; $("t-" + t).setAttribute("aria-selected", String(t === name)); }
+  try { sessionStorage.setItem("mp-tab", name); } catch {}
+}
+document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => tab(b.dataset.tab)));
+const stat = (l, v) => `<div class="asc__stat"><small>${l}</small><b>${v}</b></div>`;
+const usd = (n) => "$" + Number(n).toFixed(2);
 async function load() {
   clearTimeout(timer);
   if (!key) return out();
   let s;
   try { s = await api("merchant", { key }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return out(); }
+  canPublish = s.canPublish;
   $("out").hidden = true; $("in").hidden = false;
   $("who").textContent = s.name; $("cut").textContent = Math.round(s.cut * 100);
   const todo = $("todo");
   todo.hidden = s.canPublish;
   todo.innerHTML = s.fee !== "paid" ? `Your £${s.feeGBP.replace(/\.00$/, "")} technology fee isn't paid yet. <a href="/marketplace/onboard/">Pay it to continue</a>.` : `Next, <a href="/marketplace/onboard/">set up your payouts</a>. You can add products after that.`;
-  $("add").hidden = !s.canPublish;
-  $("sum").textContent = `${s.sales.count} sold, ${dollars(s.sales.grossUSD)} in sales, ${dollars(s.sales.earnedUSD)} your share (before Mollie's own fees).`;
-  $("list").innerHTML = productsTable;
-  renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); });
+  $("t-add").hidden = $("new").hidden = !s.canPublish;
+  const n = s.products.filter(inReview).length;
+  $("n-products").hidden = !n; $("n-products").textContent = n;
+  $("list").innerHTML = s.products.length ? productsTable : "<p>No products yet. Add your first one to send it for review.</p>";
+  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); });
+  const x = s.sales;
+  $("stats").innerHTML = stat("Units sold", x.count) + stat("Sales", usd(x.grossUSD)) + stat("Your proceeds", usd(x.earnedUSD)) + stat("Refunded", x.refunded);
+  $("recent").innerHTML = x.recent?.length
+    ? `<table class="mp-table"><thead><tr><th>Product</th><th>Date</th><th>Price</th></tr></thead><tbody>${x.recent.map((r) => `<tr><td>${esc(r.title)}</td><td>${new Date(r.t).toLocaleDateString()}</td><td>${usd(r.usd)}</td></tr>`).join("")}</tbody></table>`
+    : "<p>No sales yet.</p>";
+  $("acct").innerHTML = [["Name", esc(s.name)], ["Email", esc(s.email)], ["Technology fee", s.fee === "paid" ? "Paid" : "Not paid"], ["Payouts", s.connected ? "Set up" : "Not set up"], ["Marketplace share", Math.round(s.cut * 100) + "% of each sale"]]
+    .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+  let t = "products"; try { t = sessionStorage.getItem("mp-tab") || t; } catch {}
+  tab(t);
   if (s.products.some(inReview)) timer = setTimeout(load, 20000);   // each visit moves the review on
 }
-$("bye").addEventListener("click", () => { try { localStorage.removeItem(K); } catch {} key = ""; out(); });
+$("bye").addEventListener("click", () => { try { localStorage.removeItem(K); sessionStorage.removeItem("mp-tab"); } catch {} key = ""; out(); });
 $("si").addEventListener("submit", async (e) => {
   e.preventDefault();
   const m = e.target.querySelector(".pay__msg");
   try { await api("signin", { method: "POST", body: { email: e.target.email.value } }); m.textContent = "If that email has a Merchant Account, we have sent it a sign-in link."; } catch (err) { m.textContent = err.message; }
 });
 f.innerHTML = builderFields;
-mountBuilder(f, { getKey: () => key, onDone: load });
+mountBuilder(f, { getKey: () => key, onDone: () => { tab("products"); load(); } });
 load();
 </script>
 </body>

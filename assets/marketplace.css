@@ -22,3 +22,42 @@
 @media(max-width:600px){.gl__toc{columns:1}}
 .pay fieldset{border:0;padding:0;margin:1em 0}.pay fieldset label{display:block;margin:.3em 0}.pay select[multiple]{display:block;width:100%;margin-top:8px;font:inherit}
 .mp-note{margin:1em 0 0;font-size:.85rem;line-height:1.5;color:var(--fg2)}
+
+/* Merchant console: sidebar, cards and tables in the manner of App Store Connect */
+.asc{max-width:1120px;margin:0 auto;padding:8px var(--gutter) 64px}
+.asc__head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:14px;margin-bottom:22px}
+.asc__head h1{margin:0;font-size:1.6rem}
+.asc__who{color:var(--fg2);font-size:.9rem}
+.asc__body{display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:start}
+.asc__nav{display:flex;flex-direction:column;gap:2px;position:sticky;top:12px}
+.asc__nav button{all:unset;box-sizing:border-box;cursor:pointer;padding:9px 12px;border-radius:8px;font-weight:600;font-size:.95rem;color:var(--fg2);display:flex;justify-content:space-between;gap:8px}
+.asc__nav button:hover{background:color-mix(in srgb,var(--bg) 92%,var(--fg) 8%)}
+.asc__nav button[aria-selected=true]{background:color-mix(in srgb,var(--hl) 14%,var(--bg));color:var(--hl)}
+.asc__nav button:focus-visible{outline:2px solid var(--hl)}
+.asc__nav i{font-style:normal;font-size:.8rem;font-weight:700;background:var(--hl);color:var(--bg);border-radius:99px;padding:0 7px}
+.asc__pane h2{font-size:1.25rem;margin:0 0 4px}
+.asc__pane>p:first-of-type{margin-top:0}
+.asc__stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:12px;margin:16px 0 24px}
+.asc__stat{padding:14px 16px;border:1px solid var(--hair);border-radius:12px;background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%)}
+.asc__stat small{display:block;color:var(--fg2);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.asc__stat b{display:block;font-size:1.5rem;line-height:1.3;font-variant-numeric:tabular-nums}
+.asc__panel{border:1px solid var(--hair);border-radius:12px;overflow:hidden;margin:12px 0 24px;background:var(--bg)}
+.asc__panel .mp-table{margin:0}
+.asc__panel .mp-table th{font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--fg2);background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%)}
+.asc__panel .mp-table tr:last-child td{border-bottom:0}
+.asc__panel .mp-table td:nth-child(n+3){font-variant-numeric:tabular-nums}
+.asc__panel>p{margin:0;padding:20px;color:var(--fg2)}
+.asc__panel .pay{padding:20px}
+.asc__bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.asc__list{margin:0;padding:0}
+.asc__list div{display:flex;justify-content:space-between;gap:16px;padding:12px 20px;border-bottom:1px solid var(--hair)}
+.asc__list div:last-child{border-bottom:0}
+.asc__list dt{color:var(--fg2)}.asc__list dd{margin:0;font-weight:600;text-align:right}
+.asc__banner{margin:0 0 20px}
+@media(max-width:760px){
+  .asc__body{grid-template-columns:1fr;gap:16px}
+  .asc__nav{flex-direction:row;overflow-x:auto;position:static;border-bottom:1px solid var(--hair);padding-bottom:6px}
+  .asc__nav button{white-space:nowrap}
+  .asc__panel{overflow-x:auto}
+}
+.asc [hidden]{display:none!important}
