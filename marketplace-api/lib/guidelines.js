@@ -112,7 +112,7 @@ export default {
     {
      "id": "3.5",
      "title": "Produced music: singles, EPs and albums",
-     "text": "You may sell your own recordings as a single (1 to 3 tracks), an EP (3 to 6 tracks) or an album (7 or more tracks). The recordings must be yours. A cover, remix or sample of a published song or recording needs a licence from the rights holders of the song and of any recording used (2.2 to 2.5). Every track needs a clear title, the listing must say truthfully whether it is a single, an EP or an album (11.1), and any cover art must be yours too. Buyers receive the audio files and may keep them for their own listening (6.3)."
+     "text": "You may sell your own recordings as a single (1 to 3 tracks), an EP or an album. The recordings must be yours. A cover, remix or sample of a published song or recording needs a licence from the rights holders of the song and of any recording used (2.2 to 2.5). Every track needs a clear title, the listing must say truthfully whether it is a single, an EP or an album (11.1), and any cover art must be yours too. Buyers receive the audio files and may keep them for their own listening (6.3)."
     }
    ]
   },

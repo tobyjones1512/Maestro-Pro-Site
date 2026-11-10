@@ -122,7 +122,7 @@ export function mountBuilder(form, { getKey, onDone }) {
     $("[data-rm]", d).addEventListener("click", () => d.remove());
     tracksEl.append(d);
   };
-  $("[data-addt]", form).addEventListener("click", () => tracksEl.children.length < 40 && addTrack());
+  $("[data-addt]", form).addEventListener("click", () => tracksEl.children.length < 60 && addTrack());
   form.querySelectorAll("input[name=kind]").forEach((r) => r.addEventListener("change", syncKind));
   const syncDist = () => { $(".mp-dist__when", form).hidden = form.elements.dist.value !== "date"; };
   form.querySelectorAll("input[name=dist]").forEach((r) => r.addEventListener("change", syncDist));
@@ -195,8 +195,8 @@ export function mountBuilder(form, { getKey, onDone }) {
       for (const file of [...f.proofFiles.files]) { if (!/\.(pdf|png|jpe?g|txt)$/i.test(file.name)) throw new Error(`${file.name} isn't allowed as proof. Use PDF, PNG, JPG or TXT.`); const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${safe(file.name)}`; await up(path, file, file.name); proof.push(path); }
       let relBody = {};
       if (music) {
-        const rows = [...tracksEl.children], tracks = [], range = { single: [1, 3], ep: [3, 6], album: [7, 40] }[f.format.value];
-        if (rows.length < range[0] || rows.length > range[1]) throw new Error(`Add ${range[0]} to ${range[1]} tracks for a ${f.format.value === "ep" ? "EP" : f.format.value}.`);
+        const rows = [...tracksEl.children], tracks = [], range = { single: [1, 3], ep: [1, 60], album: [1, 60] }[f.format.value];
+        if (rows.length < range[0] || rows.length > range[1]) throw new Error(f.format.value === "single" ? "A single has 1 to 3 tracks." : "Add at least one track.");
         for (const r of rows) {
           const t = $("[name=ttitle]", r).value.trim(), file = $("[name=tfile]", r).files[0];
           if (!t) throw new Error("Give every track a title.");
@@ -231,7 +231,7 @@ export const builderFields = `
   <label class="field">Description<textarea name="description" rows="3" maxlength="600"></textarea></label>
   <label class="field">Price in US dollars (.00, .25, .50 or .75)<input name="price" type="number" inputmode="decimal" min="0.25" max="999.75" step="0.25" required></label>
   <div class="mp-music" hidden>
-    <label class="field">Release type<select name="format"><option value="single">Single (1 to 3 tracks)</option><option value="ep">EP (3 to 6 tracks)</option><option value="album">Album (7 to 40 tracks)</option></select></label>
+    <label class="field">Release type<select name="format"><option value="single">Single (1 to 3 tracks)</option><option value="ep">EP</option><option value="album">Album</option></select></label>
     <div class="mp-kept" data-kept="cover"></div>
     <label class="field">Cover art (optional, PNG or JPG)<input name="cover" type="file" accept=".png,.jpg,.jpeg"></label>
     <div class="mp-tracks"></div>

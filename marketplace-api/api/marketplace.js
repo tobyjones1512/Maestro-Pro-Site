@@ -610,12 +610,12 @@ async function content(b) {
   if (title.length < 2) return { error: "Give the piece a title." };
   if (!/^[0-9a-f-]{36}$/.test(b.id || "")) return { error: "Bad item." };
   if (b.kind === "music") {   // a single, EP or album: audio files, no .maestropro bundles (guideline 3.5)
-    const range = { single: [1, 3], ep: [3, 6], album: [7, 40] }[b.format];
+    const range = { single: [1, 3], ep: [1, 60], album: [1, 60] }[b.format];
     if (!range) return { error: "Choose single, EP or album." };
-    const ts = (Array.isArray(b.tracks) ? b.tracks : []).slice(0, 40).map((t) => ({ path: String(t?.path || ""), title: clip(t?.title, 100) }));
-    if (ts.length < range[0] || ts.length > range[1]) return { error: `A${b.format === "ep" ? "n" : ""} ${TYPE[b.format]} has ${range[0]} to ${range[1]} tracks.` };
+    const ts = (Array.isArray(b.tracks) ? b.tracks : []).slice(0, 60).map((t) => ({ path: String(t?.path || ""), title: clip(t?.title, 100) }));
+    if (ts.length < range[0] || ts.length > range[1]) return { error: b.format === "single" ? "A single has 1 to 3 tracks." : "Add at least one track." };
     if (ts.some((t) => !t.title)) return { error: "Give every track a title." };
-    const audio = await uploaded(ts.map((t) => t.path), EXTRA, b.id, new Set("mp3 m4a wav flac aac aif aiff".split(" ")), 40);
+    const audio = await uploaded(ts.map((t) => t.path), EXTRA, b.id, new Set("mp3 m4a wav flac aac aif aiff".split(" ")), 60);
     const art = b.cover ? await uploaded([String(b.cover)], EXTRA, b.id, COVER, 1) : { files: [] };
     const proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
     if (audio.error || art.error || proof.error) return { error: audio.error || art.error || proof.error };
