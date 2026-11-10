@@ -69,9 +69,11 @@ async function bundleOK(id) {
 // What a buyer can open without the app: PDF and audio files work anywhere. The rest are for Maestro Pro or other music software.
 const FORMAT = { pdf: "PDF", mp3: "Audio", m4a: "Audio", wav: "Audio", aif: "Audio", aiff: "Audio", caf: "Audio", aac: "Audio", flac: "Audio", musicxml: "MusicXML", mxl: "MusicXML", xml: "MusicXML", mid: "MIDI", midi: "MIDI", kar: "Karaoke", cdg: "Karaoke", lrc: "Lyrics", txt: "Lyrics" };
 const formatsOf = (p) => [...new Set([...(p.review?.files || []).filter((f) => !f.proof), ...(p.extras || [])].map((f) => FORMAT[ext(f.name)]).filter(Boolean))];
+const GENRES = ["Ambient", "Blues", "Children's", "Classical", "Country", "Dance", "Electronic", "Film and TV", "Folk", "Gospel and Worship", "Hip-hop", "Holiday and Seasonal", "Indie", "Jazz", "Latin", "Metal", "Musical Theatre", "Pop", "Punk", "R&B and Soul", "Reggae", "Rock", "World", "Other"];
+const cleanGenres = (g) => [...new Set((Array.isArray(g) ? g : []).map(String).filter((x) => GENRES.includes(x)))].slice(0, 3);
 const TYPE = { single: "Single", ep: "EP", album: "Album" };
 const coverIx = (p) => (p.extras || []).findIndex((x) => x.cover);
-const pub = (p) => ({ kind: p.kind === "music" ? "music" : "score", type: p.kind === "music" ? TYPE[p.format] || "" : "", cover: coverIx(p) >= 0 ? `${API}/api/marketplace-preview?id=${p.id}&x=${coverIx(p)}` : "", code: code(p), formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
+const pub = (p) => ({ genres: p.genres || [], kind: p.kind === "music" ? "music" : "score", type: p.kind === "music" ? TYPE[p.format] || "" : "", cover: coverIx(p) >= 0 ? `${API}/api/marketplace-preview?id=${p.id}&x=${coverIx(p)}` : "", code: code(p), formats: formatsOf(p), anywhere: formatsOf(p).some((f) => f === "PDF" || f === "Audio"), id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
 const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
@@ -413,7 +415,7 @@ async function merchant(req, res) {
       id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), release: p.release || { mode: "auto" }, awaiting: awaiting(p), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
       reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), versions: variantsOf(p).map((v) => v.label).filter(Boolean),
-      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { release: p.release || { mode: "auto" }, kind: p.kind === "music" ? "music" : "score", format: p.format, description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
+      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { genres: p.genres || [], release: p.release || { mode: "auto" }, kind: p.kind === "music" ? "music" : "score", format: p.format, description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), removable: removable(p), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
       guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
@@ -620,7 +622,7 @@ async function content(b) {
     const proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
     if (audio.error || art.error || proof.error) return { error: audio.error || art.error || proof.error };
     const extras = [...audio.files.map((f, i) => ({ ...f, title: ts[i].title, n: i + 1 })), ...art.files.map((f) => ({ ...f, cover: true }))];
-    return { fields: { release: rel.release, kind: "music", format: b.format, title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: `${TYPE[b.format]}, ${ts.length} track${ts.length > 1 ? "s" : ""}`, regions, variants: [], extras, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
+    return { fields: { genres: cleanGenres(b.genres), release: rel.release, kind: "music", format: b.format, title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: `${TYPE[b.format]}, ${ts.length} track${ts.length > 1 ? "s" : ""}`, regions, variants: [], extras, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
   }
   const variants = (Array.isArray(b.variants) ? b.variants : []).slice(0, 12).map((v) => ({ id: String(v?.id || ""), label: clip(v?.label, 40) }));
   if (!variants.length || variants.some((v) => !/^[0-9a-f-]{36}$/.test(v.id)) || new Set(variants.map((v) => v.id)).size !== variants.length) return { error: "Add at least one version." };
@@ -630,7 +632,7 @@ async function content(b) {
   const extras = await uploaded(xs.map((e) => e.path), EXTRA, b.id, ALLOWED, 10), proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
   if (extras.error || proof.error) return { error: extras.error || proof.error };
   extras.files = extras.files.map((f, i) => (variants.some((v) => v.id === xs[i].v) ? { ...f, v: xs[i].v } : f));   // each download belongs to one version
-  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, release: rel.release, kind: undefined, format: undefined, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
+  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, genres: cleanGenres(b.genres), release: rel.release, kind: undefined, format: undefined, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
 }
 
 /** Testing only: the code in MARKETPLACE_DEBUG_CODE makes a submission skip scanning and review and be accepted. Off while the variable is unset. */

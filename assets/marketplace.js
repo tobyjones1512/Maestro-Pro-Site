@@ -41,6 +41,7 @@ const regionBoxes = () => Object.entries(CONTINENTS).map(([name, codes]) => `<di
 // Layout: "PLAYALONG1", a 4-byte little-endian header length, the JSON header (the item and the names and sizes of its files), then the files.
 const AUDIO = ["mp3", "m4a", "wav", "aif", "aiff", "caf", "aac", "flac"];
 const SCORE = ["musicxml", "mxl", "xml", "pdf", "mid", "midi", "kar", "cdg", "lrc", "txt"];
+export const GENRES = ["Ambient", "Blues", "Children's", "Classical", "Country", "Dance", "Electronic", "Film and TV", "Folk", "Gospel and Worship", "Hip-hop", "Holiday and Seasonal", "Indie", "Jazz", "Latin", "Metal", "Musical Theatre", "Pop", "Punk", "R&B and Soul", "Reggae", "Rock", "World", "Other"];
 export const accept = { sheet: ".musicxml,.mxl,.xml,.pdf,.mid,.midi", karaoke: ".kar,.cdg", score: SCORE.map((e) => "." + e).join(","), audio: AUDIO.map((e) => "." + e).join(","), lyrics: ".lrc,.txt" };
 const ext = (n) => n.split(".").pop().toLowerCase();
 const uuid = () => crypto.randomUUID().toUpperCase();
@@ -124,6 +125,7 @@ export function mountBuilder(form, { getKey, onDone }) {
   };
   $("[data-addt]", form).addEventListener("click", () => tracksEl.children.length < 60 && addTrack());
   form.querySelectorAll("input[name=kind]").forEach((r) => r.addEventListener("change", syncKind));
+  form.addEventListener("change", (e) => { if (e.target.name === "genre" && form.querySelectorAll("input[name=genre]:checked").length > 3) { e.target.checked = false; say("Choose up to 3 genres.", true); } });
   const syncDist = () => { $(".mp-dist__when", form).hidden = form.elements.dist.value !== "date"; };
   form.querySelectorAll("input[name=dist]").forEach((r) => r.addEventListener("change", syncDist));
   const clear = () => {
@@ -143,6 +145,7 @@ export function mountBuilder(form, { getKey, onDone }) {
       p.edit.extras.filter((x) => !x.cover).forEach((x) => addTrack(x));
       keptBoxes($("[data-kept=cover]", form), p.edit.extras.filter((x) => x.cover));
     } else form.elements.kind.value = "score";
+    form.querySelectorAll("input[name=genre]").forEach((i) => (i.checked = (p.edit.genres || []).includes(i.value)));
     syncKind();
     const rl = p.edit.release || { mode: "auto" };
     form.elements.dist.value = rl.mode; if (rl.mode === "date") { const d = new Date(rl.at).toISOString(); f.relDate.value = d.slice(0, 10); f.relTime.value = d.slice(11, 16); }
@@ -212,7 +215,7 @@ export function mountBuilder(form, { getKey, onDone }) {
         relBody = { kind: "music", format: f.format.value, tracks, cover };
       }
       const contents = [variants.length > 1 ? `${variants.length} versions` : "Score", extras.length && `${extras.length} download${extras.length > 1 ? "s" : ""}`].filter(Boolean).join(", ");
-      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, release: { ...release }, variants, extras, ...relBody, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
+      await api(editing ? "edit" : "publish", { method: "POST", key, body: { id, title, composer: f.composer.value, description: f.description.value, priceUSD: f.price.value.trim(), contents, regions, rights: f.rights.checked, genres: [...form.querySelectorAll("input[name=genre]:checked")].map((i) => i.value), release: { ...release }, variants, extras, ...relBody, proof: { text: f.proofText.value, files: proof }, ...(f.debugCode?.value && { debugCode: f.debugCode.value }) } });
       clear(); say("Submitted for review. Every file is checked, then the whole product is reviewed against the guidelines. You will be emailed the result.");
       onDone?.();
     } catch (err) { say(err.message, true); }
@@ -246,6 +249,7 @@ export const builderFields = `
     <label class="field">How do you hold the rights?<textarea name="proofText" rows="2" maxlength="1500"></textarea></label>
     <div class="mp-kept" data-kept="proof"></div>
     <input name="proofFiles" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" multiple></fieldset>
+  <fieldset class="field mp-genres"><legend>Genres (optional, up to 3)</legend>${GENRES.map((g) => `<label><input type="checkbox" name="genre" value="${esc(g)}"> ${esc(g)}</label>`).join("")}</fieldset>
   <fieldset class="field mp-dist"><legend>Distribution</legend>
     <label><input type="radio" name="dist" value="auto" checked> Automatically: on sale as soon as it is approved</label>
     <label><input type="radio" name="dist" value="manual"> Manually: I will release it myself once it is approved</label>

@@ -217,3 +217,4 @@ dialog.mp-viewer::backdrop{background:rgba(10,7,4,.78)}
 .mp-track .pay__btn{margin:0;padding:5px 12px;font-size:.8rem}
 @media(max-width:600px){.mp-track{grid-template-columns:1fr}}
 .mp-dist__when{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}.mp-dist label{display:block;margin:.3em 0}
+.mp-genres{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:2px 12px}.mp-genres legend{grid-column:1/-1}.mp-genres label{margin:.15em 0}.mp-chip--genre{opacity:.85}
