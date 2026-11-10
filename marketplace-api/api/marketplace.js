@@ -354,6 +354,28 @@ async function signin(req, res) {
   res.status(200).json({ ok: true });
 }
 
+/** The Maestro Pro app signs a merchant in with a 6-digit code emailed to them (like the buyer's), instead of a link. */
+async function sellerCode(req, res) {
+  const em = String(req.body?.email ?? "").trim().toLowerCase();
+  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
+  if (!m) return fail(res, 404, "There is no Merchant Account for that email address.");
+  if (m.codeAt > Date.now() - 60e3) return fail(res, 429, "Wait a minute before asking for another code.");
+  const code = String(crypto.randomInt(100000, 1000000));
+  await modify(SELLER(m.id), (x) => (x ? { ...x, codeHash: sha(code + em), codeExp: Date.now() + 600e3, tries: 0, codeAt: Date.now() } : undefined));
+  await sendMail({ to: m.email, idem: `mp-scode-${m.id}-${Date.now()}`, subject: "Your Maestro Pro merchant sign-in code",
+    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: `Your merchant sign-in code is **${code}**.\n\nIt works for 10 minutes. If you didn't ask for it, you can ignore this email.` }) });
+  res.status(200).json({ ok: true });
+}
+async function sellerVerify(req, res) {
+  const em = String(req.body?.email ?? "").trim().toLowerCase(), code = String(req.body?.code ?? "").trim();
+  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
+  if (!m?.codeHash || m.codeExp < Date.now() || m.tries >= 5) return fail(res, 400, "That code has expired. Ask for a new one.");
+  if (m.codeHash !== sha(code + em)) { await modify(SELLER(m.id), (x) => (x ? { ...x, tries: (x.tries || 0) + 1 } : undefined)); return fail(res, 400, "That code isn't right."); }
+  const secret = rand(24);
+  await modify(SELLER(m.id), (x) => (x ? { ...x, keyHash: sha(secret), codeHash: undefined } : undefined));
+  res.status(200).json({ key: `${m.id}.${secret}` });
+}
+
 /** Swaps the one-time link from the email for a session key. The link stops working the moment it is used. */
 async function signinVerify(req, res) {
   const [id, token] = String(req.body?.t ?? "").split(".");
@@ -798,7 +820,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
