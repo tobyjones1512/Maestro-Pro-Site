@@ -48,7 +48,7 @@
         <div class="card" id="recent"></div>
       </section>
       <section id="p-add" role="tabpanel" aria-labelledby="t-add" hidden>
-        <h1>Add Product</h1><p class="sub">You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span class="cut">30</span>% of each sale and the rest is paid out to you.</p>
+        <h1 id="addh">Add Product</h1><p class="sub">You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span class="cut">30</span>% of each sale and the rest is paid out to you.</p>
         <div class="card form"><form id="f" class="pay pay--wide"></form></div>
       </section>
       <section id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
@@ -103,7 +103,7 @@ async function load() {
   const n = s.products.filter(inReview).length;
   $("n-products").hidden = !n; $("n-products").textContent = n;
   $("list").innerHTML = s.products.length ? productsTable : `<div class="empty">No products yet.${s.canPublish ? " Add your first one to send it for review." : ""}</div>`;
-  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); }, openAppeal);
+  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); }, openAppeal, openEdit);
   const x = s.sales;
   $("stats").innerHTML = stat("Units sold", x.count) + stat("Sales", usd(x.grossUSD)) + stat("Your proceeds", usd(x.earnedUSD)) + stat("Refunded", x.refunded);
   $("recent").innerHTML = x.recent?.length
@@ -152,7 +152,9 @@ $("escs").addEventListener("click", async (e) => {
   try { await api("escalation", { method: "POST", key, body: { id: card.dataset.id, accept, note: card.querySelector("textarea").value } }); load(); } catch (err) { alert(err.message); }
 });
 f.innerHTML = builderFields;
-mountBuilder(f, { getKey: () => key, onDone: () => { tab("products"); load(); } });
+const ctl = mountBuilder(f, { getKey: () => key, onDone: () => { tab("products"); load(); } });
+function openEdit(p) { ctl.edit(p); $("addh").textContent = "Edit Product"; tab("add"); }
+document.querySelectorAll("[data-tab=add]").forEach((b) => b.addEventListener("click", () => { ctl.clear(); $("addh").textContent = "Add Product"; }));
 load();
 </script>
 </body>

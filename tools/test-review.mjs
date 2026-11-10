@@ -82,4 +82,35 @@ assert.equal(a.status, "refused"); assert.deepEqual(a.review.ids, ["1.1"]); vt.v
 llm.answer = '{"decision":"accept","guidelines":[],"reason":"The licence covers it."}'; a = await appeal(a.id, "A better copy of the licence.");
 assert.equal(a.status, "ready");
 r = await ownerDecide((await submit("99999999-9999-9999-9999-999999999999", "Q", { score: xml("Q") }, no)).id, true, ""); assert.equal(r.decided, false);
+
+// 6. Versions, downloads and proof: every file of every version is scanned and the reviewer sees all of it; the accepted state is what buyers get.
+const put = async (path, text) => store.set(path, { data: Buffer.from(text), etag: "p" });
+const bundleAt = async (id, title, score) => { const b = await makeBundle({ title, score }); store.set(`marketplace/bundles/${id}.maestropro`, { data: Buffer.from(await b.arrayBuffer()), etag: "b" }); };
+const run = async (id) => { for (let i = 0; i < 10; i++) { await step(id); const q = (await products()).find((x) => x.id === id); if (!["scanning", "reviewing"].includes(q.status)) return q; } return (await products()).find((x) => x.id === id); };
+const base = { composer: "Sam Lee", description: "d", priceUSD: 3, sellerId: "aaaaaaaaaaaaaaaa", sellerName: "Sam Lee", contents: "2 versions", status: "scanning", review: {} };
+const V1 = "a1111111-1111-1111-1111-111111111111", V2 = "a2222222-2222-2222-2222-222222222222", P1 = "b1111111-1111-1111-1111-111111111111";
+await bundleAt(V1, "Etude", xml("Etude in C", "<rights>" + "x".repeat(700) + "</rights>")); await bundleAt(V2, "Etude (Bb trumpet)", xml("Etude in D"));
+await put(`marketplace/extras/${P1}/c1111111-1111-1111-1111-111111111111-print.txt`, "A printable copy of the etude.");
+await put(`marketplace/evidence/${P1}/c2222222-2222-2222-2222-222222222222-licence.txt`, "I, Sam Lee, am the composer of Etude and hold all rights.");
+llm.answer = '{"decision":"accept","guidelines":[],"reason":"Original."}';
+await addProduct({ ...base, id: P1, title: "Etude", created: 10, variants: [{ id: V1, label: "Concert pitch" }, { id: V2, label: "Bb trumpet" }],
+  extras: [{ name: "print.txt", size: 30, path: `marketplace/extras/${P1}/c1111111-1111-1111-1111-111111111111-print.txt` }],
+  proof: { text: "I wrote it.", files: [{ name: "licence.txt", size: 50, path: `marketplace/evidence/${P1}/c2222222-2222-2222-2222-222222222222-licence.txt` }] } });
+let q = await run(P1);
+assert.equal(q.status, "ready");
+assert.ok(q.review.files.some((f) => f.bundle === V2) && q.review.files.some((f) => f.proof) && q.review.files.some((f) => f.name === "print.txt"));
+assert.equal(q.published.variants.length, 2); assert.equal(q.published.extras.length, 1);
+const prompt = llm.last.messages[1].content;
+assert.match(prompt, /Bb trumpet/); assert.match(prompt, /Etude in D/); assert.match(prompt, /composer of Etude and hold all rights/); assert.match(prompt, /print\.txt/);
+// the same file again as a new item is spam (10.1), and nothing reaches the reviewer
+llm.last = null; const V3 = "a3333333-3333-3333-3333-333333333333", P2 = "b2222222-2222-2222-2222-222222222222";
+await bundleAt(V3, "Etude again", xml("Etude in C"));
+store.set(`marketplace/bundles/${V3}.maestropro`, { ...store.get(`marketplace/bundles/${V1}.maestropro`) });   // byte for byte the same bundle
+await addProduct({ ...base, id: P2, title: "Etude again", created: 20, variants: [{ id: V3, label: "" }] });
+q = await run(P2);
+assert.equal(q.status, "refused"); assert.deepEqual(q.review.ids, ["10.1"]); assert.equal(llm.last, null);
+// an edit puts the whole product back in review but buyers keep the accepted files
+await updateProduct(P1, (x) => ({ ...x, status: "scanning", review: {}, extras: [], published: x.published }));
+llm.answer = no; q = await run(P1);
+assert.equal(q.status, "refused"); assert.equal(q.published.extras.length, 1); assert.equal(q.refusals, 1);
 console.log("ok");

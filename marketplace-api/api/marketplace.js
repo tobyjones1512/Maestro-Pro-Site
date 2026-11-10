@@ -9,7 +9,7 @@ import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct } from "./_blob.js";
 import crypto from "node:crypto";
 import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
-import { BUNDLE, ext, readBlob } from "./_bundle.js";
+import { BUNDLE, ALLOWED, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import guidelines from "../lib/guidelines.js";
@@ -52,7 +52,7 @@ async function bundleOK(id) {
 }
 
 // ---- Public
-const pub = (p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, created: p.created, regions: p.regions || [] });
+const pub = (p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, sellerName: p.sellerName, contents: p.contents, versions: variantsOf(p).map((v) => v.label).filter(Boolean), downloads: (p.extras || []).length, created: p.created, regions: p.regions || [] });
 const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
@@ -142,22 +142,58 @@ async function webhook(req, res) {
   if (order) await sync(order).catch(() => {});
   res.status(200).end();
 }
+/** What a buyer may download: the last accepted version of the item (versions and extra files). */
+const packageOf = (o, all) => {
+  const p = all.find((x) => x.id === o.listing);
+  return p?.published || { variants: p ? variantsOf(p) : [{ id: o.listing, label: "" }], extras: p?.extras || [] };
+};
+const TYPES = { pdf: "application/pdf", mp3: "audio/mpeg", m4a: "audio/mp4", aac: "audio/aac", wav: "audio/wav", aif: "audio/aiff", aiff: "audio/aiff", caf: "audio/x-caf", flac: "audio/flac", mid: "audio/midi", midi: "audio/midi", kar: "audio/midi", musicxml: "application/vnd.recordare.musicxml+xml", mxl: "application/vnd.recordare.musicxml", xml: "application/xml", txt: "text/plain; charset=utf-8", lrc: "text/plain; charset=utf-8" };
+const safeName = (n) => String(n).replace(/[^\w .()-]/g, "").trim() || "file";
 async function order(req, res) {
   let o = await owned(req);
   if (!o) return fail(res, 404, "Order not found.");
   o = await sync(o);
-  res.status(200).json({ status: o.status, title: o.title, ...(o.status === "paid" && { download: link(o) }) });
+  const out = { status: o.status, title: o.title };
+  if (o.status === "paid") {
+    const pk = packageOf(o, await products()), u = link(o);
+    Object.assign(out, { download: u, extras: pk.extras.map((e, i) => ({ name: e.name, size: e.size, url: `${u}&x=${i}` })),
+      variants: await Promise.all(pk.variants.map(async (v) => ({ id: v.id, label: v.label || "", url: `${u}&v=${v.id}`,
+        files: ((await bundleInfo(v.id).catch(() => null))?.files || []).map((f) => ({ name: f.name, size: f.size, url: `${u}&v=${v.id}&f=${encodeURIComponent(f.name)}` })) }))) });
+  }
+  res.status(200).json(out);
 }
-/** Whatever happens to the listing afterwards (withdrawn, even refused on a later review), a paid order always downloads. */
+/** Whatever happens to the listing afterwards (withdrawn, even refused on a later review), a paid order always downloads.
+ *  No extra parameters: the first version as a .maestropro bundle. v: a version's bundle. v and f: one file out of it (for use outside Maestro Pro). x: an extra file. */
 async function download(req, res) {
   let o = await owned(req);
   if (!o) return fail(res, 404, "Order not found.");
   o = await sync(o);
   if (o.status !== "paid") return fail(res, 402, "This order hasn't been paid.");
-  const r = await get(BUNDLE(o.listing), { access: process.env.BLOB_ACCESS === "public" ? "public" : "private", useCache: false });
+  const pk = packageOf(o, await products()), { v, f, x } = req.query;
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  if (x !== undefined) {
+    const e = pk.extras[Number(x)], r = e && (await get(e.path, { access: bucket(), useCache: false }).catch(() => null));
+    if (!r || r.statusCode !== 200) return fail(res, 404, "The file is missing. Email support@maestro-pro.app.");
+    res.setHeader("Content-Type", TYPES[ext(e.name)] || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeName(e.name)}"`);
+    if (r.blob.size) res.setHeader("Content-Length", r.blob.size);
+    return Readable.fromWeb(r.stream).pipe(res);
+  }
+  const variant = v ? pk.variants.find((a) => a.id === v) : pk.variants[0];
+  if (!variant) return fail(res, 404, "Not found.");
+  if (f) {   // a single file from the bundle, buffered (the largest is a recording)
+    const file = (await bundleInfo(variant.id))?.files.find((a) => a.name === f);
+    const buf = file && (await readRange(variant.id, file.offset, file.offset + file.size));
+    if (!buf) return fail(res, 404, "Not found.");
+    res.setHeader("Content-Type", TYPES[ext(file.name)] || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${safeName(file.name)}"`);
+    return res.status(200).send(buf);
+  }
+  const r = await get(BUNDLE(variant.id), { access: bucket(), useCache: false });
   if (!r || r.statusCode !== 200) return fail(res, 404, "The file is missing. Email support@maestro-pro.app.");
+  const name = safeName(o.title) + (variant.label ? ` (${safeName(variant.label)})` : "");
   res.setHeader("Content-Type", "application/octet-stream");
-  res.setHeader("Content-Disposition", `attachment; filename="${o.title.replace(/[^\w .()-]/g, "").trim() || "score"}.maestropro"`);
+  res.setHeader("Content-Disposition", `attachment; filename="${name}.maestropro"`);
   if (r.blob.size) res.setHeader("Content-Length", r.blob.size);
   Readable.fromWeb(r.stream).pipe(res);   // streamed: bundles with audio are bigger than a normal response may be
 }
@@ -280,7 +316,8 @@ async function merchant(req, res) {
     products: mine.slice().reverse().map((p) => ({
       id: p.id, title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
-      reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
+      reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), versions: variantsOf(p).map((v) => v.label).filter(Boolean),
+      ...(["ready", "refused"].includes(p.status) && !p.final && { editable: true, edit: { description: p.description, variants: variantsOf(p), extras: p.extras || [], proof: p.proof || { text: "", files: [] } } }), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
       guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
@@ -302,6 +339,7 @@ async function withdraw(req, res) {
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
 const EVID = /^marketplace\/evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;
 const EVID_EXT = new Set(["pdf", "png", "jpg", "jpeg", "txt"]);
+const EXTRA = /^marketplace\/extras\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;   // downloads that go with an item (printable PDFs and so on)
 async function appeal(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
@@ -349,32 +387,75 @@ async function upload(req, res) {
     onBeforeGenerateToken: async (pathname, payload) => {
       const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
       if (!user || !ready(user)) throw new Error("Not signed in.");
-      const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname));
-      if (!evid && !/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw new Error("Bad file name.");
-      return { maximumSizeInBytes: evid ? 25e6 : 150e6, allowOverwrite: false, addRandomSuffix: false };
+      const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname)), extra = EXTRA.test(pathname) && ALLOWED.has(ext(pathname));
+      if (!evid && !extra && !/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw new Error("Bad file name.");
+      return { maximumSizeInBytes: evid ? 25e6 : extra ? 60e6 : 150e6, allowOverwrite: false, addRandomSuffix: false };
     },
   });
   res.status(200).json(json);
+}
+
+const bucket = () => (process.env.BLOB_ACCESS === "public" ? "public" : "private");
+/** The files a merchant names must already be uploaded to this product's own folder. Returns { name, size, path } for each. */
+async function uploaded(paths, pattern, id, exts, max) {
+  const files = [];
+  for (const path of (Array.isArray(paths) ? paths : []).slice(0, max).map(String)) {
+    const m = pattern.exec(path);
+    if (!m || m[1] !== id || !exts.has(ext(path))) return { error: "One of the files isn't allowed." };
+    const r = await get(path, { access: bucket(), useCache: false }).catch(() => null);
+    if (!r || r.statusCode !== 200) return { error: "A file didn't upload properly. Try again." };
+    r.stream.cancel().catch(() => {});
+    files.push({ name: path.split("/").pop().slice(37), size: r.blob.size, path });
+  }
+  return { files };
+}
+/** Checks everything a merchant sends for a new item or an edit. Returns { error } or { fields }. */
+async function content(b) {
+  const usd = price(b.priceUSD);
+  if (!usd) return { error: "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed." };
+  const regions = cleanRegions(b.regions);
+  if (!regions) return { error: "Choose the countries from the list, or sell worldwide." };
+  if (b.rights !== true) return { error: "Confirm that you own the rights to sell this content." };
+  const title = clip(b.title, 100);
+  if (title.length < 2) return { error: "Give the piece a title." };
+  if (!/^[0-9a-f-]{36}$/.test(b.id || "")) return { error: "Bad item." };
+  const variants = (Array.isArray(b.variants) ? b.variants : []).slice(0, 12).map((v) => ({ id: String(v?.id || ""), label: clip(v?.label, 40) }));
+  if (!variants.length || variants.some((v) => !/^[0-9a-f-]{36}$/.test(v.id)) || new Set(variants.map((v) => v.id)).size !== variants.length) return { error: "Add at least one version." };
+  if (variants.length > 1 && variants.some((v) => !v.label)) return { error: "Name each version, for example the key or the instrument." };
+  for (const v of variants) if (!(await bundleOK(v.id))) return { error: "A version didn't upload properly. Try again." };
+  const extras = await uploaded(b.extras, EXTRA, b.id, ALLOWED, 10), proof = await uploaded(b.proof?.files, EVID, b.id, EVID_EXT, 5);
+  if (extras.error || proof.error) return { error: extras.error || proof.error };
+  return { fields: { title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, contents: clip(b.contents, 200), regions, variants, extras: extras.files, proof: { text: clip(b.proof?.text, 1500), files: proof.files } } };
 }
 
 async function publish(req, res) {
   const me = await who(req);
   if (!me) return fail(res, 401, "Not signed in.");
   if (!ready(me)) return fail(res, 403, me.fee?.status === "paid" ? "Set up your payout details before adding content." : "Pay the technology fee before adding content.");
-  const b = req.body || {};
-  const usd = price(b.priceUSD);
-  if (!usd) return fail(res, 400, "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed.");
-  const regions = cleanRegions(b.regions);
-  if (!regions) return fail(res, 400, "Choose the countries from the list, or sell worldwide.");
-  if (b.rights !== true) return fail(res, 400, "Confirm that you own the rights to sell this content.");
-  const title = clip(b.title, 100);
-  if (title.length < 2) return fail(res, 400, "Give the piece a title.");
-  if (!/^[0-9a-f-]{36}$/.test(b.id || "") || !(await bundleOK(b.id))) return fail(res, 400, "The bundle didn't upload properly. Try again.");
+  const b = req.body || {}, c = await content(b);
+  if (c.error) return fail(res, 400, c.error);
   const all = await products();
   if (all.some((x) => x.id === b.id)) return fail(res, 409, "Already submitted.");
   if (all.filter((x) => x.sellerId === me.id && inReview(x)).length >= 10) return fail(res, 429, "You have 10 items waiting for review. Wait for some to finish first.");
-  await addProduct({ id: b.id, title, composer: clip(b.composer, 100), description: clip(b.description, 600), priceUSD: usd, sellerId: me.id, sellerName: me.name, contents: clip(b.contents, 200), regions, created: Date.now(), status: "scanning", review: { rightsConfirmed: Date.now() } });
+  await addProduct({ id: b.id, ...c.fields, sellerId: me.id, sellerName: me.name, created: Date.now(), status: "scanning", review: { rightsConfirmed: Date.now() } });
   res.status(200).json({ id: b.id, status: "scanning" });
+}
+
+/** Editing sends the whole item back through review (guideline 5.5). Buyers keep the last accepted version meanwhile. */
+async function edit(req, res) {
+  const me = await who(req);
+  if (!me) return fail(res, 401, "Not signed in.");
+  if (!ready(me)) return fail(res, 403, "Your Merchant Account isn't set up to add content.");
+  const b = req.body || {}, c = await content(b);
+  if (c.error) return fail(res, 400, c.error);
+  let done = false;
+  await updateProduct(String(b.id), (x) => {
+    if (x.sellerId !== me.id || !["ready", "refused"].includes(x.status) || x.final) return undefined;
+    done = true;
+    return { ...x, ...c.fields, published: x.published || (x.status === "ready" ? { variants: variantsOf(x), extras: x.extras || [] } : undefined), status: "scanning", lock: 0, appeal: undefined, review: { rightsConfirmed: Date.now() } };
+  });
+  if (!done) return fail(res, 409, "This product can't be edited right now.");
+  res.status(200).json({ ok: true });
 }
 
 // The daily safety net: moves anything still in review on, and sends any outcome email that didn't go.
@@ -432,10 +513,10 @@ const refundedBefore = (all, o) => all.some((x) => x.id !== o.id && x.listing ==
 async function buyerPurchases(req, res) {
   const b = await buyerWho(req);
   if (!b) return fail(res, 401, "Not signed in.");
-  const all = await ordersOf(b.email);
+  const all = await ordersOf(b.email), prods = await products();
   res.status(200).json({ email: b.email, purchases: all.map((o) => {
     const paidAt = o.paidAt || o.created;
-    return { order: o.id, token: o.token, listing: o.listing, title: o.title, paidAt, status: o.status, refundable: refundable({ status: o.status, paidAt, refundedBefore: refundedBefore(all, o) }), refundBy: paidAt + REFUND_DAYS * 864e5 };
+    return { variants: packageOf(o, prods).variants.map((a) => ({ id: a.id, label: a.label || "" })), order: o.id, token: o.token, listing: o.listing, title: o.title, paidAt, status: o.status, refundable: refundable({ status: o.status, paidAt, refundedBefore: refundedBefore(all, o) }), refundBy: paidAt + REFUND_DAYS * 864e5 };
   }) });
 }
 
@@ -460,7 +541,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

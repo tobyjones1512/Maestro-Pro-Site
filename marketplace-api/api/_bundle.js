@@ -5,6 +5,8 @@ import { get } from "@vercel/blob";
 const MAGIC = "PLAYALONG1";
 export const BUNDLE = (id) => `marketplace/bundles/${id}.maestropro`;
 export const ALLOWED = new Set("musicxml mxl xml pdf mid midi kar cdg lrc txt mp3 m4a wav aif aiff caf aac flac".split(" "));
+/** The versions of a product (keys, instruments), each its own bundle. Products made before versions existed are one bundle with the product's own id. */
+export const variantsOf = (p) => (p?.variants?.length ? p.variants : [{ id: p?.id, label: "" }]);
 export const ext = (n) => String(n).split(".").pop().toLowerCase();
 
 const open = async (id) => {

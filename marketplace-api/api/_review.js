@@ -4,7 +4,7 @@
 import { inflateRawSync } from "node:zlib";
 import guidelines from "../lib/guidelines.js";
 import { readJson, updateProduct, products } from "./_blob.js";
-import { bundleInfo, readRange, readBlob, ALLOWED, ext } from "./_bundle.js";
+import { bundleInfo, readRange, readBlob, ALLOWED, ext, variantsOf } from "./_bundle.js";
 import { startScan, pollScan, SCAN_CALLS } from "./_vt.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { OWNER } from "./_mp.js";
@@ -64,9 +64,9 @@ async function pdfText(buf) {
   return String(text || "").replace(/\s+/g, " ").trim();
 }
 /** One short entry per file. Never throws: a file that can't be read is described by its name and size. */
-async function evidence(id, files) {
+async function evidence(id, files, limit = 12) {
   const out = [];
-  for (const f of files.slice(0, 12)) {
+  for (const f of files.slice(0, limit)) {
     const e = ext(f.name);
     let body = "";
     try {
@@ -81,12 +81,10 @@ async function evidence(id, files) {
   return out.join("\n");
 }
 
-/** The merchant's statement and what can be read of their evidence files, for the reviewer. */
-async function appealText(p) {
-  const ap = p.appeal;
-  if (!ap) return "";
+/** What can be read of a list of document files, for the reviewer. */
+async function docs(files) {
   const out = [];
-  for (const f of ap.files) {
+  for (const f of files || []) {
     let body = "";
     try {
       const e = ext(f.name), buf = await readBlob(f.path);
@@ -94,9 +92,16 @@ async function appealText(p) {
       else if (buf && e === "txt") body = buf.toString("utf8", 0, 4000).replace(/\s+/g, " ").trim().slice(0, 2500);
       else body = "(an image or a file the reviewer cannot read)";
     } catch { body = "(could not be read)"; }
-    out.push(`<evidence name="${f.name}">\n${body}\n</evidence>`);
+    out.push(`<document name="${f.name}">\n${body}\n</document>`);
   }
-  return `<appeal>\nearlier refusal: ${p.history?.at(-1)?.reason || ""}\nmerchant's statement: ${ap.text}\n${out.join("\n")}\n</appeal>`;
+  return out.join("\n");
+}
+/** The merchant's proof of rights and, for an appeal, their case. */
+async function extraText(p) {
+  const out = [];
+  if (p.proof?.text || p.proof?.files?.length) out.push(`<proof>\nstatement about their rights: ${p.proof.text || "(none)"}\n${await docs(p.proof.files)}\n</proof>`);
+  if (p.appeal) out.push(`<appeal>\nearlier refusal: ${p.history?.at(-1)?.reason || ""}\nmerchant's statement: ${p.appeal.text}\n${await docs(p.appeal.files)}\n</appeal>`);
+  return out.join("\n");
 }
 
 // ---- The reviewer
@@ -107,8 +112,11 @@ The merchant has confirmed they own the rights. That is not proof. Look for sign
 - A copyright line, publisher's name, "all rights reserved", a publisher's edition, or a scan of a printed edition in the file text or tags.
 - Audio tags or names that show a commercial release, or a karaoke disc rip.
 - A listing that doesn't match the files, or breaks 1.3 or 3.1 to 3.3.
+- Spam (10.1 to 10.3): the same piece offered again as a new item when it should be a version, padding, keyword stuffing or advertising.
+- A misleading or confusing listing (11.1 to 11.4): a title, composer, description or version name that does not say clearly what the buyer gets, imitates a more famous work, or does not match the files.
 - Countries ("available in") where the work is probably still protected even though it looks old or public domain elsewhere (2.9).
 Public domain works (writer died before 1955) are fine when the arrangement or engraving looks like the merchant's own. Original work with no sign of copying is fine. If it looks like a well-known protected work and the listing gives no licence, refuse. If nothing points to a problem, accept.
+The merchant may add a <proof> block: documents (a licence, a letter of permission, a copyright registration, dated drafts) and a statement about their rights. Weigh it as real evidence only if it names the work and the parties and fits the item; a bare claim does not outweigh clear signs of copying.
 Sometimes the merchant is appealing an earlier refusal and has added a statement and evidence in an <appeal> block. Weigh it: a real licence, a letter of permission from the rights holder, or clear proof of authorship (dated drafts, project files) can change the decision; a bare claim of ownership, or evidence that does not match the work, cannot. Judge the item itself again, not only the earlier reason.
 Answer with one JSON object and nothing else: {"decision":"accept" or "refuse","guidelines":["2.2"],"reason":"..."}
 "guidelines" lists the numbers of the guidelines the decision rests on (at least one when refusing, empty when accepting). "reason" is one to three plain sentences to the merchant that say what in the item led to the decision. Do not quote the guidelines (that is added for you), do not write links, greetings or sign-offs, and do not use dashes.
@@ -116,8 +124,8 @@ Answer with one JSON object and nothing else: {"decision":"accept" or "refuse","
 GUIDELINES
 ${POLICY}`;
 
-async function ask(p, evid, files, appeal = "") {
-  const user = `<listing>\ntitle: ${maskPersonal(p.title)}\ncomposer or arranger: ${maskPersonal(p.composer || "(none given)")}\ndescription: ${maskPersonal(p.description || "(none given)")}\ncontents: ${p.contents}\nprice: $${p.priceUSD} USD\navailable in: ${p.regions?.length ? p.regions.join(", ") : "worldwide"}\nmerchant: ${maskPersonal(p.sellerName)}\n</listing>\n<files count="${files.length}">\n${maskPersonal(evid)}\n</files>${appeal ? "\n" + maskPersonal(appeal) : ""}`;
+async function ask(p, evid, count, extra = "") {
+  const user = `<listing>\ntitle: ${maskPersonal(p.title)}\ncomposer or arranger: ${maskPersonal(p.composer || "(none given)")}\ndescription: ${maskPersonal(p.description || "(none given)")}\ncontents: ${p.contents}\nversions: ${variantsOf(p).map((v) => v.label).filter(Boolean).join(" | ") || "(one)"}\ndownloadable extras: ${(p.extras || []).map((x) => x.name).join(", ") || "(none)"}\nprice: $${p.priceUSD} USD\navailable in: ${p.regions?.length ? p.regions.join(", ") : "worldwide"}\nmerchant: ${maskPersonal(p.sellerName)}\n</listing>\n<files count="${count}">\n${maskPersonal(evid)}\n</files>${extra ? "\n" + maskPersonal(extra) : ""}`;
   const r = await fetch(LLM_URL(), {
     method: "POST", headers: { Authorization: `Bearer ${process.env.LLM_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: MODEL(), max_tokens: 1500, temperature: 0.1, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }] }),
@@ -138,7 +146,7 @@ const decide = (id, accept, ids, reason) => updateProduct(id, (p) => {
   if (!mayStep(p)) return undefined;
   const refusals = (p.refusals || 0) + (accept ? 0 : 1);
   const history = [...(p.history || []), { at: Date.now(), accept, ids, reason, ...(p.appeal && { appeal: { text: p.appeal.text, files: p.appeal.files.map((f) => ({ name: f.name, path: f.path, link: f.scan?.link })) } }) }];
-  return { ...p, appeal: undefined, history, refusals, status: accept ? "ready" : refusals >= MAX_REFUSALS ? "escalated" : "refused", review: { ...p.review, decidedAt: Date.now(), ids, reason, notified: false, error: undefined } };
+  return { ...p, appeal: undefined, history, refusals, ...(accept && { published: { variants: variantsOf(p), extras: p.extras || [] } }), status: accept ? "ready" : refusals >= MAX_REFUSALS ? "escalated" : "refused", review: { ...p.review, decidedAt: Date.now(), ids, reason, notified: false, error: undefined } };
 });
 
 /** The site owner's final word on an item that was refused three times. Returns the product and whether this call decided it. */
@@ -148,7 +156,7 @@ export async function ownerDecide(id, accept, note) {
     if (x.status !== "escalated") return undefined;
     decided = true;
     const reason = tidy(note || (accept ? "A person at Maestro Pro checked your case and accepted the item." : x.review?.reason || "")).slice(0, 600);
-    return { ...x, status: accept ? "ready" : "refused", final: !accept, history: [...(x.history || []), { at: Date.now(), accept, owner: true, reason }], review: { ...x.review, decidedAt: Date.now(), ids: accept ? [] : x.review?.ids || [], reason, notified: false } };
+    return { ...x, ...(accept && { published: { variants: variantsOf(x), extras: x.extras || [] } }), status: accept ? "ready" : "refused", final: !accept, history: [...(x.history || []), { at: Date.now(), accept, owner: true, reason }], review: { ...x.review, decidedAt: Date.now(), ids: accept ? [] : x.review?.ids || [], reason, notified: false } };
   });
   if (decided) await notify(p).catch(() => {});
   return { product: p, decided };
@@ -176,17 +184,38 @@ export async function notify(p) {
 
 // ---- One step
 const mayStep = (p) => ["scanning", "reviewing"].includes(p.status);
+/** Every file of every version, the downloadable extras and the proof documents, as one list to scan. */
+async function buildList(p) {
+  const files = [], queued = () => ({ status: "queued" });
+  for (const v of variantsOf(p)) {
+    const info = await bundleInfo(v.id);
+    if (!info) return { refuse: ["1.2", "The upload isn't a complete Maestro Pro bundle, so it could not be opened."] };
+    const bad = info.files.filter((f) => !ALLOWED.has(ext(f.name)) || /[\\/]/.test(f.name));
+    if (bad.length) return { refuse: ["1.2", `The bundle holds a file type that isn't allowed: ${tidy(bad.map((f) => f.name).slice(0, 3).join(", "))}.`] };
+    if (!info.files.length || !info.files.some((f) => f.size > 0)) return { refuse: ["3.2", "The bundle is empty."] };
+    files.push(...info.files.map((f) => ({ name: f.name, size: f.size, offset: f.offset, bundle: v.id, scan: queued() })));
+  }
+  for (const x of p.extras || []) {
+    if (!ALLOWED.has(ext(x.name))) return { refuse: ["1.2", `A download has a file type that isn't allowed: ${tidy(x.name)}.`] };
+    files.push({ name: x.name, size: x.size, path: x.path, scan: queued() });
+  }
+  for (const x of p.proof?.files || []) files.push({ name: x.name, size: x.size, path: x.path, proof: true, scan: queued() });
+  return { files };
+}
+/** Another of the merchant's items (earlier, on sale or in review) that holds an identical file: spam under 10.1. */
+async function duplicateOf(p, files) {
+  const mine = new Set(files.filter((f) => !f.proof && f.size > 500 && f.scan.sha256).map((f) => f.scan.sha256));
+  return (await products()).find((o) => o.id !== p.id && o.sellerId === p.sellerId && o.created < p.created && ["ready", "scanning", "reviewing"].includes(o.status)
+    && (o.review?.files || []).some((f) => !f.proof && mine.has(f.scan?.sha256)));
+}
 async function scanStep(p) {
-  const ap = p.appeal;   // an appeal scans the evidence files; a new item scans its bundle
+  const ap = p.appeal;   // an appeal scans its evidence files; otherwise the whole product is scanned
   let files;
   if (ap) files = ap.files.map((f) => ({ ...f }));
   else {
-    const info = await bundleInfo(p.id);
-    if (!info) return decide(p.id, false, ["1.2"], "The upload isn't a complete Maestro Pro bundle, so it could not be opened.");
-    const bad = info.files.filter((f) => !ALLOWED.has(ext(f.name)) || /[\\/]/.test(f.name));
-    if (bad.length) return decide(p.id, false, ["1.2"], `The bundle holds a file type that isn't allowed: ${tidy(bad.map((f) => f.name).slice(0, 3).join(", "))}.`);
-    if (!info.files.length || !info.files.some((f) => f.size > 0)) return decide(p.id, false, ["3.2"], "The bundle is empty.");
-    files = (p.review?.files || info.files.map((f) => ({ name: f.name, size: f.size, offset: f.offset, scan: { status: "queued" } }))).map((f) => ({ ...f }));
+    const built = p.review?.files ? { files: p.review.files } : await buildList(p);
+    if (built.refuse) return decide(p.id, false, built.refuse[0] ? [built.refuse[0]] : [], built.refuse[1]);
+    files = built.files.map((f) => ({ ...f }));
   }
   let budget = SCAN_CALLS;
   for (const f of files) {
@@ -194,7 +223,7 @@ async function scanStep(p) {
     const s = f.scan;
     if (["error", "unscanned"].includes(s.status) && Date.now() - Date.parse(s.checkedAt || 0) > RETRY_ERROR_MS) s.status = "queued";
     if (s.status === "queued" && !(s.retryAt > Date.now())) {
-      const buf = ap ? await readBlob(f.path) : await readRange(p.id, f.offset, f.offset + f.size);
+      const buf = f.path ? await readBlob(f.path) : await readRange(f.bundle || p.id, f.offset, f.offset + f.size);
       if (!buf) { f.scan = { status: "error", checkedAt: new Date().toISOString(), note: "The file could not be read." }; continue; }
       const r = await startScan(buf, f.name);
       f.scan = r.scan; budget -= r.calls;
@@ -207,13 +236,23 @@ async function scanStep(p) {
   await updateProduct(p.id, (x) => (ap ? { ...x, appeal: { ...x.appeal, files } } : { ...x, review: { ...x.review, files } }));
   const flagged = files.find((f) => f.scan.status === "flagged");
   if (flagged) return decide(p.id, false, ["1.1"], `VirusTotal reported ${flagged.scan.malicious + flagged.scan.suspicious} of ${flagged.scan.total} scanning engines flagging ${tidy(flagged.name)} as harmful.`);
-  if (files.every((f) => f.scan.status === "clean")) await updateProduct(p.id, (x) => (x.status === "scanning" ? { ...x, status: "reviewing" } : undefined));
+  if (files.every((f) => f.scan.status === "clean")) {
+    const twin = !ap && (await duplicateOf(p, files));
+    if (twin) return decide(p.id, false, ["10.1"], `A file in this item is identical to one in your item ${tidy(twin.title)}. If it is the same music in another key or for another instrument, add it to that item as a version instead.`);
+    await updateProduct(p.id, (x) => (x.status === "scanning" ? { ...x, status: "reviewing" } : undefined));
+  }
 }
 async function reviewStep(p) {
-  const info = await bundleInfo(p.id);
-  if (!info) return decide(p.id, false, ["1.2"], "The upload isn't a complete Maestro Pro bundle, so it could not be opened.");
   try {
-    const v = await ask(p, await evidence(p.id, info.files), info.files, await appealText(p));
+    const parts = []; let count = 0;
+    for (const v of variantsOf(p).slice(0, 6)) {
+      const info = await bundleInfo(v.id);
+      if (!info) return decide(p.id, false, ["1.2"], "The upload isn't a complete Maestro Pro bundle, so it could not be opened.");
+      count += info.files.length;
+      parts.push(`<version name="${v.label || "main"}">\n${await evidence(v.id, info.files, 6)}\n</version>`);
+    }
+    for (const x of (p.extras || []).slice(0, 4)) { count++; parts.push(`<download name="${x.name}">\n${(await docs([x])).replace(/<\/?document[^>]*>/g, "")}\n</download>`); }
+    const v = await ask(p, parts.join("\n"), count, await extraText(p));
     await decide(p.id, v.accept, v.ids, v.reason);
   } catch (e) {
     const tries = (p.review?.tries || 0) + 1;

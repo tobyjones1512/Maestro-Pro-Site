@@ -39,7 +39,7 @@ try {
   const d = await api("list"), l = d.listings.find((x) => x.id === id);
   if (!l) throw new Error("That piece isn't for sale.");
   document.title = l.title + " | Maestro Pro Marketplace";
-  box.innerHTML = `<h1>${esc(l.title)}</h1><p><b>${esc(l.composer)}</b></p><p>${esc(l.description)}</p><p>Includes: ${esc(l.contents)}. By ${esc(l.sellerName)}. Available: ${esc(where(l.regions))}.</p><p><b>${esc(local(l.priceUSD, d))}</b></p>`;
+  box.innerHTML = `<h1>${esc(l.title)}</h1><p><b>${esc(l.composer)}</b></p><p>${esc(l.description)}</p><p>Includes: ${esc(l.contents)}${l.versions?.length ? ` (${l.versions.map(esc).join(", ")})` : ""}${l.downloads ? `, plus ${l.downloads} file${l.downloads > 1 ? "s" : ""} you can use outside Maestro Pro` : ""}. By ${esc(l.sellerName)}. Available: ${esc(where(l.regions))}.</p><p><b>${esc(local(l.priceUSD, d))}</b></p>`;
   document.getElementById("cur").textContent = d.currency === "USD" ? `Charged in US dollars (${dollars(l.priceUSD)}).` : `Charged in ${d.currency}, converted from ${dollars(l.priceUSD)}.`;
   try { f.email.value = localStorage.getItem("mp-buyer-email") || ""; } catch {}
   f.hidden = false;
