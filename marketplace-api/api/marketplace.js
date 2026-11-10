@@ -124,10 +124,10 @@ async function preview(req, res) {
   res.setHeader("Cache-Control", "public, max-age=300");
   if (ext(name) === "mp3") { res.setHeader("Content-Type", "audio/mpeg"); return res.status(200).send(buf); }
   if (x !== undefined && (p.extras || [])[Number(x)]?.cover && COVER.has(ext(name))) { res.setHeader("Content-Type", ext(name) === "png" ? "image/png" : "image/jpeg"); return res.status(200).send(buf); }
-  if (ext(name) === "musicxml" || ext(name) === "xml") {   // only the first four bars of each part, so the preview isn't the whole score
+  if (ext(name) === "musicxml" || ext(name) === "xml") {   // only the first eight bars of each part, so the preview isn't the whole score
     const xml = buf.toString("utf8").replace(/<part\s[^>]*>[\s\S]*?<\/part>/g, (part) => {
       const bars = part.match(/<measure\b[\s\S]*?<\/measure>/g) || [], head = part.slice(0, part.indexOf(bars[0] ?? "</part>"));
-      return head + bars.slice(0, 4).join("") + "</part>";
+      return head + bars.slice(0, 8).join("") + "</part>";
     });
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
     return res.status(200).send(xml);

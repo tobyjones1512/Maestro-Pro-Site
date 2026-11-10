@@ -90,7 +90,7 @@ function preview(file, name) {
   box.hidden = false;
   box.innerHTML = `<div class="mp-preview__bar"><b>${esc(name)}</b><button type="button" class="pay__btn pay__btn--ghost" data-close>Close preview</button></div>` + (file.kind === "pdf"
     ? `<iframe title="Preview of ${esc(name)}" src="${esc(file.preview)}#toolbar=0&navpanes=0&view=FitH"></iframe><p class="mp-note">A preview of the first page. The full file is yours after you buy.</p>`
-    : file.kind === "xml" ? `<div class="mp-xml" id="xml">Loading the first bars…</div><p class="mp-note">The first four bars. The full score is yours after you buy.</p>`
+    : file.kind === "xml" ? `<div class="mp-xml" id="xml">Loading the first bars…</div><p class="mp-note">The first eight bars. The full score is yours after you buy.</p>`
     : `<audio controls controlsList="nodownload noplaybackrate" src="${esc(file.preview)}"></audio><p class="mp-note">A short clip. The full recording is yours after you buy.</p>`);
   if (file.kind === "xml") drawXml(file.preview);
   box.scrollIntoView({ block: "nearest", behavior: "smooth" });
