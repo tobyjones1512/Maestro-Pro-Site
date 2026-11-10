@@ -23,9 +23,9 @@ export const TAX = {
 };
 export const taxFor = (cc) => { const t = TAX[String(cc || "").toUpperCase()]; return t ? { name: t[0], rate: t[1], inclusive: Boolean(t[2]) } : { name: "", rate: 0, inclusive: false }; };
 
-/** What a buyer pays, in minor units of their currency, and how it breaks down. The price with its tax, and the tip, are each rounded up to the next quarter. */
+/** What a buyer pays, in minor units of their currency, and how it breaks down. The price with its tax is rounded up to the next quarter; the tip is the exact amount, not rounded up. */
 export function quote(priceUSD, tipUSD, cur, fx, rate) {
-  const base = minor(priceUSD * (1 + rate), cur, fx), tip = tipUSD ? minor(tipUSD, cur, fx) : 0;   // the tip is on the price before tax and never changes the tax
+  const base = minor(priceUSD * (1 + rate), cur, fx), tip = Math.round(tipUSD * fx * 10 ** decimals(cur));   // the tip is on the price before tax and never changes the tax
   const tax = rate ? Math.round((base * rate) / (1 + rate)) : 0;
   return { total: base + tip, tip, tax, net: base - tax };
 }
