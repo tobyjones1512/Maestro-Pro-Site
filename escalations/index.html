@@ -663,7 +663,11 @@ function loadGuides(){
         [top].concat(top.children||[]).forEach(function(x){state.flat.push({slug:x.slug,title:x.title,summary:x.summary||"",keywords:(x.keywords||[]).map(function(k){return k.toLowerCase()}),group:g.title})});
       });
     });
-  }).catch(function(){state.flat=[]});
+  }).catch(function(){state.flat=[]}).then(function(){
+    return fetch("/marketplace-api/lib/guidelines.json").then(function(r){return r.json()}).then(function(g){
+      g.sections.forEach(function(s){s.items.forEach(function(i){state.flat.push({slug:"mg:"+i.id,title:"Guideline "+i.id+": "+i.title,summary:i.text,keywords:["marketplace","guideline","merchant","seller"],group:"Marketplace guidelines"})})});
+    }).catch(function(){});
+  });
 }
 function start(){
   $("login").hidden=true;$("app").hidden=false;

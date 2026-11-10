@@ -3,7 +3,7 @@
 // from escalations@maestro-pro.app in the same email design as the support bot, and sets a chain's status.
 import crypto from "node:crypto";
 import { Readable } from "node:stream";
-import { buildEmail, guideTree, LINKS, send, firstSentence, ESCALATIONS, DEFAULT_PROMPT, FROM as SUPPORT_FROM } from "./support-inbound.js";
+import { buildEmail, guideTree, marketGuidelines, LINKS, send, firstSentence, ESCALATIONS, DEFAULT_PROMPT, FROM as SUPPORT_FROM } from "./support-inbound.js";
 import { OFFER_P, OFFER_FINAL } from "./student-cancel.js";
 import { buildKeyEmail, KEY_FROM, KEY_SUBJECT } from "./_key-email.js";
 import { listPayments, forceRefund } from "./_force-refund.js";
@@ -88,6 +88,7 @@ const fail = (status, message) => Object.assign(new Error(message), { status });
 export async function sendDeskReply(thread, { id, text, close = false, guides: slugs = [], attachments: ids = [] }) {
   const { pages } = await guideTree();
   const known = new Map(pages.map((p) => [p.slug, p]));
+  for (const g of await marketGuidelines()) known.set(g.slug, { title: g.title, url: g.url, summary: g.text });   // Marketplace guidelines are attached the same way
   const guides = [...new Set(slugs.map(String))].filter((s) => known.has(s)).slice(0, 6).map((s) => { const g = known.get(s); return { slug: s, title: g.title, url: g.url, summary: firstSentence(g.summary || "") }; });
   // "Send & mark as done": the chain gets a unique case number, replies to the email go nowhere, and the email says how to re-open the case.
   const caseNumber = close ? await assignCase(thread) : "";

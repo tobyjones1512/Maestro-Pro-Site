@@ -38,6 +38,12 @@ export const LINKS = {
   refund: ["Request a refund or cancel your licence", "https://maestro-pro.app/cancel/"],
   appstore: ["Request a refund from Apple", "https://support.apple.com/en-us/118223"],
   key: ["Get your licence key emailed to you", "https://maestro-pro.app/key.html"],
+  marketplace: ["Visit the Maestro Pro Marketplace", "https://maestro-pro.app/marketplace/"],
+  buyeraccount: ["Your Marketplace buyer account", "https://maestro-pro.app/marketplace/account/"],
+  sell: ["Open a Merchant Account", "https://maestro-pro.app/marketplace/onboard/"],
+  merchant: ["Sign in to your Merchant Account", "https://maestro-pro.app/marketplace/seller/"],
+  guidelines: ["Read the Merchant Content Review Guidelines", "https://maestro-pro.app/marketplace/guidelines/"],
+  copyright: ["Report a copyright problem", "https://maestro-pro.app/marketplace/disputes/"],
   testflight: ["Install Maestro Pro with TestFlight", "https://testflight.apple.com/join/rPBpRCu9"],
   buy: ["Buy Maestro Pro Professional", "https://maestro-pro.app/buy/"],
 };
@@ -57,6 +63,7 @@ Facts you may use, and nothing else about the product:
 - Ending a monthly licence early after the 14 days costs one month plus half of the remaining term. The cancellation page shows the exact amount before the customer confirms.
 - A licence cannot be moved to another email address or transferred to someone else. If a customer has lost access to the email address they paid with, they must email support explaining their situation and show the direct debit on their bank statement.
 - Education: one licence for a whole organisation is a flat £499 a year, with no minimum organisation size and no device limit.
+- The Maestro Pro Marketplace (links ["marketplace"]) sells sheet music, backing tracks and karaoke made by independent merchants. Buyers need a free buyer account (their email address and a code we email) to see what they bought, on the website (links ["buyeraccount"]) and in the app, where Marketplace in the menu only signs in and lists purchases: buying, downloads of every file and refunds are on the website. A buyer can cancel a purchase for a full refund within 14 days, on their buyer account page, never by email, and the refund comes from the merchant. Merchants (links ["sell", "merchant"]) pay a one-time £5 technology fee and set up payouts, and Maestro Pro keeps 30% of each sale. Every item is virus-scanned and reviewed against the Merchant Content Review Guidelines (links ["guidelines"]) before it goes on sale. A refused item can be appealed with evidence, and after three refusals a person decides. Merchants are responsible for what they sell and to whom. The full rules are in the <marketplace> block when a customer asks about the Marketplace: answer from them and nothing else, point to the guideline that applies, and never promise that an item will be accepted.
 - Scanning paper music with the camera is simply not available. Never describe it as coming soon or planned. Apart from that, do not claim any other missing platform or feature unless the guide says so.
 Rules:
 - CHECK BEFORE YOU ANSWER. Every answer about the app must come from, in this order: (1) the <guide_page> blocks and the <guide_tree>, where every feature of the app has a page; (2) failing that, the <app_code> excerpts; (3) the facts above. Read them first, then write your reply. If a page in the tree is about something, the app does it.
@@ -84,10 +91,12 @@ Rules:
 - Set refund_problem to true ONLY when the customer says a refund has not come through, has not arrived yet, or is wrong in some way (wrong amount, taken twice, charged after cancelling). A customer who is simply asking how to get a refund or cancel is NOT a refund problem: send them to the cancellation page. Otherwise leave refund_problem false.
 - Set business to true ONLY when the email is a business enquiry that is not about using or buying Maestro Pro: a partnership, sponsorship, advertising or press request, a reseller, distribution, licensing or investment approach, a collaboration or hiring proposal, or a sales pitch for another company's product or service. A customer's own question, a refund, a licence key, a bug, feedback, or an Education licence purchase is NOT a business enquiry. When business is true, reply may be empty because nobody writes back; the email is passed to the owner.
 - "issue" (base it on the whole conversation) is a short lower-case phrase that finishes the sentence "I'm sorry to hear ...", for example "that the tuner can't hear you" or "you can't access your account". No full stop, no URLs, under 100 characters. It is only used if you escalate.
-Reply with only JSON: {"reply": string, "pages": string[], "links": string[], "escalate": boolean, "refund_problem": boolean, "business": boolean, "issue": string, "evidence": "guide" | "code" | "facts" | "none"}. "evidence" is where your answer came from ("none" only if you made no claim about the app). Allowed links: {{LINKS}}.`;
+- Copyright claims about the Marketplace: when a person says their own copyrighted work (or a work they are authorised to act for) is being sold on the Marketplace, and the email gives the item's Marketplace address or exact title, set "copyright_claim" to {"listing": the address or exact title, "work": which of their works it uses, "details": why it is theirs and how the item copies it, "rights_holder": true only if they say they own it or are authorised to act for the owner}. We then file a dispute for them, so keep "reply" short and do not say it has been filed yourself. If something is missing, set "copyright_claim" to null and ask for the item's Marketplace address, which work is theirs and how the item copies it. Never set it for anything else. Never decide or promise an outcome.
+Reply with only JSON: {"reply": string, "pages": string[], "links": string[], "escalate": boolean, "refund_problem": boolean, "business": boolean, "copyright_claim": object or null, "issue": string, "evidence": "guide" | "code" | "facts" | "none"}. "evidence" is where your answer came from ("none" only if you made no claim about the app). Allowed links: {{LINKS}}.`;
 // A prompt saved on the desk before the business-enquiry rule existed gets the rule added, so the model always knows about the field.
 const BUSINESS_RULE = DEFAULT_PROMPT.split("\n").find((l) => l.startsWith("- Set business to true")) || "";
-export const promptFor = (custom) => { let p = String(custom || DEFAULT_PROMPT); if (custom && !/\bbusiness\b.*\btrue\b/i.test(p)) p += `\n${BUSINESS_RULE}\n(Also add "business": boolean to the JSON.)`; return p.replaceAll("{{LINKS}}", Object.keys(LINKS).join(", ")); };
+const MARKET_FACT = DEFAULT_PROMPT.split("\n").find((l) => l.startsWith("- The Maestro Pro Marketplace")) || "", CLAIM_RULE = DEFAULT_PROMPT.split("\n").find((l) => l.startsWith("- Copyright claims about the Marketplace")) || "";
+export const promptFor = (custom) => { let p = String(custom || DEFAULT_PROMPT); if (custom && !p.includes("copyright_claim")) p += `\n${MARKET_FACT}\n${CLAIM_RULE}\n(Also add "copyright_claim": object or null to the JSON.)`; if (custom && !/\bbusiness\b.*\btrue\b/i.test(p)) p += `\n${BUSINESS_RULE}\n(Also add "business": boolean to the JSON.)`; return p.replaceAll("{{LINKS}}", Object.keys(LINKS).join(", ")); };
 
 // ---- Reference material: the guide's tree (guide/tree.json) and Markdown pages (guide/<slug>.md) on the website, cached for an hour.
 // Pages are picked by matching the email against each page's title, keywords and summary, so only a few short pages are sent to the model.
@@ -528,6 +537,7 @@ export const plain = (e) => {
 };
 
 async function draft(subject, body, guide = { top: [], outline: "" }, code = [], earlier = "", extra = "", system = promptFor(), files = "") {
+  const market = MARKET.test(`${subject}\n${body}\n${earlier}`) ? await marketBlock() : "";
   const r = await fetch(LLM_URL(), {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.LLM_API_KEY}`, "Content-Type": "application/json" },
@@ -537,7 +547,7 @@ async function draft(subject, body, guide = { top: [], outline: "" }, code = [],
       temperature: 0.3,
       messages: [
         { role: "system", content: system },
-        { role: "user", content: `${code.map((c) => `<app_code path="${c.path}">\n${c.body}\n</app_code>`).join("\n")}\n${guide.outline ? `<guide_tree>\n${guide.outline}\n</guide_tree>\n` : ""}${guide.top.map((p) => `<guide_page slug="${p.slug}" title="${p.title}">\n${p.md}\n</guide_page>`).join("\n")}\nSubject: ${maskPersonal(subject)}\n\n${earlier ? `<earlier_messages>\n${maskPersonal(earlier)}\n</earlier_messages>\n` : ""}<customer_email>\n${maskPersonal(body)}\n</customer_email>${files}${extra ? `\n<verification>\n${extra}\n</verification>` : ""}` },
+        { role: "user", content: `${code.map((c) => `<app_code path="${c.path}">\n${c.body}\n</app_code>`).join("\n")}\n${guide.outline ? `<guide_tree>\n${guide.outline}\n</guide_tree>\n` : ""}${guide.top.map((p) => `<guide_page slug="${p.slug}" title="${p.title}">\n${p.md}\n</guide_page>`).join("\n")}${market}\nSubject: ${maskPersonal(subject)}\n\n${earlier ? `<earlier_messages>\n${maskPersonal(earlier)}\n</earlier_messages>\n` : ""}<customer_email>\n${maskPersonal(body)}\n</customer_email>${files}${extra ? `\n<verification>\n${extra}\n</verification>` : ""}` },
       ],
     }),
   });
@@ -546,7 +556,39 @@ async function draft(subject, body, guide = { top: [], outline: "" }, code = [],
   const content = (await r.json()).choices?.[0]?.message?.content || "";
   let j = {};
   try { j = JSON.parse(/\{[\s\S]*\}/.exec(content)?.[0] || "{}"); } catch { /* escalate below */ }
-  return { reply: String(j.reply || "").trim() || NO_ANSWER, links: Array.isArray(j.links) ? j.links.filter((k) => LINKS[k]) : [], pages: Array.isArray(j.pages) ? j.pages.map(String) : [], escalate: j.escalate === true, refundProblem: j.refund_problem === true, business: j.business === true, evidence: String(j.evidence || ""), issue: String(j.issue || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").replace(/[.!]+$/, "").trim().slice(0, 100) };
+  return { reply: String(j.reply || "").trim() || NO_ANSWER, links: Array.isArray(j.links) ? j.links.filter((k) => LINKS[k]) : [], pages: Array.isArray(j.pages) ? j.pages.map(String) : [], escalate: j.escalate === true, refundProblem: j.refund_problem === true, business: j.business === true, claim: j.copyright_claim && typeof j.copyright_claim === "object" ? j.copyright_claim : null, evidence: String(j.evidence || ""), issue: String(j.issue || "").replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").replace(/[.!]+$/, "").trim().slice(0, 100) };
+}
+
+// ---- The Marketplace: its guidelines go into the prompt when an email is about it, and a copyright claim in an email is filed as a dispute.
+const MARKET = /\b(marketplace|merchant|seller|guidelines?|content review|refused|appeals?|strikes?|copyright|disputes?|payouts?|buyer account)\b/i;
+const MARKET_API = "https://maestro-marketplace-api.vercel.app/api/marketplace-";
+let guidelineCache = { at: 0, items: [] };
+/** The Merchant Content Review Guidelines (the file the Marketplace's own reviewer reads), as items with their anchors. Cached for an hour. */
+export async function marketGuidelines() {
+  if (guidelineCache.items.length && Date.now() - guidelineCache.at < 3600e3) return guidelineCache.items;
+  try {
+    const g = await fetch(`${SITE}/marketplace-api/lib/guidelines.json`).then((r) => r.json());
+    const items = g.sections.flatMap((s) => s.items.map((i) => ({ slug: `mg:${i.id}`, id: i.id, section: `${s.n}. ${s.title}`, title: `Guideline ${i.id}: ${i.title}`, text: i.text, url: `${SITE}/marketplace/guidelines/#g${i.id.replace(".", "-")}` })));
+    guidelineCache = { at: Date.now(), items };
+  } catch { /* the bot answers without them */ }
+  return guidelineCache.items;
+}
+async function marketBlock() {
+  const items = await marketGuidelines();
+  if (!items.length) return "";
+  return `\n<marketplace>\nThe Merchant Content Review Guidelines of the Maestro Pro Marketplace. Answer Marketplace questions from these and name the guideline number that applies.\n${items.map((i) => `${i.id} ${i.title.replace(/^Guideline [\d.]+: /, "")}: ${i.text}`).join("\n")}\n</marketplace>`;
+}
+/** Files a copyright dispute for a customer who says their work is sold on the Marketplace. Returns { ref } when filed, { error } when the Marketplace says why not, {} otherwise. */
+async function fileClaim(c, from) {
+  const email = addr(from), name = String(from).replace(/<[^>]*>/, "").replace(/["']/g, "").trim() || email.split("@")[0];
+  const s = (x, n) => String(x ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  if (c.rights_holder !== true || !s(c.listing, 300) || !s(c.work, 200) || s(c.details, 2000).length < 20) return {};
+  try {
+    const r = await fetch(MARKET_API + "dispute-file", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, listing: s(c.listing, 300), work: s(c.work, 200), details: `${s(c.details, 1900)} (Filed by Maestro Pro Support from the customer's email.)`, goodFaith: true, via: "support" }) });
+    const j = await r.json().catch(() => ({}));
+    return r.ok && j.id ? { ref: String(j.id).slice(0, 8).toUpperCase() } : { error: String(j.error || "").slice(0, 200) };
+  } catch { return {}; }
 }
 
 /** Used when the model gives no usable reply. A missing answer is never a reason to escalate; ask the customer for detail instead. */
@@ -660,6 +702,12 @@ export async function answerEmail(job) {
       denied = deniesWithoutEvidence(d.reply);
     }
     if (d.business && !replies) return passOn("model");
+    // Someone says their work is sold on the Marketplace: file the dispute for them (the item goes off sale and a person decides).
+    if (d.claim) {
+      const filed = await fileClaim(d.claim, from);
+      if (filed.ref) Object.assign(d, { reply: `Thank you for letting us know. We have filed a copyright dispute for you, reference ${filed.ref}. The item is taken off sale while it is looked at, the merchant is asked to respond, and we will email you the outcome. You can read how disputes work in the [Marketplace guidelines](guidelines).`, escalate: false, links: [], pages: [], refundProblem: false });
+      else if (filed.error) Object.assign(d, { reply: `We could not file the dispute yet. ${filed.error} Reply with that and we will file it straight away.`, escalate: false, links: [], pages: [] });
+    }
     console.log(JSON.stringify({ evt: "support-evidence", id, guidePages: guide.top.map((p) => p.slug), bestScore: guide.best, coverage: Math.round(guide.coverage * 100) / 100, strong: guide.strong, codeFiles: code.map((c) => c.path), evidence: d.evidence, retried, stillDenies: denied }));
 
     // Guide pages the model chose, checked against the real tree (it never supplies a URL).
