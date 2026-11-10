@@ -18,7 +18,7 @@ writeFileSync(new URL("../marketplace/guidelines/index.html", import.meta.url), 
 <link rel="canonical" href="https://maestro-pro.app/marketplace/guidelines/">
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css">
+<link rel="stylesheet" href="/assets/marketplace.css?v=3">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
