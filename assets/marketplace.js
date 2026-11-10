@@ -13,6 +13,16 @@ export async function api(fn, { method = "GET", body, query = {}, key, header = 
   return d;
 }
 
+/** The price a visitor sees: with the tax built in where their country expects that. */
+export const shown = (usd, d) => usd * (1 + (d.tax?.inclusive ? d.tax.rate : 0));
+/** The checkout's breakdown, worked out exactly as the server does it. Returns amounts in the buyer's currency. */
+export function breakdown(priceUSD, tipUSD, { currency, rate }, tax) {
+  const dec = currency === "JPY" || currency === "ISK" ? 0 : 2, k = 10 ** dec, r = tax?.rate || 0, usd = priceUSD * (1 + r) + tipUSD;
+  const total = dec ? Math.ceil(usd * rate * 4 - 1e-6) * 25 : Math.ceil(usd * rate - 1e-6);
+  const tip = Math.min(total, Math.round(tipUSD * rate * k)), taxable = total - tip, t = r ? Math.round((taxable * r) / (1 + r)) : 0;
+  return { total: total / k, tip: tip / k, tax: t / k, net: (taxable - t) / k };
+}
+export const money = (n, currency) => new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
 /** US dollars -> the buyer's currency, rounded up the way the server rounds it. */
 export function local(usd, { currency, rate }, base = 0) {
   const whole = currency === "JPY" || currency === "ISK", amt = (u) => (whole ? Math.ceil(u * rate - 1e-6) : Math.ceil(u * rate * 4 - 1e-6) / 4);   // rounded up to the next quarter (0.19 -> 0.25, 0.26 -> 0.50)
@@ -274,7 +284,7 @@ const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".
 export const gmt = (t) => new Date(t).toLocaleString("en-GB", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " GMT";
 export function renderProducts(table, products, act, onAppeal, onEdit, onRemove, onRelease) {
   table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>ID ${esc(p.code)} &middot; ${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}${p.versions?.length ? ` &middot; ${p.versions.length} versions` : ""}</small></td>
-    <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : p.awaiting ? "Awaiting Distribution" : LABEL[p.status] || esc(p.status)}</span>${p.awaiting ? `<br><small>${p.release.mode === "date" ? "Goes on sale " + gmt(p.release.at) : "Release it when you are ready."}</small>` : ""}${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
+    <td><span class="mp-status mp-status--${p.withdrawn ? "refused" : p.awaiting ? "wait" : p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : p.awaiting ? "Awaiting Distribution" : LABEL[p.status] || esc(p.status)}</span>${p.awaiting ? `<br><small>${p.release.mode === "date" ? "Goes on sale " + gmt(p.release.at) : "Release it when you are ready."}</small>` : ""}${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
       ${p.status === "refused" || p.status === "escalated" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul>${p.final ? "<small>Final decision. This can't be appealed.</small>" : p.canAppeal ? `<button class="pay__btn pay__btn--ghost" data-appeal="${esc(p.id)}">Appeal with evidence</button>` : p.status === "escalated" ? "<small>Waiting for a final decision from a person at Maestro Pro.</small>" : ""}</div>` : ""}</td>
     <td>${p.sold}</td><td>${dollars(p.earnedUSD)}</td>
     <td>${p.editable ? `<button class="pay__btn pay__btn--ghost" data-edit="${esc(p.id)}">Edit</button> ` : ""}${p.removable ? `<button class="pay__btn pay__btn--ghost" data-remove="${esc(p.id)}">${inReview(p) ? "Cancel" : "Remove"}</button> ` : ""}${p.awaiting ? `<button class="pay__btn" data-release="${esc(p.id)}">Release now</button>` : p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;

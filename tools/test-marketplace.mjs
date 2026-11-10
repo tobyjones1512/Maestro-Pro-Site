@@ -1,8 +1,9 @@
 // Run: node tools/test-marketplace.mjs  (the bundle layout, the quarter-dollar price rule, the guidelines the bot quotes, and the emails)
 import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
-import { makeBundle, validPrice } from "../assets/marketplace.js";
+import { makeBundle, validPrice, breakdown } from "../assets/marketplace.js";
 import { price, currencyFor, minor, fmt, cleanRegions, availableIn, refundable } from "../marketplace-api/api/_mp.js";
+import { quote, taxFor, TAX } from "../marketplace-api/api/_tax.js";
 import { verdictFrom } from "../marketplace-api/api/_vt.js";
 import { buildEmail, resolve } from "../marketplace-api/api/_email.js";
 import { GUIDELINE, tidy } from "../marketplace-api/api/_review.js";
@@ -55,3 +56,12 @@ assert.equal(head.item.track, "a.mp3"); assert.equal(head.item.extraTracks.lengt
 await assert.rejects(makeBundle({ title: "x", score: new File(["x"], "evil.exe") }));
 await assert.rejects(makeBundle({ title: "x", score: new File(["x"], "a.xml"), tracks: [new File(["x"], "a.exe")] }));
 console.log("ok");
+
+// Tax: the server and the checkout page work out the same breakdown, and the parts add up to the total.
+assert.deepEqual(taxFor("gb"), { name: "VAT", rate: 0.2, inclusive: true }); assert.equal(taxFor("US").rate, 0); assert.equal(taxFor("CA").inclusive, false);
+for (const [cur, fx] of [["GBP", 0.75], ["EUR", 0.92], ["JPY", 150.3], ["USD", 1]]) for (const cc of ["GB", "DE", "CA", "US"]) for (const [p, tip] of [[0.25, 0.01], [4.25, 0.21], [12, 0], [999.75, 40]]) {
+  const q = quote(p, tip, cur, fx, taxFor(cc).rate), b = breakdown(p, tip, { currency: cur, rate: fx }, taxFor(cc)), k = cur === "JPY" ? 1 : 100;
+  assert.equal(q.net + q.tax + q.tip, q.total); assert.ok(Math.abs(b.total * k - q.total) < 1e-6 && Math.abs(b.tax * k - q.tax) < 1e-6 && Math.abs(b.net * k - q.net) < 1e-6 && Math.abs(b.tip * k - q.tip) < 1e-6, `${cur} ${cc} ${p}`);
+}
+assert.deepEqual(quote(10, 0, "GBP", 1, 0.2), { total: 1200, tip: 0, tax: 200, net: 1000 });
+assert.ok(Object.values(TAX).every(([n, r]) => n && r > 0 && r < 0.3));

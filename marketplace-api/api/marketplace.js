@@ -8,6 +8,7 @@ import { Readable } from "node:stream";
 import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
+import { TAX, taxFor, quote, recordTax, refundTax, LEDGER } from "./_tax.js";
 import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
@@ -78,7 +79,7 @@ const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
   const r = await rate(cur);
-  res.status(200).json({ listings: (await products()).filter((p) => onSale(p) && availableIn(p.regions, country(req))).reverse().map(pub), currency: r ? cur : "USD", rate: r || 1, cut: CUT });
+  res.status(200).json({ listings: (await products()).filter((p) => onSale(p) && availableIn(p.regions, country(req))).reverse().map(pub), currency: r ? cur : "USD", rate: r || 1, cut: CUT, tax: taxFor(country(req)) });
 }
 /** One item for its page: the files in each version, with a preview where one is safe to show. */
 async function item(req, res) {
@@ -92,7 +93,7 @@ async function item(req, res) {
     ...ex.map((e, k) => [e, k]).filter(([e]) => (e.v ? e.v === v.id : i === 0)).map(([e, k]) => ({ name: e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })),
   ] })));
   if (p.kind === "music") detail.push({ id: p.id, label: "Tracks", files: ex.map((e, k) => [e, k]).filter(([e]) => !e.cover).map(([e, k]) => ({ name: e.name, title: e.title ? `${e.n}. ${e.title}` : e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })) });
-  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1 });
+  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1, tax: taxFor(country(req)), taxes: TAX, country: String(country(req) || "").toUpperCase() });
 }
 const CLIP = 450000;   // about 30 seconds of a typical MP3
 /** A preview that is no use as a copy: the first page of a PDF with a PREVIEW watermark across it, or the first 30 seconds or so of an MP3. */
@@ -164,12 +165,15 @@ async function buy(req, res) {
   const t = req.body?.tip || {};
   const tipUSD = t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
   if (!Number.isFinite(tipUSD) || tipUSD < 0 || tipUSD > 500) return fail(res, 400, "A tip can be from $0 to $500.");
+  const ip = String(country(req) || "").toUpperCase(), pick = String(req.body?.country || "").toUpperCase(), cc = pick === "OTHER" || TAX[pick] ? pick : ip, tax = taxFor(cc);   // the buyer's country decides the tax
+  let q;
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);
   let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   if (!r) { cur = "USD"; r = 1; }
   const create = (currency, rt, how) => {
-    const m = minor(l.priceUSD + (tipUSD || 0), currency, rt);   // the total is rounded up, so the price and tip shown add up to it
+    q = quote(l.priceUSD, tipUSD || 0, currency, rt, tax.rate);   // the total is rounded up once, so the price, tax and tip shown add up to it
+    const m = q.total;
     return mollie("POST", "/payments", pay.token, {
       amount: { currency, value: fmt(m, currency) },
       description: `${l.title} (Maestro Pro marketplace)`,
@@ -177,7 +181,7 @@ async function buy(req, res) {
       webhookUrl: `${API}/api/marketplace-webhook?o=${order.id}`,
       metadata: { order: order.id, listing: l.id },
       ...(how && { method: how }),
-      ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.max(1, Math.round(m * CUT)), currency) }, description: "Maestro Pro marketplace fee (30%)" } }),
+      ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.min(m, Math.max(1, Math.round((q.net + q.tip) * CUT) + q.tax)), currency) }, description: q.tax ? "Maestro Pro marketplace fee (30%) and tax" : "Maestro Pro marketplace fee (30%)" } }),
     });
   };
   // Apple Pay first when asked; then any method; then dollars, for a currency this account can't take.
@@ -187,6 +191,7 @@ async function buy(req, res) {
   const url = p.data?._links?.checkout?.href;
   if (!url) return fail(res, 502, p.data?.detail || "Couldn't start the payment.");
   order.paymentId = p.data.id; order.currency = used; order.amount = p.data.amount.value;
+  order.tax = { cc, ip, name: tax.name, rate: tax.rate, inclusive: tax.inclusive, fx: used === "USD" ? 1 : r, ...q };
   await writeRaw(ORDER(order.id), order);
   await modify(ORDERS_OF(order.email.toLowerCase()), (a) => [...(a || []), { order: order.id, token: order.token, listing: l.id, title: l.title, t: order.created }]).catch(() => {});
   res.status(200).json({ url, order: order.id, token: order.token });
@@ -207,8 +212,9 @@ async function sync(order) {
     const sale = { id: order.id, t: Date.now(), listing: order.listing, title: order.title, usd: order.usd, ...(order.tipUSD && { tipUSD: order.tipUSD }), currency: order.currency, amount: order.amount };
     await modify(SALES(order.sellerId || "platform"), (a) => ((a || []).some((x) => x.id === sale.id) ? undefined : [...(a || []), sale])).catch(() => {});
     const seller = (await products()).find((x) => x.id === order.listing)?.sellerName || "Maestro Pro";
+    await recordTax(order, seller).catch((e) => console.error("tax ledger", e?.message));
     await sendMail({ to: order.email, idem: `mp-${order.id}`, subject: `Your receipt: ${order.title}`,
-      mail: buildEmail({ name: "there", label: "Marketplace receipt", reply: `Thank you for your purchase. This is your receipt.\n\n- Item: **${order.title}**\n- Seller: ${seller}\n- Amount paid: **${order.amount} ${order.currency}**${order.tipUSD ? ` (includes a tip of $${order.tipUSD.toFixed(2)} USD)` : ""}\n- Date: ${new Date().toUTCString().slice(0, 16)}\n- Order number: ${order.id.slice(0, 8).toUpperCase()}\n\nYour download is ready. Download it, then open the file in Maestro Pro, or use the files on their own. It is yours to keep, and you can use this link to download it again at any time.\n\nYou can cancel for a full refund within ${REFUND_DAYS} days from your [buyer account](account), under the [refund rules](refunds).`, buttons: [["Download", link(order)]] }) });
+      mail: buildEmail({ name: "there", label: "Marketplace receipt", reply: `Thank you for your purchase. This is your receipt.\n\n- Item: **${order.title}**\n- Seller: ${seller}\n- Amount paid: **${order.amount} ${order.currency}**${order.tax?.tax ? ` (includes ${order.tax.name} of ${fmt(order.tax.tax, order.currency)} ${order.currency})` : ""}${order.tipUSD ? ` (includes a tip of $${order.tipUSD.toFixed(2)} USD)` : ""}\n- Date: ${new Date().toUTCString().slice(0, 16)}\n- Order number: ${order.id.slice(0, 8).toUpperCase()}\n\nYour download is ready. Download it, then open the file in Maestro Pro, or use the files on their own. It is yours to keep, and you can use this link to download it again at any time.\n\nYou can cancel for a full refund within ${REFUND_DAYS} days from your [buyer account](account), under the [refund rules](refunds).`, buttons: [["Download", link(order)]] }) });
   }
   return order;
 }
@@ -569,6 +575,11 @@ async function disputeAppealDecide(req, res) {
   if (!(await decideAppeal(String(b.id), b.overturn === true, clip(b.note, 600)))) return fail(res, 404, "Nothing waiting for a decision.");
   res.status(200).json({ ok: true });
 }
+/** The tax ledger: every sale with the tax collected, for the owner's returns (admin key only). */
+async function taxReport(req, res) {
+  if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
+  res.status(200).json({ rows: ((await readJson(LEDGER)) || []).slice().reverse() });
+}
 /** Every dispute with everything the owner needs to decide it (owner only). */
 async function disputeList(req, res) {
   if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
@@ -778,6 +789,7 @@ async function refund(req, res) {
   if (r.status >= 300) return fail(res, 502, r.data?.detail || "The refund couldn't be processed. Email support@maestro-pro.app.");
   await writeRaw(ORDER(o.id), { ...o, status: "refunded", refundedAt: Date.now(), refundId: r.data.id });
   await modify(SALES(o.sellerId || "platform"), (a) => (a || []).map((x) => (x.id === o.id ? { ...x, refunded: true } : x))).catch(() => {});
+  await refundTax(o.id).catch(() => {});
   const m = o.sellerId === "platform" ? { email: OWNER, name: "Maestro Pro" } : await readJson(SELLER(o.sellerId));
   await sendMail({ to: o.email, idem: `mp-refund-${o.id}`, subject: `Refund for ${o.title}`,
     mail: buildEmail({ name: "there", label: "Marketplace", reply: `Your purchase of **${o.title}** has been refunded in full (${o.amount} ${o.currency}). The money goes back to the payment method you used and can take a few days to arrive.\n\nYour access to this item has ended.` }) });
@@ -786,7 +798,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

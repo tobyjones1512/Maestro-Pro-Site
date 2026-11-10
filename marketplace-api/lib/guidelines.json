@@ -112,6 +112,11 @@
           "id": "3.5",
           "title": "Produced music: singles, EPs and albums",
           "text": "You may sell your own recordings as a single (1 to 3 tracks), an EP or an album. The recordings must be yours. A cover, remix or sample of a published song or recording needs a licence from the rights holders of the song and of any recording used (2.2 to 2.5). Every track needs a clear title, the listing must say truthfully whether it is a single, an EP or an album (11.1), and any cover art must be yours too. Buyers receive the audio files and may keep them for their own listening (6.3)."
+        },
+        {
+          "id": "3.6",
+          "title": "Sales tax, VAT and GST",
+          "text": "Where the law of the buyer's country requires it, tax is charged on a sale: VAT, GST or a similar tax. Where buyers expect prices to include tax, the price shown on the Marketplace already includes it, and the checkout shows the price before tax, the tax and the total. Elsewhere the tax is added at checkout. The price you set is the price before tax. Your share of a sale is worked out on that price, never on the tax. Maestro Pro collects the tax from the buyer and pays it to the tax authorities. If a sale is refunded, its tax is refunded with it."
         }
       ]
     },
