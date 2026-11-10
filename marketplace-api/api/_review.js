@@ -4,7 +4,7 @@
 import { inflateRawSync } from "node:zlib";
 import guidelines from "../lib/guidelines.js";
 import { readJson, updateProduct, products } from "./_blob.js";
-import { bundleInfo, readRange, ALLOWED, ext } from "./_bundle.js";
+import { bundleInfo, readRange, readBlob, ALLOWED, ext } from "./_bundle.js";
 import { startScan, pollScan, SCAN_CALLS } from "./_vt.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { OWNER } from "./_mp.js";
@@ -14,6 +14,7 @@ export const GUIDELINE = Object.fromEntries(guidelines.sections.flatMap((s) => s
 const LLM_URL = () => `${(process.env.LLM_BASE_URL || "https://api.pawan.krd/v1").replace(/\/$/, "")}/chat/completions`;
 const MODEL = () => process.env.LLM_MODEL || "openai/gpt-oss-20b";
 const MAX_LLM_TRIES = 6;
+export const MAX_REFUSALS = 3;   // the third refusal goes to a person
 const RETRY_ERROR_MS = 5 * 60000;
 
 /** The model's words are kept plain: no dashes, no emoji, no links. */
@@ -80,6 +81,24 @@ async function evidence(id, files) {
   return out.join("\n");
 }
 
+/** The merchant's statement and what can be read of their evidence files, for the reviewer. */
+async function appealText(p) {
+  const ap = p.appeal;
+  if (!ap) return "";
+  const out = [];
+  for (const f of ap.files) {
+    let body = "";
+    try {
+      const e = ext(f.name), buf = await readBlob(f.path);
+      if (buf && e === "pdf" && buf.length <= 25e6) body = (await pdfText(buf)).slice(0, 2500);
+      else if (buf && e === "txt") body = buf.toString("utf8", 0, 4000).replace(/\s+/g, " ").trim().slice(0, 2500);
+      else body = "(an image or a file the reviewer cannot read)";
+    } catch { body = "(could not be read)"; }
+    out.push(`<evidence name="${f.name}">\n${body}\n</evidence>`);
+  }
+  return `<appeal>\nearlier refusal: ${p.history?.at(-1)?.reason || ""}\nmerchant's statement: ${ap.text}\n${out.join("\n")}\n</appeal>`;
+}
+
 // ---- The reviewer
 const POLICY = guidelines.sections.map((s) => `${s.n}. ${s.title}\n` + s.items.map((i) => `${i.id} ${i.title}: ${i.text}`).join("\n")).join("\n\n");
 const SYSTEM = `You review items submitted to the Maestro Pro Marketplace, where musicians sell sheet music, backing tracks, karaoke and lyrics. Decide whether an item may go on sale, using only the guidelines below.
@@ -90,14 +109,15 @@ The merchant has confirmed they own the rights. That is not proof. Look for sign
 - A listing that doesn't match the files, or breaks 1.3 or 3.1 to 3.3.
 - Countries ("available in") where the work is probably still protected even though it looks old or public domain elsewhere (2.9).
 Public domain works (writer died before 1955) are fine when the arrangement or engraving looks like the merchant's own. Original work with no sign of copying is fine. If it looks like a well-known protected work and the listing gives no licence, refuse. If nothing points to a problem, accept.
+Sometimes the merchant is appealing an earlier refusal and has added a statement and evidence in an <appeal> block. Weigh it: a real licence, a letter of permission from the rights holder, or clear proof of authorship (dated drafts, project files) can change the decision; a bare claim of ownership, or evidence that does not match the work, cannot. Judge the item itself again, not only the earlier reason.
 Answer with one JSON object and nothing else: {"decision":"accept" or "refuse","guidelines":["2.2"],"reason":"..."}
 "guidelines" lists the numbers of the guidelines the decision rests on (at least one when refusing, empty when accepting). "reason" is one to three plain sentences to the merchant that say what in the item led to the decision. Do not quote the guidelines (that is added for you), do not write links, greetings or sign-offs, and do not use dashes.
 
 GUIDELINES
 ${POLICY}`;
 
-async function ask(p, evid, files) {
-  const user = `<listing>\ntitle: ${maskPersonal(p.title)}\ncomposer or arranger: ${maskPersonal(p.composer || "(none given)")}\ndescription: ${maskPersonal(p.description || "(none given)")}\ncontents: ${p.contents}\nprice: $${p.priceUSD} USD\navailable in: ${p.regions?.length ? p.regions.join(", ") : "worldwide"}\nmerchant: ${maskPersonal(p.sellerName)}\n</listing>\n<files count="${files.length}">\n${maskPersonal(evid)}\n</files>`;
+async function ask(p, evid, files, appeal = "") {
+  const user = `<listing>\ntitle: ${maskPersonal(p.title)}\ncomposer or arranger: ${maskPersonal(p.composer || "(none given)")}\ndescription: ${maskPersonal(p.description || "(none given)")}\ncontents: ${p.contents}\nprice: $${p.priceUSD} USD\navailable in: ${p.regions?.length ? p.regions.join(", ") : "worldwide"}\nmerchant: ${maskPersonal(p.sellerName)}\n</listing>\n<files count="${files.length}">\n${maskPersonal(evid)}\n</files>${appeal ? "\n" + maskPersonal(appeal) : ""}`;
   const r = await fetch(LLM_URL(), {
     method: "POST", headers: { Authorization: `Bearer ${process.env.LLM_API_KEY}`, "Content-Type": "application/json" },
     body: JSON.stringify({ model: MODEL(), max_tokens: 1500, temperature: 0.1, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }] }),
@@ -114,41 +134,69 @@ async function ask(p, evid, files) {
 }
 
 // ---- Deciding and telling the merchant
-const decide = (id, accept, ids, reason) => updateProduct(id, (p) => (["ready", "refused"].includes(p.status) ? undefined : {
-  ...p, status: accept ? "ready" : "refused", review: { ...p.review, decidedAt: Date.now(), ids, reason, notified: false, error: undefined },
-}));
+const decide = (id, accept, ids, reason) => updateProduct(id, (p) => {
+  if (!mayStep(p)) return undefined;
+  const refusals = (p.refusals || 0) + (accept ? 0 : 1);
+  const history = [...(p.history || []), { at: Date.now(), accept, ids, reason, ...(p.appeal && { appeal: { text: p.appeal.text, files: p.appeal.files.map((f) => ({ name: f.name, path: f.path, link: f.scan?.link })) } }) }];
+  return { ...p, appeal: undefined, history, refusals, status: accept ? "ready" : refusals >= MAX_REFUSALS ? "escalated" : "refused", review: { ...p.review, decidedAt: Date.now(), ids, reason, notified: false, error: undefined } };
+});
+
+/** The site owner's final word on an item that was refused three times. Returns the product and whether this call decided it. */
+export async function ownerDecide(id, accept, note) {
+  let decided = false;
+  const p = await updateProduct(id, (x) => {
+    if (x.status !== "escalated") return undefined;
+    decided = true;
+    const reason = tidy(note || (accept ? "A person at Maestro Pro checked your case and accepted the item." : x.review?.reason || "")).slice(0, 600);
+    return { ...x, status: accept ? "ready" : "refused", final: !accept, history: [...(x.history || []), { at: Date.now(), accept, owner: true, reason }], review: { ...x.review, decidedAt: Date.now(), ids: accept ? [] : x.review?.ids || [], reason, notified: false } };
+  });
+  if (decided) await notify(p).catch(() => {});
+  return { product: p, decided };
+}
 
 /** Emails the merchant the outcome (once). */
 export async function notify(p) {
-  if (!["ready", "refused"].includes(p.status) || p.review?.notified) return;
+  if (!["ready", "refused", "escalated"].includes(p.status) || p.review?.notified) return;
   const m = p.sellerId === "platform" ? { name: "Maestro Pro", email: OWNER } : await readJson(SELLER(p.sellerId));
   if (!m?.email) return;
-  const ok = p.status === "ready";
-  const cards = ok ? [] : (p.review.ids || []).map((i) => ({ label: "Guideline " + i, title: `${i} ${GUIDELINE[i].title}`, url: `${LINKS.guidelines}#g${i.replace(".", "-")}`, text: "“" + GUIDELINE[i].text + "”" }));
-  const reply = ok
-    ? `Good news: **${p.title}** has been **Accepted** and is now **Ready For Distribution**. It is on the Marketplace at $${p.priceUSD.toFixed(2)} USD, and buyers can buy and download it from now on.\n\nEvery file was checked with VirusTotal, and the item was reviewed against the [Merchant Content Review Guidelines](guidelines). Once someone has bought it, they keep it for good, even if you later withdraw it from sale.`
-    : `**${p.title}** has been **Refused**, so it is not on sale.\n\n**Reason:** ${p.review.reason}\n\nThis is what the [Merchant Content Review Guidelines](guidelines) say about it:\n\nYou can fix the problem and submit the item again from your [merchant account](merchant). If you think this was a mistake, email [support](support) with proof that you own the rights or hold a licence, and a person will look again (guideline 5.3).`;
-  const sent = await sendMail({ to: m.email, idem: `mp-review-${p.id}-${p.review.decidedAt}`, subject: ok ? `Accepted: ${p.title} is Ready For Distribution` : `Refused: ${p.title}`,
-    mail: buildEmail({ name: String(m.name).split(" ")[0], reply, cards, label: "Marketplace review", buttons: ok ? [["View your products", LINKS.merchant]] : [["Read the guidelines", LINKS.guidelines]] }) });
+  const ok = p.status === "ready", esc = p.status === "escalated", left = Math.max(0, MAX_REFUSALS - (p.refusals || 0));
+  const links = ok ? "" : (p.review.ids || []).map((i) => `- [Guideline ${i}: ${GUIDELINE[i].title}](${LINKS.guidelines}#g${i.replace(".", "-")})`).join("\n");
+  const accepted = `Good news: **${p.title}** has been **Accepted** and is now **Ready For Distribution**. It is on the Marketplace at $${p.priceUSD.toFixed(2)} USD, and buyers can buy and download it from now on.\n\nEvery file was checked with VirusTotal, and the item was reviewed against the [Merchant Content Review Guidelines](guidelines). Once someone has bought it, they keep it for good, even if you later withdraw it from sale.`;
+  const reply = ok ? accepted
+    : esc ? `**${p.title}** has now been refused ${MAX_REFUSALS} times, so it has been passed to a person at Maestro Pro for a final decision. You will be emailed when it is decided. You can't send more evidence in the meantime.\n\n**Latest reason:** ${p.review.reason}\n\n${links}`
+    : p.final ? `A person at Maestro Pro has reviewed **${p.title}** and made a **final decision**: it is refused, and cannot be appealed again.\n\n**Reason:** ${p.review.reason}`
+    : `**${p.title}** has been **Refused**, so it is not on sale.\n\n**Reason:** ${p.review.reason}\n\nYou can read the guideline${(p.review.ids || []).length === 1 ? "" : "s"} it was refused under here:\n\n${links}\n\nIf you think this was a mistake, you can **appeal** from your [merchant account](merchant): explain your case and upload supporting evidence such as a licence, a letter of permission or proof that you wrote it. Every file is scanned with VirusTotal and the item is assessed again. You have ${left} appeal${left === 1 ? "" : "s"} left; after ${MAX_REFUSALS} refusals a person at Maestro Pro makes a final decision (guideline 5.3).`;
+  const subject = ok ? `Accepted: ${p.title} is Ready For Distribution` : esc ? `Final review: ${p.title}` : p.final ? `Final decision: ${p.title}` : `Refused: ${p.title}`;
+  const sent = await sendMail({ to: m.email, idem: `mp-review-${p.id}-${p.review.decidedAt}`, subject,
+    mail: buildEmail({ name: String(m.name).split(" ")[0], reply, label: "Marketplace review", buttons: ok || esc || p.final ? [["View your products", LINKS.merchant]] : [["Appeal or read the guidelines", LINKS.merchant]] }) });
+  if (esc) await sendMail({ to: OWNER, idem: `mp-escalated-${p.id}`, subject: `Marketplace: ${p.title} needs your decision`,
+    mail: buildEmail({ name: "Toby", label: "Marketplace review", reply: `**${p.title}** by ${p.sellerName} was refused ${MAX_REFUSALS} times and now needs a final decision. Open the [merchant console](merchant) with your admin key, go to **Escalations**, read the history and the evidence, then accept it or refuse it permanently.\n\n**Latest reason:** ${p.review.reason}` }) }).catch(() => {});
   if (sent) await updateProduct(p.id, (x) => ({ ...x, review: { ...x.review, notified: true } }));
 }
 
 // ---- One step
 const mayStep = (p) => ["scanning", "reviewing"].includes(p.status);
 async function scanStep(p) {
-  const info = await bundleInfo(p.id);
-  if (!info) return decide(p.id, false, ["1.2"], "The upload isn't a complete Maestro Pro bundle, so it could not be opened.");
-  const bad = info.files.filter((f) => !ALLOWED.has(ext(f.name)) || /[\\/]/.test(f.name));
-  if (bad.length) return decide(p.id, false, ["1.2"], `The bundle holds a file type that isn't allowed: ${tidy(bad.map((f) => f.name).slice(0, 3).join(", "))}.`);
-  if (!info.files.length || !info.files.some((f) => f.size > 0)) return decide(p.id, false, ["3.2"], "The bundle is empty.");
-  const files = (p.review?.files || info.files.map((f) => ({ name: f.name, size: f.size, offset: f.offset, scan: { status: "queued" } }))).map((f) => ({ ...f }));
+  const ap = p.appeal;   // an appeal scans the evidence files; a new item scans its bundle
+  let files;
+  if (ap) files = ap.files.map((f) => ({ ...f }));
+  else {
+    const info = await bundleInfo(p.id);
+    if (!info) return decide(p.id, false, ["1.2"], "The upload isn't a complete Maestro Pro bundle, so it could not be opened.");
+    const bad = info.files.filter((f) => !ALLOWED.has(ext(f.name)) || /[\\/]/.test(f.name));
+    if (bad.length) return decide(p.id, false, ["1.2"], `The bundle holds a file type that isn't allowed: ${tidy(bad.map((f) => f.name).slice(0, 3).join(", "))}.`);
+    if (!info.files.length || !info.files.some((f) => f.size > 0)) return decide(p.id, false, ["3.2"], "The bundle is empty.");
+    files = (p.review?.files || info.files.map((f) => ({ name: f.name, size: f.size, offset: f.offset, scan: { status: "queued" } }))).map((f) => ({ ...f }));
+  }
   let budget = SCAN_CALLS;
   for (const f of files) {
     if (budget <= 0) break;
     const s = f.scan;
     if (["error", "unscanned"].includes(s.status) && Date.now() - Date.parse(s.checkedAt || 0) > RETRY_ERROR_MS) s.status = "queued";
     if (s.status === "queued" && !(s.retryAt > Date.now())) {
-      const r = await startScan(await readRange(p.id, f.offset, f.offset + f.size), f.name);
+      const buf = ap ? await readBlob(f.path) : await readRange(p.id, f.offset, f.offset + f.size);
+      if (!buf) { f.scan = { status: "error", checkedAt: new Date().toISOString(), note: "The file could not be read." }; continue; }
+      const r = await startScan(buf, f.name);
       f.scan = r.scan; budget -= r.calls;
       if (r.scan.status === "queued") f.scan.retryAt = Date.now() + 60000;
     } else if (s.status === "pending") {
@@ -156,7 +204,7 @@ async function scanStep(p) {
       f.scan = r.scan; budget -= r.calls;
     }
   }
-  await updateProduct(p.id, (x) => ({ ...x, review: { ...x.review, files } }));
+  await updateProduct(p.id, (x) => (ap ? { ...x, appeal: { ...x.appeal, files } } : { ...x, review: { ...x.review, files } }));
   const flagged = files.find((f) => f.scan.status === "flagged");
   if (flagged) return decide(p.id, false, ["1.1"], `VirusTotal reported ${flagged.scan.malicious + flagged.scan.suspicious} of ${flagged.scan.total} scanning engines flagging ${tidy(flagged.name)} as harmful.`);
   if (files.every((f) => f.scan.status === "clean")) await updateProduct(p.id, (x) => (x.status === "scanning" ? { ...x, status: "reviewing" } : undefined));
@@ -165,7 +213,7 @@ async function reviewStep(p) {
   const info = await bundleInfo(p.id);
   if (!info) return decide(p.id, false, ["1.2"], "The upload isn't a complete Maestro Pro bundle, so it could not be opened.");
   try {
-    const v = await ask(p, await evidence(p.id, info.files), info.files);
+    const v = await ask(p, await evidence(p.id, info.files), info.files, await appealText(p));
     await decide(p.id, v.accept, v.ids, v.reason);
   } catch (e) {
     const tries = (p.review?.tries || 0) + 1;

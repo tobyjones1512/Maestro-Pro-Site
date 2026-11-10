@@ -134,12 +134,12 @@ export default {
     {
      "id": "5.2",
      "title": "Outcomes",
-     "text": "An item is either Accepted, which makes it Ready For Distribution and visible on the Marketplace, or Refused. A refusal always comes with a reason and quotes the guideline it breaks. You can fix the problem and submit the item again."
+     "text": "An item is either Accepted, which makes it Ready For Distribution and visible on the Marketplace, or Refused. A refusal always comes with a reason and a link to the guideline it breaks. You can fix the problem and submit the item again."
     },
     {
      "id": "5.3",
      "title": "Mistakes and appeals",
-     "text": "Automated review can be wrong. If you believe an item was refused by mistake, email support@maestro-pro.app with your proof of ownership or licence, and a person will look at it again. An item being accepted does not mean we have checked that you own it, and it does not move your responsibility to us."
+     "text": "Automated review can be wrong. If an item is refused you can appeal from your Merchant Account: explain your case and upload supporting evidence, such as a licence, a letter of permission or proof that you wrote the work. Every evidence file is scanned with VirusTotal, and then the item is assessed again with your evidence in front of the reviewer. If an item has been refused three times, it is passed to a person at Maestro Pro, who makes a final decision to accept it or to refuse it permanently. An item being accepted does not mean we have checked that you own it, and it does not move your responsibility to us."
     },
     {
      "id": "5.4",

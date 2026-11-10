@@ -120,17 +120,31 @@ export const builderFields = `
   <p class="pay__msg" role="status"></p>`;
 
 // ---- Merchant pages: the product list with each review result, shared by /marketplace/seller and /marketplace/add.
-const LABEL = { scanning: "In review: checking files", reviewing: "In review", ready: "Ready For Distribution", refused: "Refused" };
+const LABEL = { scanning: "In review: checking files", reviewing: "In review", ready: "Ready For Distribution", refused: "Refused", escalated: "Final review by Maestro Pro" };
 export const inReview = (p) => p.status === "scanning" || p.status === "reviewing";
-const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".", "-")}">${esc(g.id)} ${esc(g.title)}</a>: “${esc(g.text)}”</li>`;
+const gl = (g) => `<li><a href="/marketplace/guidelines/#g${esc(g.id).replace(".", "-")}" target="_blank" rel="noopener">Guideline ${esc(g.id)}: ${esc(g.title)}</a></li>`;
 
 /** Fills `table` (a <tbody>) with the products. `act(id, withdrawn)` is called by the withdraw / put back on sale button. */
-export function renderProducts(table, products, act) {
+export function renderProducts(table, products, act, onAppeal) {
   table.innerHTML = products.map((p) => `<tr><td><b>${esc(p.title)}</b><br><small>${dollars(p.priceUSD)} &middot; ${esc(where(p.regions))}</small></td>
     <td><span class="mp-status mp-status--${p.status === "ready" ? "ready" : p.status === "refused" ? "refused" : "wait"}">${p.withdrawn ? "Withdrawn from sale" : LABEL[p.status] || esc(p.status)}</span>${p.files && inReview(p) ? `<br><small>${p.files.done} of ${p.files.total} files scanned</small>` : ""}
-      ${p.status === "refused" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul></div>` : ""}</td>
+      ${p.status === "refused" || p.status === "escalated" ? `<div class="mp-reason">${esc(p.reason)}<ul>${(p.guidelines || []).map(gl).join("")}</ul>${p.final ? "<small>Final decision. This can't be appealed.</small>" : p.canAppeal ? `<button class="pay__btn pay__btn--ghost" data-appeal="${esc(p.id)}">Appeal with evidence</button> <small>Refused ${p.refusals} of 3 times</small>` : p.status === "escalated" ? "<small>Waiting for a final decision from a person at Maestro Pro.</small>" : ""}</div>` : ""}</td>
     <td>${p.sold}</td><td>${dollars(p.earnedUSD)}</td>
     <td>${p.status === "ready" ? `<button class="pay__btn pay__btn--ghost" data-id="${esc(p.id)}" data-w="${p.withdrawn ? "" : "1"}">${p.withdrawn ? "Put back on sale" : "Withdraw from sale"}</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="5">Nothing yet.</td></tr>`;
+  table.querySelectorAll("button[data-appeal]").forEach((b) => b.addEventListener("click", () => onAppeal?.(products.find((p) => p.id === b.dataset.appeal))));
   table.querySelectorAll("button[data-id]").forEach((b) => b.addEventListener("click", () => act(b.dataset.id, Boolean(b.dataset.w))));
 }
 export const productsTable = `<table class="mp-table"><thead><tr><th>Product</th><th>Status</th><th>Sold</th><th>Your share</th><th></th></tr></thead><tbody></tbody></table>`;
+
+/** Uploads the evidence files, then sends the appeal. Throws with a message the merchant can read. */
+export async function sendAppeal({ key, id, text, files, say = () => {} }) {
+  const { upload } = await import("https://esm.sh/@vercel/blob@2.8.2/client");
+  const paths = [];
+  for (const f of files) {
+    const path = `marketplace/evidence/${id}/${crypto.randomUUID()}-${f.name.replace(/[^\w.\- ()]+/g, "_").slice(-100)}`;
+    say(`Uploading ${f.name}…`);
+    await upload(path, f, { access: "private", handleUploadUrl: API + "upload", clientPayload: JSON.stringify({ key }), contentType: f.type || "application/octet-stream" });
+    paths.push(path);
+  }
+  await api("appeal", { method: "POST", key, body: { id, text, files: paths } });
+}

@@ -12,6 +12,12 @@ const open = async (id) => {
   return r && r.statusCode === 200 ? r : null;
 };
 
+/** A whole small blob (an evidence file), or null. */
+export async function readBlob(path) {
+  const r = await get(path, { access: process.env.BLOB_ACCESS === "public" ? "public" : "private", useCache: false }).catch(() => null);
+  return r && r.statusCode === 200 ? Buffer.from(await new Response(r.stream).arrayBuffer()) : null;
+}
+
 /** The bytes from `start` up to (not including) `end`, or null if the bundle isn't there. Stops reading once it has them. */
 export async function readRange(id, start, end) {
   const r = await open(id);

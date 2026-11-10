@@ -87,3 +87,6 @@ body.console{--bg:#fff;--fg:#1d1d1f;--fg2:#6e6e73;--hair:#d2d2d7;--hl:#0071e3;--
   .console .card{overflow-x:auto}
   .console .bar .who{display:none}
 }
+.console dialog{border:1px solid var(--hair);border-radius:14px;background:var(--bg);color:var(--fg);padding:24px;width:min(34rem,calc(100vw - 32px))}
+.console dialog::backdrop{background:rgba(0,0,0,.45)}
+.console .mp-reason .pay__btn{margin-top:8px}

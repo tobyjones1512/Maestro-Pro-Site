@@ -33,6 +33,7 @@
       <button role="tab" id="t-sales" data-tab="sales" aria-selected="false">Sales and Trends</button>
       <button role="tab" id="t-add" data-tab="add" aria-selected="false">Add Product</button>
       <button role="tab" id="t-account" data-tab="account" aria-selected="false">Account</button>
+      <button role="tab" id="t-esc" data-tab="esc" aria-selected="false" hidden><span>Escalations</span> <i id="n-esc" hidden></i></button>
     </nav>
     <main class="page" id="main">
       <p id="todo" class="notice" hidden></p>
@@ -55,12 +56,24 @@
         <div class="card"><dl id="acct"></dl></div>
         <p class="mp-note">Need help? <a href="/support/">Contact support</a> or read the <a href="/marketplace/guidelines/">guidelines</a>.</p>
       </section>
+      <section id="p-esc" role="tabpanel" aria-labelledby="t-esc" hidden>
+        <h1>Escalations</h1><p class="sub">Items refused three times. Your decision is final: accept it, or refuse it permanently.</p>
+        <div id="escs"></div>
+      </section>
     </main>
   </div>
+  <dialog id="appeal"><form method="dialog" class="pay" id="af">
+    <h2>Appeal: <span id="at"></span></h2>
+    <p class="sub">Explain why this item should be accepted and add evidence such as a licence, a letter of permission or proof that you wrote it. Every file is scanned with VirusTotal, then the item is assessed again. After three refusals a person makes the final decision.</p>
+    <label class="field">Your case<textarea name="text" rows="5" required minlength="20" maxlength="2000"></textarea></label>
+    <label class="field">Evidence (up to 5 files: PDF, PNG, JPG or TXT, 25 MB each)<input name="files" type="file" accept=".pdf,.png,.jpg,.jpeg,.txt" multiple></label>
+    <div class="row"><button class="pay__btn" type="submit">Send appeal</button><button class="pay__btn pay__btn--ghost" type="button" id="ac">Cancel</button></div>
+    <p class="pay__msg" role="status"></p>
+  </form></dialog>
 </div>
 <script type="module">
-import { api, mountBuilder, builderFields, dollars, renderProducts, productsTable, inReview, esc } from "/assets/marketplace.js";
-const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account"];
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal } from "/assets/marketplace.js";
+const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc"];
 let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const fromLink = new URLSearchParams(location.hash.slice(1)).get("k");
 if (fromLink) { key = fromLink; try { localStorage.setItem(K, key); } catch {} history.replaceState(null, "", location.pathname); }
@@ -90,7 +103,7 @@ async function load() {
   const n = s.products.filter(inReview).length;
   $("n-products").hidden = !n; $("n-products").textContent = n;
   $("list").innerHTML = s.products.length ? productsTable : `<div class="empty">No products yet.${s.canPublish ? " Add your first one to send it for review." : ""}</div>`;
-  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); });
+  if (s.products.length) renderProducts($("list").querySelector("tbody"), s.products, async (id, withdrawn) => { await api("withdraw", { method: "POST", key, body: { id, withdrawn } }).catch(() => {}); load(); }, openAppeal);
   const x = s.sales;
   $("stats").innerHTML = stat("Units sold", x.count) + stat("Sales", usd(x.grossUSD)) + stat("Your proceeds", usd(x.earnedUSD)) + stat("Refunded", x.refunded);
   $("recent").innerHTML = x.recent?.length
@@ -98,6 +111,13 @@ async function load() {
     : `<div class="empty">No sales yet.</div>`;
   $("acct").innerHTML = [["Name", esc(s.name)], ["Email", esc(s.email)], ["Technology fee", s.fee === "paid" ? "Paid" : "Not paid"], ["Payouts", s.connected ? "Set up" : "Not set up"], ["Marketplace share", Math.round(s.cut * 100) + "% of each sale"]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+  const E = s.escalations || [];
+  $("t-esc").hidden = !s.admin; $("n-esc").hidden = !E.length; $("n-esc").textContent = E.length;
+  $("escs").innerHTML = E.length ? E.map((p) => `<div class="card form" data-id="${esc(p.id)}"><h2>${esc(p.title)} <small>${esc(p.composer || "")}</small></h2>
+    <p>${esc(p.seller)}, $${Number(p.priceUSD).toFixed(2)}. ${esc(p.description || "")}</p>
+    ${p.history.map((h, i) => `<p><b>${h.owner ? "Owner" : "Refusal " + (i + 1)}:</b> ${esc(h.reason)}${h.appeal ? `<br><i>Merchant's case:</i> ${esc(h.appeal.text)}<br>${h.appeal.files.map((f) => `<button class="pay__btn pay__btn--ghost" type="button" data-file="${esc(f.path)}">${esc(f.name)}</button> ${f.link ? `<a href="${esc(f.link)}" target="_blank" rel="noopener">VirusTotal</a>` : ""}`).join(" ")}` : ""}</p>`).join("")}
+    <label class="field">Note to the merchant (optional)<textarea rows="2" maxlength="600"></textarea></label>
+    <div class="row"><button class="pay__btn" type="button" data-accept="1">Accept</button><button class="pay__btn pay__btn--ghost" type="button" data-accept="">Refuse permanently</button></div></div>`).join("") : '<div class="card empty">Nothing waiting for a decision.</div>';
   let t = "products"; try { t = sessionStorage.getItem("mp-tab") || t; } catch {}
   tab(t);
   if (s.products.some(inReview)) timer = setTimeout(load, 20000);   // each visit moves the review on
@@ -107,6 +127,29 @@ $("si").addEventListener("submit", async (e) => {
   e.preventDefault();
   const m = e.target.querySelector(".pay__msg");
   try { await api("signin", { method: "POST", body: { email: e.target.email.value } }); m.textContent = "If that email has a Merchant Account, we have sent it a sign-in link."; } catch (err) { m.textContent = err.message; }
+});
+let appealId = "";
+function openAppeal(p) { appealId = p.id; $("at").textContent = p.title; $("af").reset(); $("af").querySelector(".pay__msg").textContent = ""; $("appeal").showModal(); }
+$("ac").addEventListener("click", () => $("appeal").close());
+$("af").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = e.target, m = f.querySelector(".pay__msg"), b = f.querySelector("button[type=submit]"), files = [...f.files.files];
+  if (files.length > 5 || files.some((x) => x.size > 25e6)) return (m.textContent = "Add up to 5 files of 25 MB or less.");
+  b.disabled = true;
+  try { await sendAppeal({ key, id: appealId, text: f.text.value, files, say: (t) => (m.textContent = t) }); $("appeal").close(); tab("products"); load(); } catch (err) { m.textContent = err.message; }
+  b.disabled = false;
+});
+$("escs").addEventListener("click", async (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  if (b.dataset.file) {
+    const r = await fetch(API + "evidence-file?path=" + encodeURIComponent(b.dataset.file), { headers: { "X-MP-Key": key } });
+    return r.ok ? window.open(URL.createObjectURL(await r.blob())) : alert("Couldn't open that file.");
+  }
+  if (b.dataset.accept === undefined) return;
+  const card = b.closest("[data-id]"), accept = Boolean(b.dataset.accept);
+  if (!confirm(accept ? "Accept this item and put it on sale?" : "Refuse this item permanently? The merchant cannot appeal again.")) return;
+  try { await api("escalation", { method: "POST", key, body: { id: card.dataset.id, accept, note: card.querySelector("textarea").value } }); load(); } catch (err) { alert(err.message); }
 });
 f.innerHTML = builderFields;
 mountBuilder(f, { getKey: () => key, onDone: () => { tab("products"); load(); } });

@@ -9,8 +9,8 @@ import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct } from "./_blob.js";
 import crypto from "node:crypto";
 import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
-import { BUNDLE } from "./_bundle.js";
-import { step, sweep, GUIDELINE } from "./_review.js";
+import { BUNDLE, ext, readBlob } from "./_bundle.js";
+import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import guidelines from "../lib/guidelines.js";
 
@@ -280,12 +280,13 @@ async function merchant(req, res) {
     products: mine.slice().reverse().map((p) => ({
       id: p.id, title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
-      reason: p.status === "refused" ? p.review?.reason : undefined,
-      guidelines: p.status === "refused" ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
+      reason: ["refused", "escalated"].includes(p.status) ? p.review?.reason : undefined, refusals: p.refusals || 0, final: Boolean(p.final), canAppeal: p.status === "refused" && !p.final && (p.refusals || 0) < MAX_REFUSALS,
+      guidelines: ["refused", "escalated"].includes(p.status) ? (p.review?.ids || []).map((i) => ({ id: i, title: GUIDELINE[i]?.title, text: GUIDELINE[i]?.text })) : undefined,
       sold: per(p.id).length, earnedUSD: Math.round((per(p.id).reduce((n, s) => n + s.usd, 0) * share - charged(back(p.id))) * 100) / 100,
     })),
     sales: { count: sales.length, refunded: every.length - sales.length, grossUSD: Math.round(gross * 100) / 100, earnedUSD: Math.round((gross * share - charged(back())) * 100) / 100, recent: sales.slice(-15).reverse().map((s) => ({ t: s.t, title: s.title, usd: s.usd })) },
-    cut: CUT,
+    cut: CUT, maxRefusals: MAX_REFUSALS,
+    ...(me.admin && { escalations: (await products()).filter((p) => p.status === "escalated").map((p) => ({ id: p.id, title: p.title, composer: p.composer, description: p.description, priceUSD: p.priceUSD, seller: p.sellerName, history: p.history || [] })) }),
   });
 }
 
@@ -298,6 +299,47 @@ async function withdraw(req, res) {
   res.status(200).json({ ok: true, withdrawn: Boolean(p.withdrawn) });   // only stops new sales: buyers keep their downloads
 }
 
+// ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
+const EVID = /^marketplace\/evidence\/([0-9a-f-]{36})\/[0-9a-f-]{36}-[\w.\- ()]{1,100}$/;
+const EVID_EXT = new Set(["pdf", "png", "jpg", "jpeg", "txt"]);
+async function appeal(req, res) {
+  const me = await who(req);
+  if (!me) return fail(res, 401, "Not signed in.");
+  const b = req.body || {}, text = clip(b.text, 2000);
+  if (text.length < 20) return fail(res, 400, "Explain your case in a few sentences.");
+  const files = [];
+  for (const path of (Array.isArray(b.files) ? b.files : []).slice(0, 5).map(String)) {
+    const m = EVID.exec(path);
+    if (!m || m[1] !== b.id || !EVID_EXT.has(ext(path))) return fail(res, 400, "One of the evidence files isn't allowed.");
+    const r = await get(path, { access: process.env.BLOB_ACCESS === "public" ? "public" : "private", useCache: false }).catch(() => null);
+    if (!r || r.statusCode !== 200) return fail(res, 400, "An evidence file didn't upload properly. Try again.");
+    r.stream.cancel().catch(() => {});
+    files.push({ name: path.split("/").pop().slice(37), size: r.blob.size, path, scan: { status: "queued" } });
+  }
+  const p = await updateProduct(String(b.id), (x) => (x.sellerId === me.id && x.status === "refused" && !x.final && (x.refusals || 0) < MAX_REFUSALS
+    ? { ...x, status: "scanning", lock: 0, appeal: { at: Date.now(), text, files }, review: { ...x.review, tries: 0, error: undefined } } : undefined));
+  if (!p || p.status !== "scanning") return fail(res, 409, "This product can't be appealed.");
+  await step(p.id);
+  res.status(200).json({ ok: true });
+}
+/** The owner's final decision on an escalated item (admin key only). */
+async function escalation(req, res) {
+  if (!isAdmin(String(req.headers["x-mp-key"] || ""))) return fail(res, 401, "No.");
+  const b = req.body || {}, r = await ownerDecide(String(b.id), b.accept === true, clip(b.note, 600));
+  if (!r.decided) return fail(res, 404, "There is nothing waiting for a decision on that item.");
+  res.status(200).json({ ok: true, status: r.product.status });
+}
+/** An evidence file, for the owner to read (admin key only). */
+async function evidenceFile(req, res) {
+  const path = String(req.query.path || "");
+  if (!isAdmin(String(req.headers["x-mp-key"] || "")) || !EVID.test(path)) return fail(res, 401, "No.");
+  const buf = await readBlob(path);
+  if (!buf) return fail(res, 404, "Not found.");
+  res.setHeader("Content-Type", { pdf: "application/pdf", png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", txt: "text/plain; charset=utf-8" }[ext(path)] || "application/octet-stream");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.status(200).send(buf);
+}
+
 // ---- Adding content (a merchant with their key, or the site owner with the admin key)
 async function upload(req, res) {
   const me = await who(req).catch(() => null);
@@ -307,8 +349,9 @@ async function upload(req, res) {
     onBeforeGenerateToken: async (pathname, payload) => {
       const user = me || (await who({ headers: { "x-mp-key": JSON.parse(payload || "{}").key } }));
       if (!user || !ready(user)) throw new Error("Not signed in.");
-      if (!/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw new Error("Bad file name.");
-      return { maximumSizeInBytes: 150e6, allowOverwrite: false, addRandomSuffix: false };
+      const evid = EVID.test(pathname) && EVID_EXT.has(ext(pathname));
+      if (!evid && !/^marketplace\/bundles\/[0-9a-f-]{36}\.maestropro$/.test(pathname)) throw new Error("Bad file name.");
+      return { maximumSizeInBytes: evid ? 25e6 : 150e6, allowOverwrite: false, addRandomSuffix: false };
     },
   });
   res.status(200).json(json);
@@ -417,7 +460,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
