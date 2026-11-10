@@ -23,12 +23,11 @@ export const TAX = {
 };
 export const taxFor = (cc) => { const t = TAX[String(cc || "").toUpperCase()]; return t ? { name: t[0], rate: t[1], inclusive: Boolean(t[2]) } : { name: "", rate: 0, inclusive: false }; };
 
-/** What a buyer pays, in minor units of their currency, and how it breaks down. The price is rounded up to the next quarter once, as a total with the tax and tip. */
+/** What a buyer pays, in minor units of their currency, and how it breaks down. The price with its tax, and the tip, are each rounded up to the next quarter. */
 export function quote(priceUSD, tipUSD, cur, fx, rate) {
-  const total = minor(priceUSD * (1 + rate) + tipUSD, cur, fx);
-  const tip = Math.min(total, Math.round(tipUSD * fx * 10 ** decimals(cur))), taxable = total - tip;
-  const tax = rate ? Math.round((taxable * rate) / (1 + rate)) : 0;
-  return { total, tip, tax, net: taxable - tax };
+  const base = minor(priceUSD * (1 + rate), cur, fx), tip = tipUSD ? minor(tipUSD, cur, fx) : 0;   // the tip is on the price before tax and never changes the tax
+  const tax = rate ? Math.round((base * rate) / (1 + rate)) : 0;
+  return { total: base + tip, tip, tax, net: base - tax };
 }
 
 /** Writes a paid sale to the ledger (once). */

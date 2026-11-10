@@ -165,7 +165,7 @@ async function buy(req, res) {
   const t = req.body?.tip || {};
   const tipUSD = t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
   if (!Number.isFinite(tipUSD) || tipUSD < 0 || tipUSD > 500) return fail(res, 400, "A tip can be from $0 to $500.");
-  const ip = String(country(req) || "").toUpperCase(), pick = String(req.body?.country || "").toUpperCase(), cc = pick === "OTHER" || TAX[pick] ? pick : ip, tax = taxFor(cc);   // the buyer's country decides the tax
+  const ip = String(country(req) || "").toUpperCase(), cc = ip, tax = taxFor(cc);   // the country is worked out from the buyer's connection
   let q;
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);

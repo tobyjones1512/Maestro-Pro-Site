@@ -41,7 +41,6 @@
       </div>
       <label class="field mp-tip__custom" id="cw" hidden>Tip in US dollars<input name="custom" type="number" inputmode="decimal" min="0" max="500" step="0.01" placeholder="0.00"></label>
     </fieldset>
-    <label class="field">Your country, for tax<select name="country" id="cc"></select></label>
     <dl class="mp-sum">
       <div><dt id="spl">Price</dt><dd id="sp"></dd></div>
       <div id="txr" hidden><dt id="txl">Tax</dt><dd id="tx"></dd></div>
@@ -64,7 +63,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, breakdown, money } from "/assets/marketplace.js?v=17";
+import { api, esc, breakdown, money } from "/assets/marketplace.js?v=18";
 const $ = (id) => document.getElementById(id), id = new URLSearchParams(location.search).get("id"), f = $("f");
 const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
 let d, l;
@@ -73,7 +72,7 @@ const tipUSD = () => {
   if (v === "custom") { const n = Math.round(Number(f.custom.value || 0) * 100) / 100; return Number.isFinite(n) ? Math.min(Math.max(n, 0), 500) : 0; }
   return Math.round(l.priceUSD * Number(v)) / 100;
 };
-const taxOf = () => { const v = TAXES[f.country.value]; return v ? { name: v[0], rate: v[1], inclusive: Boolean(v[2]) } : { name: "", rate: 0, inclusive: false }; };
+const taxOf = () => { const v = TAXES[d.country]; return v ? { name: v[0], rate: v[1], inclusive: Boolean(v[2]) } : { name: "", rate: 0, inclusive: false }; };
 let TAXES = {};
 function totals() {
   const t = tipUSD(), x = taxOf(), b = breakdown(l.priceUSD, t, d, x);
@@ -103,9 +102,6 @@ try {
   $("pv").addEventListener("click", (e) => { if (e.target.closest("[data-close]")) { $("pv").hidden = true; $("pv").innerHTML = ""; } });
   $("cur").textContent = d.currency === "USD" ? "Charged in US dollars." : `Charged in ${d.currency}, converted from US dollars and rounded up to the next quarter.`;
   TAXES = d.taxes || {};   // an older server sends no tax table: no tax is shown
-  const names = new Intl.DisplayNames(undefined, { type: "region" }), here = Object.keys(TAXES).includes(d.country) ? d.country : "OTHER";
-  $("cc").innerHTML = Object.keys(TAXES).map((c) => [c, names.of(c)]).sort((a, b) => a[1].localeCompare(b[1])).map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join("") + '<option value="OTHER">Another country (no tax)</option>';
-  $("cc").value = here; $("cc").closest("label").hidden = !Object.keys(TAXES).length;
   try { f.email.value = localStorage.getItem("mp-buyer-email") || ""; } catch {}
   f.addEventListener("input", totals); totals();
   $("item").hidden = false;
@@ -115,7 +111,7 @@ try {
     if (!f.email.checkValidity()) { m.textContent = "Enter a valid email address."; return; }
     b.disabled = true; m.textContent = "";
     try { localStorage.setItem("mp-buyer-email", f.email.value.trim()); } catch {}
-    try { location.href = (await api("buy", { method: "POST", body: { id, email: f.email.value, country: f.country.value, tip: { usd: tipUSD() } } })).url; }
+    try { location.href = (await api("buy", { method: "POST", body: { id, email: f.email.value, tip: { usd: tipUSD() } } })).url; }
     catch (err) { m.textContent = err.message; b.disabled = false; }
   });
 } catch (e) { $("err").textContent = e.message; }

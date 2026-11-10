@@ -17,10 +17,9 @@ export async function api(fn, { method = "GET", body, query = {}, key, header = 
 export const shown = (usd, d) => usd * (1 + (d.tax?.inclusive ? d.tax.rate : 0));
 /** The checkout's breakdown, worked out exactly as the server does it. Returns amounts in the buyer's currency. */
 export function breakdown(priceUSD, tipUSD, { currency, rate }, tax) {
-  const dec = currency === "JPY" || currency === "ISK" ? 0 : 2, k = 10 ** dec, r = tax?.rate || 0, usd = priceUSD * (1 + r) + tipUSD;
-  const total = dec ? Math.ceil(usd * rate * 4 - 1e-6) * 25 : Math.ceil(usd * rate - 1e-6);
-  const tip = Math.min(total, Math.round(tipUSD * rate * k)), taxable = total - tip, t = r ? Math.round((taxable * r) / (1 + r)) : 0;
-  return { total: total / k, tip: tip / k, tax: t / k, net: (taxable - t) / k };
+  const dec = currency === "JPY" || currency === "ISK" ? 0 : 2, k = 10 ** dec, r = tax?.rate || 0, up = (u) => (dec ? Math.ceil(u * rate * 4 - 1e-6) * 25 : Math.ceil(u * rate - 1e-6));
+  const base = up(priceUSD * (1 + r)), tip = tipUSD ? up(tipUSD) : 0, t = r ? Math.round((base * r) / (1 + r)) : 0;   // the tip is on the price before tax and never changes the tax
+  return { total: (base + tip) / k, tip: tip / k, tax: t / k, net: (base - t) / k };
 }
 export const money = (n, currency) => new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
 /** US dollars -> the buyer's currency, rounded up the way the server rounds it. */
