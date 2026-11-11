@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=26">
+<link rel="stylesheet" href="/assets/marketplace.css?v=27">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -49,7 +49,7 @@
         <div class="card" id="recent"></div>
       </section>
       <section id="p-add" role="tabpanel" aria-labelledby="t-add" hidden>
-        <h1 id="addh">Add Product</h1><p class="sub">You set the price in US dollars (.00, .25, .50 or .75). Maestro Pro keeps <span class="cut">30</span>% of each sale and the rest is paid out to you.</p>
+        <h1 id="addh">Add Product</h1><p class="sub">You set the price in US dollars, from $1.00 (.00, .25, .50 or .75). Maestro Pro keeps <span class="cut">30</span>% of each sale and the rest is paid out to you.</p>
         <div class="card form"><form id="f" class="pay pay--wide"></form></div>
       </section>
       <section id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
@@ -94,7 +94,7 @@
   </form></dialog>
 </div>
 <script type="module">
-import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile, uploadEvidence } from "/assets/marketplace.js?v=17";
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile, uploadEvidence } from "/assets/marketplace.js?v=21";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false, reopened = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");

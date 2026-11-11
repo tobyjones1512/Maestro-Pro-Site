@@ -27,16 +27,26 @@ export function local(usd, { currency, rate }, base = 0) {
   const whole = currency === "JPY" || currency === "ISK", amt = (u) => (whole ? Math.ceil(u * rate - 1e-6) : Math.ceil(u * rate * 4 - 1e-6) / 4);   // rounded up to the next quarter (0.19 -> 0.25, 0.26 -> 0.50)
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amt(usd + base) - (base ? amt(base) : 0));   // base: the price the amount is added to, so a tip is shown as the total minus the price
 }
+/** What a seller receives for a card sale at this price (an estimate, before tax and tips): the marketplace share and Mollie's card fee (3.25% + 20p, at about 78p to the dollar) come off what the buyer pays. */
+export function proceeds(form) {
+  const box = form.querySelector("[data-proceeds]"), v = form.price.value;
+  box.hidden = !validPrice(v);
+  if (box.hidden) return;
+  const price = Number(v), cut = Number(document.querySelector(".cut")?.textContent || 30) / 100, share = price * cut, fee = 0.0325 * price + 0.2 / 0.78, you = Math.max(0, price - share - fee), usd = (n) => "$" + n.toFixed(2);
+  box.innerHTML = `<b>What you receive for a card sale (estimate)</b>
+    <dl><div><dt>Buyer pays</dt><dd>${usd(price)}</dd></div><div><dt>Marketplace share (${Math.round(cut * 100)}%)</dt><dd>&minus;${usd(share)}</dd></div><div><dt>Mollie card fee (3.25% + &pound;0.20)</dt><dd>&minus;${usd(fee)}</dd></div><div class="mp-proceeds__you"><dt>You receive</dt><dd>${usd(you)}</dd></div></dl>
+    <small>Before tax and tips. Mollie's fee is taken from your Mollie account, and it differs for other payment methods. The pound fee is converted at about 78p to the dollar.</small>`;
+}
 export const dollars = (n) => "$" + Number(n).toFixed(2) + " USD";
 
-/** True for $0.25 to $999.75 ending in .00, .25, .50 or .75 ("4", "4.5" and "4.25" pass; "4.10", "4.99" and "0.75" do not). Mirrors price() on the server. */
+/** True for $1.00 to $999.75 ending in .00, .25, .50 or .75 ("4", "4.5" and "4.25" pass; "4.10", "4.99" and "0.75" and "0.50" do not). Mirrors price() on the server. */
 export function validPrice(v) {
   const m = /^(\d{1,3})(?:\.(\d{1,2}))?$/.exec(String(v ?? "").trim());
   if (!m) return false;
   const cents = Number(m[1]) * 100 + Number((m[2] || "").padEnd(2, "0"));
-  return cents >= 25 && cents % 25 === 0;
+  return cents >= 100 && cents % 25 === 0;
 }
-export const PRICE_RULE = "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed.";
+export const PRICE_RULE = "The price must be from $1.00 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed.";
 
 // ---- Where an item is sold: worldwide, or only the countries the merchant picks (ISO codes; names come from the browser).
 const COUNTRIES = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ");
@@ -166,7 +176,8 @@ export function mountBuilder(form, { getKey, onDone }) {
     submit.textContent = "Resubmit for review"; $("[data-cancel]", form).hidden = false;
     say("Saving sends the whole product back through review, and it is off sale until it is accepted.");
   };
-  form.price.addEventListener("input", () => say(form.price.value && !validPrice(form.price.value) ? PRICE_RULE : "", true));
+  form.price.addEventListener("input", () => { say(form.price.value && !validPrice(form.price.value) ? PRICE_RULE : "", true); proceeds(form); });
+  proceeds(form);
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const key = getKey();
@@ -241,7 +252,8 @@ export const builderFields = `
   <label class="field">Title<input name="title" type="text" required maxlength="100"></label>
   <label class="field">Composer, arranger or artist<input name="composer" type="text" maxlength="100"></label>
   <label class="field">Description<textarea name="description" rows="3" maxlength="600"></textarea></label>
-  <label class="field">Price in US dollars (.00, .25, .50 or .75)<input name="price" type="number" inputmode="decimal" min="0.25" max="999.75" step="0.25" required></label>
+  <label class="field">Price in US dollars (from 1.00, ending .00, .25, .50 or .75)<input name="price" type="number" inputmode="decimal" min="1" max="999.75" step="0.25" required></label>
+  <div class="mp-proceeds" data-proceeds hidden></div>
   <div class="mp-music" hidden>
     <label class="field">Release type<select name="format"><option value="single">Single (1 to 3 tracks)</option><option value="ep">EP</option><option value="album">Album</option></select></label>
     <div class="mp-kept" data-kept="cover"></div>

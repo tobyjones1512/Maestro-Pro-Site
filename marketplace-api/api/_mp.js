@@ -70,7 +70,7 @@ export function price(v) {
   const m = /^(\d{1,3})(?:\.(\d{1,2}))?$/.exec(String(v ?? "").trim());
   if (!m) return null;
   const cents = Number(m[1]) * 100 + Number((m[2] || "").padEnd(2, "0"));
-  return cents >= 25 && cents % 25 === 0 ? cents / 100 : null;
+  return cents >= 100 && cents % 25 === 0 ? cents / 100 : null;   // from $1: below that Mollie's fixed fee leaves the seller nothing
 }
 
 // ---- Mollie

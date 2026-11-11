@@ -330,3 +330,12 @@ html.app #payui{display:none!important}
 .mp-dlg__x{all:unset;cursor:pointer;font-size:1.6rem;line-height:1;padding:0 4px;color:var(--fg2)}
 .mp-dlg__x:hover{color:var(--hl)}
 .mp-dlg__sum{margin:6px 0 16px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Seller's proceeds preview under the price field. */
+.mp-proceeds{margin:4px 0 14px;padding:12px 14px;border:1px solid var(--hair);border-radius:9px;background:rgba(255,255,255,.03);font-size:.85rem}
+.mp-proceeds dl{margin:8px 0}
+.mp-proceeds dl>div{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.mp-proceeds dt,.mp-proceeds dd{margin:0}
+.mp-proceeds dd{font-variant-numeric:tabular-nums}
+.mp-proceeds__you{border-top:1px solid var(--hair);margin-top:4px;padding-top:6px!important;font-weight:700}
+.mp-proceeds small{display:block;color:var(--fg2)}

@@ -783,7 +783,7 @@ async function uploaded(paths, pattern, id, exts, max) {
 /** Checks everything a merchant sends for a new item or an edit. Returns { error } or { fields }. */
 async function content(b) {
   const usd = price(b.priceUSD);
-  if (!usd) return { error: "The price must be from $0.25 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed." };
+  if (!usd) return { error: "The price must be from $1.00 to $999.75 and end in .00, .25, .50 or .75. No other cent amount is allowed." };
   const regions = cleanRegions(b.regions);
   if (!regions) return { error: "Choose the countries from the list, or sell worldwide." };
   const rel = releaseOf(b.release);
