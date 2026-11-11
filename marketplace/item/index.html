@@ -182,7 +182,7 @@ function pay() {
       };
       s.onpaymentauthorized = async (e) => {
         try {
-          const r = await call({ quoteToken: Q.token, applePayToken: JSON.stringify(e.payment.token.paymentData) });
+          const r = await call({ quoteToken: Q.token, applePayToken: JSON.stringify(e.payment.token) });
           if (r.status !== "paid") throw new Error("The payment wasn't completed. You have not been charged.");
           s.completePayment(ApplePaySession.STATUS_SUCCESS);
           done(r);
