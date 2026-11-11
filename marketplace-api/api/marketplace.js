@@ -44,6 +44,8 @@ function releaseOf(r) {
   return { release: { mode: "date", at } };
 }
 const REOPEN_DAYS = 30;
+const REOPEN_FEE_GBP = "15.00";   // the technology fee to reactivate a closed account (a new account pays FEE_GBP)
+const feeFor = (m) => (m.reactivating ? REOPEN_FEE_GBP : FEE_GBP);
 const day = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const first = (name) => String(name || "").split(" ")[0] || "there";
 
@@ -327,7 +329,7 @@ async function download(req, res) {
 /** Starts the £5 technology fee on the platform's Mollie account. */
 async function startFee(m) {
   const p = await mollie("POST", "/payments", process.env.MOLLIE_API_KEY, {
-    amount: { currency: "GBP", value: FEE_GBP }, description: "Maestro Pro Marketplace technology fee (one-time)",
+    amount: { currency: "GBP", value: feeFor(m) }, description: m.reactivating ? "Maestro Pro Marketplace technology fee (reactivation)" : "Maestro Pro Marketplace technology fee (one-time)",
     redirectUrl: `${SITE}/marketplace/onboard/?m=${m.id}`, webhookUrl: `${API}/api/marketplace-fee-webhook?m=${m.id}`, metadata: { merchant: m.id, kind: "fee" },
   });
   const url = p.data?._links?.checkout?.href;
@@ -342,10 +344,11 @@ async function signup(req, res) {
   if (!EMAIL.test(em)) return fail(res, 400, "Enter a valid email address.");
   if (!agree) return fail(res, 400, "Please agree to the Merchant Content Review Guidelines.");
   const old = await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id)));
+  if (old?.closed && old.permanent) return fail(res, 403, "The Merchant Account for that email address was closed permanently. It can't be reopened, and the email address can't be used for a new one.");
   if (old?.closed) {   // a closed account can be reopened (not replaced) once a month has passed
     const on = (old.closedAt || 0) + REOPEN_DAYS * 864e5;
     if (Date.now() < on) return fail(res, 409, `The Merchant Account for that email address was closed on ${day(old.closedAt)}. It can be reopened from ${day(on)}: sign up again with the same email address then.`);
-    return res.status(200).json({ reactivate: true, name: old.name });
+    return res.status(200).json({ reactivate: true, name: old.name, feeGBP: REOPEN_FEE_GBP });
   }
   if (old?.fee?.status === "paid") return fail(res, 409, "There is already a Merchant Account for that email address. Ask for a sign-in link instead.");
   const secret = rand(24), m = { ...old, id: old?.id || rand(8), name: clip(name, 80), email: em, keyHash: sha(secret), created: old?.created || Date.now(), agreedAt: Date.now() };
@@ -365,7 +368,11 @@ async function syncFee(m) {
   if (!s || s === m.fee.status) return m;
   m = { ...(await readJson(SELLER(m.id))), fee: { ...m.fee, status: s, ...(s === "paid" && { paidAt: Date.now() }) } };
   await writeRaw(SELLER(m.id), m);
-  if (s === "paid") await sendMail({ to: m.email, idem: `mp-fee-${m.id}`, subject: "Your Merchant Account is open",
+  if (s === "paid" && m.reactivating) {   // reactivation fee paid: what was withdrawn comes back, to be reviewed again
+    await reopen(m);
+    m = { ...m, reactivating: undefined };
+    await writeRaw(SELLER(m.id), m);
+  } else if (s === "paid") await sendMail({ to: m.email, idem: `mp-fee-${m.id}`, subject: "Your Merchant Account is open",
     mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: `Thank you. Your technology fee has been paid and your Maestro Pro Merchant Account is open.\n\nThe next step is to set up your payout details, so that your share of every sale is paid to you. After that you can add content. Every item is checked before it goes on sale, so please read the [Merchant Content Review Guidelines](guidelines) first.`, buttons: [["Open your merchant account", LINKS.merchant]] }) });
   return m;
 }
@@ -424,16 +431,13 @@ async function signinVerify(req, res) {
   if (!/^[0-9a-f]{16}$/.test(id || "") || !token) return fail(res, 400, "That sign-in link isn't valid.");
   const secret = rand(24);
   let ok = false;
-  let reopened = null;
   await modify(SELLER(id), (m) => {
     if (!m?.linkHash || m.linkExp < Date.now() || m.linkHash !== sha(token)) return undefined;
     if (m.closed && Date.now() < (m.closedAt || 0) + REOPEN_DAYS * 864e5) return undefined;
     ok = true;
-    if (m.closed) reopened = m;
-    return { ...m, keyHash: sha(secret), linkHash: undefined, linkExp: undefined, ...(m.closed && { closed: undefined, closedAt: undefined, reopenedAt: Date.now(), agreedAt: Date.now() }) };
+    return { ...m, keyHash: sha(secret), linkHash: undefined, linkExp: undefined, ...(m.closed && { closed: undefined, closedAt: undefined, reopenedAt: Date.now(), agreedAt: Date.now(), reactivating: true, fee: { status: "none" } }) };   // open again, but nothing goes back on sale until the reactivation fee is paid
   });
   if (!ok) return fail(res, 400, "That sign-in link has already been used or has expired. Ask for a new one.");
-  if (reopened) await reopen(reopened);
   res.status(200).json({ key: `${id}.${secret}` });
 }
 
@@ -487,7 +491,7 @@ async function merchant(req, res) {
   const allDisputes = await disputes(), allProducts = await products();
   res.status(200).json({
     id: me.id, name: me.name, email: me.email, admin: Boolean(me.admin),
-    fee: me.admin ? "paid" : me.fee?.status || "none", feeGBP: FEE_GBP, connected: Boolean(me.admin || me.access), canPublish: ready(me),
+    fee: me.admin ? "paid" : me.fee?.status || "none", feeGBP: feeFor(me), reopened: Boolean(me.reopenedAt), connected: Boolean(me.admin || me.access), canPublish: ready(me),
     products: mine.slice().reverse().map((p) => ({
       id: p.id, code: code(p), title: p.title, composer: p.composer, priceUSD: p.priceUSD, regions: p.regions || [], status: p.status, withdrawn: Boolean(p.withdrawn), release: p.release || { mode: "auto" }, awaiting: awaiting(p), created: p.created,
       files: p.review?.files ? { done: p.review.files.filter((f) => f.scan.status === "clean").length, total: p.review.files.length } : undefined,
@@ -560,9 +564,10 @@ async function closeAccount(req, res) {
     const paths = gone.flatMap((p) => [...variantsOf(p).map((v) => BUNDLE(v.id)), ...(p.extras || []).map((e) => e.path), ...(p.proof?.files || []).map((f) => f.path), ...(p.appeal?.files || []).map((f) => f.path)]);
     if (paths.length) await del(paths);
   } catch { /* leftover files are harmless */ }
-  await modify(SELLER(me.id), (x) => (x ? { ...x, closed: true, closedAt: Date.now(), keyHash: undefined, linkHash: undefined, linkExp: undefined } : undefined));
+  const permanent = Boolean(me.reopenedAt);   // closing an account that was reopened is for good
+  await modify(SELLER(me.id), (x) => (x ? { ...x, closed: true, ...(permanent && { permanent: true }), closedAt: Date.now(), keyHash: undefined, linkHash: undefined, linkExp: undefined } : undefined));
   await sendMail({ to: me.email, idem: `mp-closed-${me.id}-${Date.now()}`, subject: "Your Merchant Account is closed",
-    mail: buildEmail({ name: first(me.name), label: "Merchant account", reply: `Your Maestro Pro Merchant Account has been closed, as you asked.\n\n- Your content has been taken off the Marketplace.\n- People who already bought your items keep their downloads.\n- We keep the records of your orders, sales, tax and refunds, and your responsibilities for them continue.\n\nYou can reopen the account from ${day(Date.now() + REOPEN_DAYS * 864e5)} by signing up again with this email address. Anything you had for sale will be off sale until it has been reviewed again.\n\nIf you didn't close your account, email ${SUPPORT} straight away.` }) }).catch(() => {});
+    mail: buildEmail({ name: first(me.name), label: "Merchant account", reply: `Your Maestro Pro Merchant Account has been closed, as you asked.\n\n- Your content has been taken off the Marketplace.\n- People who already bought your items keep their downloads.\n- We keep the records of your orders, sales, tax and refunds, and your responsibilities for them continue.\n\n${permanent ? "Because this account had been reopened before, closing it is permanent: it can't be reopened, and this email address can't be used for a new Merchant Account." : `You can reopen the account from ${day(Date.now() + REOPEN_DAYS * 864e5)} by signing up again with this email address and paying a £${Number(REOPEN_FEE_GBP)} reactivation fee. Anything you had for sale will be off sale until it has been reviewed again. If you reopen it and close it again, that is permanent.`}\n\nIf you didn't close your account, email ${SUPPORT} straight away.` }) }).catch(() => {});
   res.status(200).json({ ok: true });
 }
 
@@ -571,13 +576,14 @@ async function reactivate(req, res) {
   const em = String(req.body?.email ?? "").trim().toLowerCase();
   const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
   if (!m?.closed) return fail(res, 404, "There is no closed Merchant Account for that email address.");
+  if (m.permanent) return fail(res, 403, "This Merchant Account was closed permanently. It can't be reopened.");
   const on = (m.closedAt || 0) + REOPEN_DAYS * 864e5;
   if (Date.now() < on) return fail(res, 409, `This account can be reopened from ${day(on)}.`);
   if (m.signinAt > Date.now() - 600e3) return fail(res, 429, "We've just emailed you a link. Check your inbox, or try again in a few minutes.");
   const token = rand(24);
   await modify(SELLER(m.id), (x) => (x ? { ...x, linkHash: sha(token), linkExp: Date.now() + 900e3, signinAt: Date.now() } : undefined));
   await sendMail({ to: m.email, idem: `mp-reopen-${m.id}-${Date.now()}`, subject: "Reopen your Maestro Pro Merchant Account",
-    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Here is the link to reopen your Merchant Account and sign in. It works once and expires in 15 minutes. Anything you had for sale will be off sale until it has been reviewed again. If you didn't ask for this, you can ignore this email.", buttons: [["Reopen and sign in", `${LINKS.merchant}#t=${m.id}.${token}`]] }) });
+    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Here is the link to reopen your Merchant Account and sign in. Reopening costs a £15 technology fee, which you pay after signing in, and if you close the account again later that is permanent. The link works once and expires in 15 minutes. Anything you had for sale will be off sale until it has been reviewed again. If you didn't ask for this, you can ignore this email.", buttons: [["Reopen and sign in", `${LINKS.merchant}#t=${m.id}.${token}`]] }) });
   res.status(200).json({ ok: true });
 }
 
@@ -589,7 +595,7 @@ async function reopen(m) {
       : x))
     : undefined);
   await sendMail({ to: m.email, idem: `mp-reopened-${m.id}-${Date.now()}`, subject: "Your Merchant Account is open again",
-    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Welcome back. Your Merchant Account is open again, with your payout details as they were.\n\nEverything you had for sale is off sale and is being reviewed again, as it would be for a new item. It goes on sale when it is accepted.", buttons: [["Open your merchant account", LINKS.merchant]] }) }).catch(() => {});
+    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Welcome back. Your reactivation fee is paid and your Merchant Account is open again, with your payout details as they were. If you close it again, that is permanent.\n\nEverything you had for sale is off sale and is being reviewed again, as it would be for a new item. It goes on sale when it is accepted.", buttons: [["Open your merchant account", LINKS.merchant]] }) }).catch(() => {});
 }
 
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.

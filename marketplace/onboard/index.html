@@ -35,8 +35,9 @@
   </form>
   <div id="re" hidden>
     <h2>Welcome back</h2>
-    <p>We found a closed Merchant Account for this email address. Would you like to reactivate it? Your technology fee and payout details are kept. Everything you had for sale will be off sale until it has been reviewed again.</p>
-    <p><button id="reyes" class="pay__btn" type="button">Reactivate my account</button> <button id="reno" class="pay__btn pay__btn--ghost" type="button">No thanks</button></p>
+    <p>We found a closed Merchant Account for this email address. Would you like to reactivate it? Reactivating costs a <b>£15 technology fee</b>. Your payout details are kept, and everything you had for sale will be off sale until it has been reviewed again.</p>
+    <p><b>This is permanent once used: if you reactivate the account and later close it again, it can never be reopened, and this email address can never be used for another Merchant Account.</b></p>
+    <p><button id="reyes" class="pay__btn" type="button">Reactivate my account (£15)</button> <button id="reno" class="pay__btn pay__btn--ghost" type="button">No thanks</button></p>
     <p id="remsg" class="pay__msg" role="status"></p>
   </div>
   <p class="mp-note">Already have an account? <a href="/marketplace/seller/">Sign in</a>.</p>
@@ -79,6 +80,7 @@ async function load(waitForFee) {
   if (!key) return show(1);
   let me;
   try { me = await api("merchant", { key }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return show(1); }
+  $("pay").textContent = "Pay the £" + Number(me.feeGBP) + " fee";
   if (me.fee !== "paid") {
     show(2);
     if (waitForFee && me.fee === "open") { say("Checking your payment…"); await new Promise((r) => setTimeout(r, 3000)); return load(--waitForFee); }

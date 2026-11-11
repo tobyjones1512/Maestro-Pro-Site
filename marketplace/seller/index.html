@@ -63,7 +63,8 @@
         </div>
         <div class="card" id="close">
           <h2>Close my Merchant Account</h2>
-          <p>This takes all your content off the Marketplace and signs you out for good. People who already bought your items keep their downloads. Your sales records, tax records and refunds are kept, and you stay responsible for them. This can't be undone.</p>
+          <p>This takes all your content off the Marketplace and signs you out. People who already bought your items keep their downloads. Your sales records, tax records and refunds are kept, and you stay responsible for them.</p>
+          <p><b>Reopening a closed account costs a £15 technology fee and can only be done after a month. If you reopen it and close it again, that is permanent: it can never be reopened, and your email address can never be used for another Merchant Account.</b></p>
           <form id="closef" class="pay">
             <label class="field">Type your email address to confirm<input name="e" type="email" required autocomplete="off"></label>
             <button class="pay__btn" type="submit">Close my Merchant Account</button>
@@ -95,7 +96,7 @@
 <script type="module">
 import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile, uploadEvidence } from "/assets/marketplace.js?v=17";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
-let key = "", timer = 0, canPublish = false; try { key = localStorage.getItem(K) || ""; } catch {}
+let key = "", timer = 0, canPublish = false, reopened = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");
 if (once) {   // the one-time link from the sign-in email
   history.replaceState(null, "", location.pathname);
@@ -145,6 +146,7 @@ async function load() {
   $("recent").innerHTML = x.recent?.length
     ? `<table class="mp-table"><thead><tr><th>Product</th><th>Date</th><th>Price</th><th>Tip</th></tr></thead><tbody>${x.recent.map((r) => `<tr><td>${esc(r.title)}</td><td>${new Date(r.t).toLocaleDateString()}</td><td>${usd(r.usd)}</td><td>${r.tip ? usd(r.tip) : ""}</td></tr>`).join("")}</tbody></table>`
     : `<div class="empty">No sales yet.</div>`;
+  reopened = Boolean(s.reopened);
   $("acct").innerHTML = [["Name", esc(s.name)], ["Email", esc(s.email)], ["Technology fee", s.fee === "paid" ? "Paid" : "Not paid"], ["Payouts", s.connected ? "Set up" : "Not set up"], ["Marketplace share", Math.round(s.cut * 100) + "% of each sale"]]
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
   const D = s.disputes || [], live = D.filter((d) => d.status === "open" || d.status === "responded" || (d.appeal && !d.appeal.outcome));
@@ -189,7 +191,7 @@ $("chg").addEventListener("click", async () => { try { location.href = (await ap
 $("closef").addEventListener("submit", async (e) => {
   e.preventDefault();
   const m = e.target.querySelector(".pay__msg");
-  if (!confirm("Close your Merchant Account? Your content comes off the Marketplace and this can't be undone.")) return;
+  if (!confirm(reopened ? "Close your Merchant Account PERMANENTLY? Because it was reopened before, it can never be reopened and this email address can never be used for another Merchant Account." : "Close your Merchant Account? Your content comes off the Marketplace. You can reopen it after a month for a £15 fee, but if you reopen it and close it again, that is permanent.")) return;
   try { await api("close-account", { method: "POST", key, body: { confirm: e.target.e.value } }); try { localStorage.removeItem(K); sessionStorage.removeItem("mp-tab"); } catch {} key = ""; out(); }
   catch (err) { m.textContent = err.message; }
 });
