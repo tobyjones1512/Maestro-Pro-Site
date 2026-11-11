@@ -270,8 +270,11 @@ dialog.mp-gate{width:min(26rem,92vw);padding:24px;border:1px solid var(--hair,#3
 
 /* The footer sits at the bottom of the page, or at the bottom of the screen when the page is short. */
 body.read{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
-body.read>main,body.read>.foot{width:100%;box-sizing:border-box}
-body.read>.foot{margin-top:auto}
+/* In a column the auto side margins would shrink these to their content: they take the full width, keeping the widths they had (padding included). */
+body.read>.top,body.read>main,body.read>.foot{width:100%;box-sizing:border-box}
+body.read>main.plain{max-width:calc(70ch + 2*var(--gutter))}
+body.read>main.mp-wide{max-width:none}
+body.read>.foot{max-width:calc(var(--max) + 2*var(--gutter));margin-top:auto}
 body.read>main{flex:0 0 auto}
 /* A spinner in the middle of the screen while the buyer account loads. */
 html.wait main.plain{visibility:hidden}
