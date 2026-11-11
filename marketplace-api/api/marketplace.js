@@ -89,7 +89,7 @@ const country = (req) => req.headers["x-vercel-ip-country"];
 async function list(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]);
   const r = await rate(cur);
-  res.status(200).json({ listings: (await products()).filter((p) => onSale(p) && availableIn(p.regions, country(req))).reverse().map(pub), currency: r ? cur : "USD", rate: r || 1, cut: CUT, tax: taxFor(country(req)) });
+  res.status(200).json({ listings: (await products()).filter((p) => onSale(p) && availableIn(p.regions, country(req))).reverse().map(pub), currency: r ? cur : "USD", rate: r || 1, cardFee: await cardFee(r ? cur : "USD", r || 1), cut: CUT, tax: taxFor(country(req)) });
 }
 /** One item for its page: the files in each version, with a preview where one is safe to show. */
 async function item(req, res) {

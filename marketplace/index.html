@@ -37,7 +37,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, local, shown } from "/assets/marketplace.js?v=23";
+import { api, esc, breakdown, money } from "/assets/marketplace.js?v=24";
 const $ = (id) => document.getElementById(id), grid = $("grid");
 let d;
 const chips = (l) => l.formats.map((f) => `<span class="mp-chip${f === "PDF" || f === "Audio" ? " mp-chip--free" : ""}">${esc(f)}</span>`).join("");
@@ -48,7 +48,7 @@ function show() {
   const by = { new: (a, b) => b.created - a.created, low: (a, b) => a.priceUSD - b.priceUSD, high: (a, b) => b.priceUSD - a.priceUSD, az: (a, b) => a.title.localeCompare(b.title) }[$("sort").value];
   list.sort(by);
   $("count").textContent = d.listings.length ? `${list.length} of ${d.listings.length} items` : "";
-  grid.innerHTML = list.length ? list.map((l) => `<a class="mp-card" href="/marketplace/item/?id=${esc(l.id)}">${l.cover ? `<img class="mp-cover" src="${esc(l.cover)}" alt="" loading="lazy">` : ""}<b>${esc(l.title)}</b><small>${esc(l.composer)}</small><small class="mp-id">ID ${esc(l.code)}</small><small>${esc(l.contents)}${l.versions?.length ? ` (${l.versions.map(esc).join(", ")})` : ""}</small><div class="mp-chips">${(l.genres || []).map((g) => `<span class="mp-chip mp-chip--genre">${esc(g)}</span>`).join("")}${l.type ? `<span class="mp-chip">${esc(l.type)}</span>` : ""}${chips(l)}</div><div class="mp-price">${esc(local(shown(l.priceUSD, d), d))}</div></a>`).join("") : `<p>${d.listings.length ? "Nothing matches. Try a different search or filter." : "Nothing for sale yet."}</p>`;
+  grid.innerHTML = list.length ? list.map((l) => `<a class="mp-card" href="/marketplace/item/?id=${esc(l.id)}">${l.cover ? `<img class="mp-cover" src="${esc(l.cover)}" alt="" loading="lazy">` : ""}<b>${esc(l.title)}</b><small>${esc(l.composer)}</small><small class="mp-id">ID ${esc(l.code)}</small><small>${esc(l.contents)}${l.versions?.length ? ` (${l.versions.map(esc).join(", ")})` : ""}</small><div class="mp-chips">${(l.genres || []).map((g) => `<span class="mp-chip mp-chip--genre">${esc(g)}</span>`).join("")}${l.type ? `<span class="mp-chip">${esc(l.type)}</span>` : ""}${chips(l)}</div><div class="mp-price">${esc(money(breakdown(l.priceUSD, 0, d, d.tax?.inclusive ? d.tax : null).total, d.currency))}</div></a>`).join("") : `<p>${d.listings.length ? "Nothing matches. Try a different search or filter." : "Nothing for sale yet."}</p>`;
 }
 try {
   d = await api("list");
