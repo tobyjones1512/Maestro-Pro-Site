@@ -7,7 +7,8 @@
 <title>Buyer account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=20">
+<link rel="stylesheet" href="/assets/marketplace.css?v=21">
+<script>document.documentElement.classList.add("wait")</script>
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -49,13 +50,14 @@
 import { api, esc } from "/assets/marketplace.js?v=17";
 const K = "mp-buyer-key", $ = (id) => document.getElementById(id);
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
-const out = () => { $("out").hidden = false; $("in").hidden = true; };
+const ready = () => document.documentElement.classList.remove("wait");
+const out = () => { $("out").hidden = false; $("in").hidden = true; ready(); };
 async function load() {
   if (!key) return out();
   let d;
   try { d = await api("buyer-purchases", { key, header: "X-MP-Buyer" }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return out(); }
   const nx = new URLSearchParams(location.search).get("next"); if (nx && /^\/marketplace\/[\w\/?=&.-]*$/.test(nx)) return (location.href = nx);
-  $("out").hidden = true; $("in").hidden = false; $("who").textContent = d.email;
+  $("out").hidden = true; $("in").hidden = false; ready(); $("who").textContent = d.email;
   const day = (t) => new Date(t).toLocaleDateString(undefined, { dateStyle: "medium" });
   $("rows").innerHTML = d.purchases.map((p) => `<tr><td><b>${esc(p.title)}</b></td><td>${day(p.paidAt)}${p.status === "refunded" ? "<br><small>Refunded</small>" : ""}</td><td>${p.status === "paid" ? `<a class="pay__btn" href="/marketplace/thanks/?o=${p.order}&t=${p.token}">Downloads</a>` : ""}${p.refundable ? ` <button class="pay__btn pay__btn--ghost" data-o="${p.order}" data-t="${p.token}">Cancel and refund (until ${day(p.refundBy)})</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="3">Nothing bought yet. <a href="/marketplace/">Browse the Marketplace</a>.</td></tr>`;
   $("rows").querySelectorAll("button[data-o]").forEach((b) => b.addEventListener("click", async () => {
