@@ -353,6 +353,7 @@ async function startFee(m) {
   return { url, fee: { paymentId: p.data.id, status: "open", created: Date.now() } };
 }
 
+const DEBUG_FEE = () => ({ paymentId: "debug", status: "paid", paidAt: Date.now(), debug: true });
 async function signup(req, res) {
   const { name, email, agree } = req.body || {};
   const em = String(email ?? "").trim().toLowerCase();
@@ -368,7 +369,7 @@ async function signup(req, res) {
   }
   if (old?.fee?.status === "paid") return fail(res, 409, "There is already a Merchant Account for that email address. Ask for a sign-in link instead.");
   const secret = rand(24), m = { ...old, id: old?.id || rand(8), name: clip(name, 80), email: em, keyHash: sha(secret), created: old?.created || Date.now(), agreedAt: Date.now() };
-  const f = await startFee(m).catch((e) => ({ error: e.message }));
+  const f = debugOK(req.body) ? { url: `${SITE}/marketplace/onboard/`, fee: DEBUG_FEE() } : await startFee(m).catch((e) => ({ error: e.message }));   // testing only: the debug code skips the fee
   if (f.error) return fail(res, 502, f.error);
   m.fee = f.fee;
   await writeRaw(SELLER(m.id), m);
@@ -401,7 +402,7 @@ async function feeRetry(req, res) {
   const me = await who(req);
   if (!me || me.admin) return fail(res, 401, "Not signed in.");
   if (me.fee?.status === "paid") return fail(res, 409, "The technology fee is already paid.");
-  const f = await startFee(me);
+  const f = debugOK(req.body) ? { url: `${SITE}/marketplace/onboard/`, fee: DEBUG_FEE() } : await startFee(me);
   await writeRaw(SELLER(me.id), { ...me, fee: f.fee });
   res.status(200).json({ url: f.url });
 }

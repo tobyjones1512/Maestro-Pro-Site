@@ -96,7 +96,7 @@ $("f").addEventListener("submit", async (e) => {
   const f = e.target, b = f.querySelector("button"), m = f.querySelector(".pay__msg");
   b.disabled = true; m.textContent = "";
   try {
-    const d = await api("signup", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked } });
+    const d = await api("signup", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked, debugCode: q.get("debug") || undefined } });
     if (d.reactivate) { $("re").hidden = false; f.hidden = true; reEmail = f.email.value; return; }
     try { localStorage.setItem(K, d.key); } catch {}
     location.href = d.url;
@@ -107,7 +107,7 @@ $("reyes").addEventListener("click", async () => {
   catch (err) { $("remsg").textContent = err.message; }
 });
 $("reno").addEventListener("click", () => { $("re").hidden = true; $("f").hidden = false; $("f").querySelector("button").disabled = false; });
-$("pay").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key })).url; } catch (err) { say(err.message); } });
+$("pay").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key, body: { debugCode: q.get("debug") || undefined } })).url; } catch (err) { say(err.message); } });
 $("connect").addEventListener("click", async () => { try { location.href = (await api("connect-start", { method: "POST", key })).url; } catch (err) { say(err.message); } });
 load(q.get("m") ? 20 : 0);
 </script>
