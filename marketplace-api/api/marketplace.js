@@ -8,6 +8,7 @@ import { Readable } from "node:stream";
 import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
+import { inflateRawSync } from "node:zlib";
 import { TAX, TAX_ON, taxFor, quote, recordTax, refundTax, LEDGER } from "./_tax.js";
 import { SUPPORT, SITE, API, CUT, FEE_GBP, decimals, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
@@ -96,7 +97,7 @@ async function item(req, res) {
   const cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   const p = (await products()).find((x) => x.id === String(req.query.id) && onSale(x) && availableIn(x.regions, country(req)));
   if (!p) return fail(res, 404, "That piece isn't for sale.");
-  const kind = (n) => ({ pdf: "pdf", mp3: "audio", musicxml: "xml", xml: "xml" })[ext(n)] || "", ex = p.extras || [];
+  const kind = (n) => ({ pdf: "pdf", mp3: "audio", musicxml: "xml", mxl: "xml", xml: "xml" })[ext(n)] || "", ex = p.extras || [];
   const url = (q) => `${API}/api/marketplace-preview?id=${p.id}&${q}`;
   const detail = await Promise.all(variantsOf(p).map(async (v, i) => ({ id: v.id, label: v.label || "", files: [
     ...(((await bundleInfo(v.id).catch(() => null))?.files) || []).map((f) => ({ name: f.name, size: f.size, type: FORMAT[ext(f.name)] || "", kind: kind(f.name), preview: kind(f.name) ? url(`v=${v.id}&f=${encodeURIComponent(f.name)}`) : "" })),
@@ -106,6 +107,24 @@ async function item(req, res) {
   res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1, cardFee: await cardFee(r ? cur : "USD", r || 1), tax: taxFor(country(req)), taxes: TAX_ON ? TAX : {}, country: String(country(req) || "").toUpperCase() });
 }
 const CLIP = 450000;   // about 30 seconds of a typical MP3
+/** The score inside a compressed MusicXML (.mxl) file: the zip's root file named in META-INF/container.xml, else the first XML file. */
+function mxlXml(buf) {
+  let e = buf.length - 22;
+  while (e >= 0 && buf.readUInt32LE(e) !== 0x06054b50) e--;
+  if (e < 0) return "";
+  const files = new Map();
+  let p = buf.readUInt32LE(e + 16);
+  for (let n = buf.readUInt16LE(e + 10); n > 0 && buf.readUInt32LE(p) === 0x02014b50; n--) {
+    const method = buf.readUInt16LE(p + 10), csize = buf.readUInt32LE(p + 20), nl = buf.readUInt16LE(p + 28), el = buf.readUInt16LE(p + 30), cl = buf.readUInt16LE(p + 32), lo = buf.readUInt32LE(p + 42);
+    const name = buf.subarray(p + 46, p + 46 + nl).toString(), start = lo + 30 + buf.readUInt16LE(lo + 26) + buf.readUInt16LE(lo + 28);
+    files.set(name, () => { const data = buf.subarray(start, start + csize); return (method === 8 ? inflateRawSync(data, { maxOutputLength: 80e6 }) : data).toString("utf8"); });
+    p += 46 + nl + el + cl;
+  }
+  const root = files.get("META-INF/container.xml")?.().match(/full-path="([^"]+)"/)?.[1];
+  const name = files.has(root) ? root : [...files.keys()].find((k) => /\.(xml|musicxml)$/i.test(k) && !/^META-INF\//i.test(k));
+  return name ? files.get(name)() : "";
+}
+
 /** A preview that is no use as a copy: the first page of a PDF with a PREVIEW watermark across it, or the first 30 seconds or so of an MP3. */
 async function preview(req, res) {
   const p = (await products()).find((x) => x.id === String(req.query.id) && onSale(x));
@@ -134,8 +153,8 @@ async function preview(req, res) {
   res.setHeader("Cache-Control", "public, max-age=300");
   if (ext(name) === "mp3") { res.setHeader("Content-Type", "audio/mpeg"); return res.status(200).send(buf); }
   if (x !== undefined && (p.extras || [])[Number(x)]?.cover && COVER.has(ext(name))) { res.setHeader("Content-Type", ext(name) === "png" ? "image/png" : "image/jpeg"); return res.status(200).send(buf); }
-  if (ext(name) === "musicxml" || ext(name) === "xml") {   // only the first eight bars of each part, so the preview isn't the whole score
-    const xml = buf.toString("utf8").replace(/<part\s[^>]*>[\s\S]*?<\/part>/g, (part) => {
+  if (["musicxml", "xml", "mxl"].includes(ext(name))) {   // only the first eight bars of each part, so the preview isn't the whole score
+    const xml = (ext(name) === "mxl" ? mxlXml(buf) : buf.toString("utf8")).replace(/<part\s[^>]*>[\s\S]*?<\/part>/g, (part) => {
       const bars = part.match(/<measure\b[\s\S]*?<\/measure>/g) || [], head = part.slice(0, part.indexOf(bars[0] ?? "</part>"));
       return head + bars.slice(0, 8).join("") + "</part>";
     });

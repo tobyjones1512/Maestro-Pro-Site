@@ -42,8 +42,9 @@ const $ = (id) => document.getElementById(id), grid = $("grid");
 let d;
 const chips = (l) => l.formats.map((f) => `<span class="mp-chip${f === "PDF" || f === "Audio" ? " mp-chip--free" : ""}">${esc(f)}</span>`).join("");
 function show() {
-  const q = $("q").value.trim().toLowerCase(), fmt = $("fmt").value, max = Number($("max").value) || Infinity;
-  const list = d.listings.filter((l) => (!q || [l.title, l.composer, l.sellerName, l.description, l.code, ...(l.genres || [])].join(" ").toLowerCase().includes(q))
+  const plain = (t) => String(t).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[ßøæœđłı]/g, (c) => ({ "ß": "ss", "ø": "o", "æ": "ae", "œ": "oe", "đ": "d", "ł": "l", "ı": "i" })[c]);   // "Für Elise" is "fur elise"
+  const q = plain($("q").value.trim()), fmt = $("fmt").value, max = Number($("max").value) || Infinity;
+  const list = d.listings.filter((l) => (!q || [l.title, l.composer, l.sellerName, l.description, l.code, ...(l.genres || [])].map(plain).join(" ").includes(q))
     && (!fmt || (fmt === "Music" ? l.kind === "music" : l.formats.includes(fmt))) && l.priceUSD <= max && (!$("genre").value || (l.genres || []).includes($("genre").value)));
   const by = { new: (a, b) => b.created - a.created, low: (a, b) => a.priceUSD - b.priceUSD, high: (a, b) => b.priceUSD - a.priceUSD, az: (a, b) => a.title.localeCompare(b.title) }[$("sort").value];
   list.sort(by);
