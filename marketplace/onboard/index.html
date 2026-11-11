@@ -78,7 +78,6 @@
   </div>
   <p class="pay__msg" id="paymsg" role="status"></p>
   <p class="mp-note" id="stmt"></p>
-  <p class="mp-note"><button type="button" id="mpage" class="pay__btn pay__btn--ghost">Pay on Mollie's own page instead</button></p>
 </div>
 </dialog>
 <p id="m" class="pay__msg" role="status"></p>
@@ -171,7 +170,6 @@ let payOpen = () => {};
   $("pdx").addEventListener("click", () => { if (!working) dlg.close(); });
   dlg.addEventListener("cancel", (e) => { if (working) e.preventDefault(); });
   dlg.addEventListener("click", (e) => { if (e.target === dlg && !working) dlg.close(); });
-  $("mpage").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key, body: { debugCode: q.get("debug") || undefined } })).url; } catch (err) { pm(err.message); } });
   $("cardpay").addEventListener("click", async () => {
     if (!Q || !comps) return;
     busy(true); pm("");
