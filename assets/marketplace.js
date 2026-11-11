@@ -16,10 +16,11 @@ export async function api(fn, { method = "GET", body, query = {}, key, header = 
 /** The price a visitor sees: with the tax built in where their country expects that. */
 export const shown = (usd, d) => usd * (1 + (d.tax?.inclusive ? d.tax.rate : 0));
 /** The checkout's breakdown, worked out exactly as the server does it. Returns amounts in the buyer's currency. */
-export function breakdown(priceUSD, tipUSD, { currency, rate }, tax) {
+export function breakdown(priceUSD, tipUSD, { currency, rate, cardFee }, tax) {
   const dec = currency === "JPY" || currency === "ISK" ? 0 : 2, k = 10 ** dec, r = tax?.rate || 0, up = (u) => (dec ? Math.ceil(u * rate * 4 - 1e-6) * 25 : Math.ceil(u * rate - 1e-6));
   const base = up(priceUSD * (1 + r)), tip = Math.round(tipUSD * rate * k), t = r ? Math.round((base * r) / (1 + r)) : 0;   // the tip is on the price before tax and never changes the tax
-  return { total: (base + tip) / k, tip: tip / k, tax: t / k, net: (base - t) / k };
+  const sub = base + tip, card = cardFee ? Math.ceil((sub + cardFee.fixed) / (1 - cardFee.pct) - 1e-6) - sub : 0;   // the card fee is added on top, grossed up so the price and tip are left whole after Mollie takes it
+  return { total: (sub + card) / k, tip: tip / k, tax: t / k, net: (base - t) / k, fee: card / k };
 }
 export const money = (n, currency) => new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);
 /** US dollars -> the buyer's currency, rounded up the way the server rounds it. */
@@ -27,15 +28,15 @@ export function local(usd, { currency, rate }, base = 0) {
   const whole = currency === "JPY" || currency === "ISK", amt = (u) => (whole ? Math.ceil(u * rate - 1e-6) : Math.ceil(u * rate * 4 - 1e-6) / 4);   // rounded up to the next quarter (0.19 -> 0.25, 0.26 -> 0.50)
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amt(usd + base) - (base ? amt(base) : 0));   // base: the price the amount is added to, so a tip is shown as the total minus the price
 }
-/** What a seller receives for a card sale at this price (an estimate, before tax and tips): the marketplace share and Mollie's card fee (3.25% + 20p, at about 78p to the dollar) come off what the buyer pays. */
+/** What a seller receives at this price (before tax and tips): 70% of the price. The buyer is charged Mollie's card fee (3.25% + 20p) on top, so it never comes out of the seller's share. */
 export function proceeds(form) {
   const box = form.querySelector("[data-proceeds]"), v = form.price.value;
   box.hidden = !validPrice(v);
   if (box.hidden) return;
-  const price = Number(v), cut = Number(document.querySelector(".cut")?.textContent || 30) / 100, share = price * cut, fee = 0.0325 * price + 0.2 / 0.78, you = Math.max(0, price - share - fee), usd = (n) => "$" + n.toFixed(2);
-  box.innerHTML = `<b>What you receive for a card sale (estimate)</b>
-    <dl><div><dt>Buyer pays</dt><dd>${usd(price)}</dd></div><div><dt>Marketplace share (${Math.round(cut * 100)}%)</dt><dd>&minus;${usd(share)}</dd></div><div><dt>Mollie card fee (3.25% + &pound;0.20)</dt><dd>&minus;${usd(fee)}</dd></div><div class="mp-proceeds__you"><dt>You receive</dt><dd>${usd(you)}</dd></div></dl>
-    <small>Before tax and tips. Mollie's fee is taken from your Mollie account, and it differs for other payment methods. The pound fee is converted at about 78p to the dollar.</small>`;
+  const price = Number(v), cut = Number(document.querySelector(".cut")?.textContent || 30) / 100, share = price * cut, fee = (price + 0.2 / 0.78) / (1 - 0.0325) - price, you = price - share, usd = (n) => "$" + n.toFixed(2);   // (the 20p fee at about 78p to the dollar)
+  box.innerHTML = `<b>What you receive</b>
+    <dl><div><dt>Your price</dt><dd>${usd(price)}</dd></div><div><dt>Marketplace share (${Math.round(cut * 100)}%)</dt><dd>&minus;${usd(share)}</dd></div><div class="mp-proceeds__you"><dt>You receive</dt><dd>${usd(you)}</dd></div></dl>
+    <small>Before tax and tips. The buyer also pays a card processing fee of about ${usd(fee)} on top of your price, to cover Mollie's fee, so it does not come out of your share.</small>`;
 }
 export const dollars = (n) => "$" + Number(n).toFixed(2) + " USD";
 

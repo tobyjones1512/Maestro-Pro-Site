@@ -26,10 +26,12 @@ export const TAX_ON = false;
 export const taxFor = (cc) => { const t = TAX_ON ? TAX[String(cc || "").toUpperCase()] : null; return t ? { name: t[0], rate: t[1], inclusive: Boolean(t[2]) } : { name: "", rate: 0, inclusive: false }; };
 
 /** What a buyer pays, in minor units of their currency, and how it breaks down. The price with its tax is rounded up to the next quarter; the tip is the exact amount, not rounded up. */
-export function quote(priceUSD, tipUSD, cur, fx, rate) {
+export function quote(priceUSD, tipUSD, cur, fx, rate, fee) {
   const base = minor(priceUSD * (1 + rate), cur, fx), tip = Math.round(tipUSD * fx * 10 ** decimals(cur));   // the tip is on the price before tax and never changes the tax
   const tax = rate ? Math.round((base * rate) / (1 + rate)) : 0;
-  return { total: base + tip, tip, tax, net: base - tax };
+  // The card fee is added to what the buyer pays, grossed up so that after Mollie takes its fee (pct of the whole payment + a fixed amount) the price and tip are left whole.
+  const sub = base + tip, card = fee ? Math.ceil((sub + fee.fixed) / (1 - fee.pct) - 1e-6) - sub : 0;
+  return { total: sub + card, tip, tax, net: base - tax, fee: card };
 }
 
 /** A ledger row with its amounts in the currency of the country the tax is owed to (converted from US dollars when the buyer paid in another currency). */

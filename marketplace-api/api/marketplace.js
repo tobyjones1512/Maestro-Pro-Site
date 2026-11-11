@@ -9,7 +9,7 @@ import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
 import { TAX, TAX_ON, taxFor, quote, recordTax, refundTax, LEDGER } from "./_tax.js";
-import { SUPPORT, SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
+import { SUPPORT, SITE, API, CUT, FEE_GBP, decimals, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
@@ -42,6 +42,12 @@ function releaseOf(r) {
   if (at < Date.now() - 6e4) return { error: "The release date must be in the future (GMT)." };
   if (at > Date.now() + 2 * 365 * 864e5) return { error: "The release date can be at most two years away." };
   return { release: { mode: "date", at } };
+}
+/** Mollie's card fee (3.25% + 20p), as it applies to a payment in this currency (the fixed part in that currency's smallest unit). The buyer is charged it on top of the price. */
+const CARD_PCT = 0.0325, CARD_FIXED_GBP = 0.2;
+async function cardFee(cur, r) {
+  const gbp = (await rate("GBP")) || 0.78;
+  return { pct: CARD_PCT, fixed: Math.ceil(CARD_FIXED_GBP * (r / gbp) * 10 ** decimals(cur) - 1e-6) };
 }
 const REOPEN_DAYS = 30;
 const REOPEN_FEE_GBP = "15.00";   // the technology fee to reactivate a closed account (a new account pays FEE_GBP)
@@ -97,7 +103,7 @@ async function item(req, res) {
     ...ex.map((e, k) => [e, k]).filter(([e]) => (e.v ? e.v === v.id : i === 0)).map(([e, k]) => ({ name: e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })),
   ] })));
   if (p.kind === "music") detail.push({ id: p.id, label: "Tracks", files: ex.map((e, k) => [e, k]).filter(([e]) => !e.cover).map(([e, k]) => ({ name: e.name, title: e.title ? `${e.n}. ${e.title}` : e.name, size: e.size, type: FORMAT[ext(e.name)] || "", kind: kind(e.name), preview: kind(e.name) ? url(`x=${k}`) : "" })) });
-  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1, tax: taxFor(country(req)), taxes: TAX_ON ? TAX : {}, country: String(country(req) || "").toUpperCase() });
+  res.status(200).json({ listing: { ...pub(p), detail }, currency: r ? cur : "USD", rate: r || 1, cardFee: await cardFee(r ? cur : "USD", r || 1), tax: taxFor(country(req)), taxes: TAX_ON ? TAX : {}, country: String(country(req) || "").toUpperCase() });
 }
 const CLIP = 450000;   // about 30 seconds of a typical MP3
 /** A preview that is no use as a copy: the first page of a PDF with a PREVIEW watermark across it, or the first 30 seconds or so of an MP3. */
@@ -193,17 +199,18 @@ async function buy(req, res) {
   const ip = String(country(req) || "").toUpperCase(), cc = ip, tax = taxFor(cc);   // the country is worked out from the buyer's connection
   let q;
   if (req.body?.quote) {
-    q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate);
+    const cf = wallet ? wallet.fee : await cardFee(cur, r);
+    q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, cf);
     // The card form (Mollie Components) is made for the profile that will take the payment.
     const who0 = await payee(l.sellerId);
     const profileId = who0.seller?.profileId || process.env.MOLLIE_PROFILE_ID || (await mollie("GET", "/profiles/me", who0.token)).data?.id;
-    return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, total: q.total, exp: Date.now() + 10 * 60e3 }) });
+    return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), fee: fmt(q.fee, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, fee: cf, total: q.total, exp: Date.now() + 10 * 60e3 }) });
   }
-  if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
+  if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, wallet.fee).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);
-  const create = (currency, rt, how) => {
-    q = quote(l.priceUSD, tipUSD || 0, currency, rt, tax.rate);   // the total is rounded up once, so the price, tax and tip shown add up to it
+  const create = async (currency, rt, how) => {
+    q = quote(l.priceUSD, tipUSD || 0, currency, rt, tax.rate, wallet ? wallet.fee : await cardFee(currency, rt));   // the total is rounded up once, so the price, tax and tip shown add up to it
     const m = q.total;
     return mollie("POST", "/payments", pay.token, {
       amount: { currency, value: fmt(m, currency) },
