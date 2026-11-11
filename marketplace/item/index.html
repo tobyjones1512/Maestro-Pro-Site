@@ -146,7 +146,7 @@ function pay() {
   }
   async function refresh() {
     const mine = ++seq; Q = null; busy(true); say("");
-    try { const q = await call({ quote: true }); if (mine !== seq) return; Q = q; $("stmt").textContent = (q.statement ? `Your bank statement will show "${q.statement}", the seller's business name, not Maestro Pro.` : "Your bank statement will show the seller's business name, not Maestro Pro.") + " Your bank may add its own prefix."; await mount(q); }
+    try { const q = await call({ quote: true }); if (mine !== seq) return; Q = q; $("stmt").textContent = (q.statement ? `Your bank statement should show "${q.statement}", the seller's business name, not Maestro Pro.` : "Your bank statement should show the seller's business name, not Maestro Pro.") + " The exact wording depends on your bank, which may add its own prefix."; await mount(q); }
     catch (err) { if (mine === seq) lost(err); return; }
     if (mine === seq) busy(false);
   }
