@@ -55,6 +55,12 @@
       <section id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
         <h1>Account</h1><p class="sub">Your Merchant Account details.</p>
         <div class="card"><dl id="acct"></dl></div>
+        <div class="card" id="payout">
+          <h2>Payouts</h2>
+          <p>Your share of each sale is paid to the Mollie account you connected. You can connect a different one. New sales are paid to the new account. Refunds for earlier sales are still taken from the account that was paid.</p>
+          <button id="chg" class="pay__btn" type="button">Change my Mollie account</button>
+          <p class="pay__msg" id="chgm" role="status"></p>
+        </div>
         <div class="card" id="close">
           <h2>Close my Merchant Account</h2>
           <p>This takes all your content off the Marketplace and signs you out for good. People who already bought your items keep their downloads. Your sales records, tax records and refunds are kept, and you stay responsible for them. This can't be undone.</p>
@@ -179,6 +185,7 @@ async function load() {
   tab(t);
   if (s.products.some(inReview)) timer = setTimeout(load, 20000);   // each visit moves the review on
 }
+$("chg").addEventListener("click", async () => { try { location.href = (await api("connect-start", { method: "POST", key, body: { change: true } })).url; } catch (err) { $("chgm").textContent = err.message; } });
 $("closef").addEventListener("submit", async (e) => {
   e.preventDefault();
   const m = e.target.querySelector(".pay__msg");

@@ -9,7 +9,7 @@ import { get } from "@vercel/blob";
 import { readJson, writeRaw, modify, products, addProduct, updateProduct, INDEX } from "./_blob.js";
 import crypto from "node:crypto";
 import { TAX, TAX_ON, taxFor, quote, recordTax, refundTax, LEDGER } from "./_tax.js";
-import { SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
+import { SUPPORT, SITE, API, CUT, FEE_GBP, cors, rand, sha, isAdmin, sign, unsign, currencyFor, rate, minor, fmt, price, cleanRegions, availableIn, refundable, REFUND_DAYS, live, mollie, oauth, OWNER } from "./_mp.js";
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
@@ -43,6 +43,8 @@ function releaseOf(r) {
   if (at > Date.now() + 2 * 365 * 864e5) return { error: "The release date can be at most two years away." };
   return { release: { mode: "date", at } };
 }
+const REOPEN_DAYS = 30;
+const day = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 const first = (name) => String(name || "").split(" ")[0] || "there";
 
 async function who(req) {
@@ -147,20 +149,23 @@ async function preview(req, res) {
 const guidelinesInfo = (req, res) => res.status(200).json(guidelines);
 
 // ---- Paying
-async function sellerToken(s) {
-  if (s.exp > Date.now() + 60e3) return s.access;
-  const r = await oauth({ grant_type: "refresh_token", refresh_token: s.refresh });
+/** The token for the merchant's current Mollie connection, or (e) for an earlier one that they have since changed away from. */
+async function sellerToken(s, e = s) {
+  if (e.exp > Date.now() + 60e3) return e.access;
+  const r = await oauth({ grant_type: "refresh_token", refresh_token: e.refresh });
   if (!r.data.access_token) throw new Error("Seller's Mollie connection has expired.");
-  Object.assign(s, { access: r.data.access_token, exp: Date.now() + r.data.expires_in * 1e3, refresh: r.data.refresh_token || s.refresh });
+  Object.assign(e, { access: r.data.access_token, exp: Date.now() + r.data.expires_in * 1e3, refresh: r.data.refresh_token || e.refresh });
   await writeRaw(SELLER(s.id), s);
-  return s.access;
+  return e.access;
 }
 /** Who gets paid for an order: the platform itself, or a connected merchant. */
-async function payee(sellerId) {
+async function payee(sellerId, at) {
   if (sellerId === "platform") return { token: process.env.MOLLIE_API_KEY, extra: "" };
   const s = await readJson(SELLER(sellerId));
   if (!s?.access) throw new Error("Seller not found.");
-  return { token: await sellerToken(s), seller: s, extra: live() ? "" : "?testmode=true" };
+  // A payment made before the merchant changed their Mollie account lives in the account they had then: it is looked up, and refunded, there.
+  const old = at && s.connectedAt && at < s.connectedAt ? (s.previous || []).find((e) => (e.from || 0) <= at && at < e.until) : null;
+  return { token: await sellerToken(s, old || s), seller: s, extra: live() ? "" : "?testmode=true" };
 }
 
 async function buy(req, res) {
@@ -233,7 +238,7 @@ const link = (o) => `${API}/api/marketplace-download?o=${o.id}&t=${o.token}`;
 /** Asks Mollie where the payment stands, and the first time it is paid: records the sale and emails the download link. */
 async function sync(order) {
   if (order.status === "paid" || order.status === "refunded") return order;
-  const pay = await payee(order.sellerId || (await products()).find((x) => x.id === order.listing)?.sellerId);
+  const pay = await payee(order.sellerId || (await products()).find((x) => x.id === order.listing)?.sellerId, order.created);
   const p = await mollie("GET", `/payments/${order.paymentId}${pay.extra}`, pay.token);
   const s = p.data?.status;
   if (!s || s === order.status) return order;
@@ -337,7 +342,11 @@ async function signup(req, res) {
   if (!EMAIL.test(em)) return fail(res, 400, "Enter a valid email address.");
   if (!agree) return fail(res, 400, "Please agree to the Merchant Content Review Guidelines.");
   const old = await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id)));
-  if (old?.closed) return fail(res, 409, "A Merchant Account for that email address was closed. Contact support to open a new one.");
+  if (old?.closed) {   // a closed account can be reopened (not replaced) once a month has passed
+    const on = (old.closedAt || 0) + REOPEN_DAYS * 864e5;
+    if (Date.now() < on) return fail(res, 409, `The Merchant Account for that email address was closed on ${day(old.closedAt)}. It can be reopened from ${day(on)}: sign up again with the same email address then.`);
+    return res.status(200).json({ reactivate: true, name: old.name });
+  }
   if (old?.fee?.status === "paid") return fail(res, 409, "There is already a Merchant Account for that email address. Ask for a sign-in link instead.");
   const secret = rand(24), m = { ...old, id: old?.id || rand(8), name: clip(name, 80), email: em, keyHash: sha(secret), created: old?.created || Date.now(), agreedAt: Date.now() };
   const f = await startFee(m).catch((e) => ({ error: e.message }));
@@ -415,12 +424,16 @@ async function signinVerify(req, res) {
   if (!/^[0-9a-f]{16}$/.test(id || "") || !token) return fail(res, 400, "That sign-in link isn't valid.");
   const secret = rand(24);
   let ok = false;
+  let reopened = null;
   await modify(SELLER(id), (m) => {
     if (!m?.linkHash || m.linkExp < Date.now() || m.linkHash !== sha(token)) return undefined;
+    if (m.closed && Date.now() < (m.closedAt || 0) + REOPEN_DAYS * 864e5) return undefined;
     ok = true;
-    return { ...m, keyHash: sha(secret), linkHash: undefined, linkExp: undefined };
+    if (m.closed) reopened = m;
+    return { ...m, keyHash: sha(secret), linkHash: undefined, linkExp: undefined, ...(m.closed && { closed: undefined, closedAt: undefined, reopenedAt: Date.now(), agreedAt: Date.now() }) };
   });
   if (!ok) return fail(res, 400, "That sign-in link has already been used or has expired. Ask for a new one.");
+  if (reopened) await reopen(reopened);
   res.status(200).json({ key: `${id}.${secret}` });
 }
 
@@ -432,7 +445,8 @@ async function connectStart(req, res) {
   if (m.fee?.status !== "paid") return fail(res, 402, "Pay the technology fee first.");
   if (!process.env.MOLLIE_CLIENT_ID || !process.env.MARKETPLACE_SECRET) return fail(res, 503, "Payout set-up isn't switched on yet.");
   const q = new URLSearchParams({
-    client_id: process.env.MOLLIE_CLIENT_ID, redirect_uri: `${API}/api/marketplace-callback`, response_type: "code", approval_prompt: "auto",
+    client_id: process.env.MOLLIE_CLIENT_ID, redirect_uri: `${API}/api/marketplace-callback`, response_type: "code", approval_prompt: req.body?.change ? "force" : "auto",   // changing asks Mollie to show the account choice again
+   
     scope: "payments.read payments.write refunds.read refunds.write profiles.read organizations.read onboarding.read", state: sign({ m: m.id, ts: Date.now() }),
   });
   res.status(200).json({ url: `${AUTHORIZE}?${q}` });
@@ -454,7 +468,9 @@ async function callback(req, res) {
     console.error("callback: unreadable payout account", org.status, org.data?.detail, me.status, me.data?.detail);
     return back("Your payout account isn't ready yet. Finish creating your business profile there (it can take a few minutes to be approved), then set up payouts again.");
   }
-  await writeRaw(SELLER(m.id), { ...m, mollieOrg: org.data.id, profileId: profile.id, access: t.data.access_token, refresh: t.data.refresh_token, exp: Date.now() + t.data.expires_in * 1e3, connectedAt: Date.now() });
+  // Moving to a different Mollie account keeps the old connection, so refunds and payment checks for earlier sales still go to the account that took them.
+  const previous = m.access && m.mollieOrg !== org.data.id ? [...(m.previous || []), { mollieOrg: m.mollieOrg, profileId: m.profileId, access: m.access, refresh: m.refresh, exp: m.exp, from: m.connectedAt || 0, until: Date.now() }] : m.previous;
+  await writeRaw(SELLER(m.id), { ...m, previous, mollieOrg: org.data.id, profileId: profile.id, access: t.data.access_token, refresh: t.data.refresh_token, exp: Date.now() + t.data.expires_in * 1e3, connectedAt: Date.now() });
   res.redirect(302, `${SITE}/marketplace/seller/`);
 }
 
@@ -545,7 +561,35 @@ async function closeAccount(req, res) {
     if (paths.length) await del(paths);
   } catch { /* leftover files are harmless */ }
   await modify(SELLER(me.id), (x) => (x ? { ...x, closed: true, closedAt: Date.now(), keyHash: undefined, linkHash: undefined, linkExp: undefined } : undefined));
+  await sendMail({ to: me.email, idem: `mp-closed-${me.id}-${Date.now()}`, subject: "Your Merchant Account is closed",
+    mail: buildEmail({ name: first(me.name), label: "Merchant account", reply: `Your Maestro Pro Merchant Account has been closed, as you asked.\n\n- Your content has been taken off the Marketplace.\n- People who already bought your items keep their downloads.\n- We keep the records of your orders, sales, tax and refunds, and your responsibilities for them continue.\n\nYou can reopen the account from ${day(Date.now() + REOPEN_DAYS * 864e5)} by signing up again with this email address. Anything you had for sale will be off sale until it has been reviewed again.\n\nIf you didn't close your account, email ${SUPPORT} straight away.` }) }).catch(() => {});
   res.status(200).json({ ok: true });
+}
+
+/** A closed account's email address asked to reopen it: a one-time link goes to that address, and using it signs them in and reopens the account. */
+async function reactivate(req, res) {
+  const em = String(req.body?.email ?? "").trim().toLowerCase();
+  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
+  if (!m?.closed) return fail(res, 404, "There is no closed Merchant Account for that email address.");
+  const on = (m.closedAt || 0) + REOPEN_DAYS * 864e5;
+  if (Date.now() < on) return fail(res, 409, `This account can be reopened from ${day(on)}.`);
+  if (m.signinAt > Date.now() - 600e3) return fail(res, 429, "We've just emailed you a link. Check your inbox, or try again in a few minutes.");
+  const token = rand(24);
+  await modify(SELLER(m.id), (x) => (x ? { ...x, linkHash: sha(token), linkExp: Date.now() + 900e3, signinAt: Date.now() } : undefined));
+  await sendMail({ to: m.email, idem: `mp-reopen-${m.id}-${Date.now()}`, subject: "Reopen your Maestro Pro Merchant Account",
+    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Here is the link to reopen your Merchant Account and sign in. It works once and expires in 15 minutes. Anything you had for sale will be off sale until it has been reviewed again. If you didn't ask for this, you can ignore this email.", buttons: [["Reopen and sign in", `${LINKS.merchant}#t=${m.id}.${token}`]] }) });
+  res.status(200).json({ ok: true });
+}
+
+/** Reopening: what was withdrawn when the account closed comes back, but anything that was on sale must pass review again before it can be sold. */
+async function reopen(m) {
+  await modify(INDEX, (all) => (all || []).some((x) => x.sellerId === m.id && x.closedWithAccount)
+    ? all.map((x) => (x.sellerId === m.id && x.closedWithAccount
+      ? { ...x, withdrawn: false, closedWithAccount: undefined, ...(x.status === "ready" && { published: x.published || { variants: variantsOf(x), extras: x.extras || [] }, status: "scanning", released: undefined, lock: 0, appeal: undefined, review: { rightsConfirmed: x.review?.rightsConfirmed || Date.now() } }) }
+      : x))
+    : undefined);
+  await sendMail({ to: m.email, idem: `mp-reopened-${m.id}-${Date.now()}`, subject: "Your Merchant Account is open again",
+    mail: buildEmail({ name: first(m.name), label: "Merchant account", reply: "Welcome back. Your Merchant Account is open again, with your payout details as they were.\n\nEverything you had for sale is off sale and is being reviewed again, as it would be for a new item. It goes on sale when it is accepted.", buttons: [["Open your merchant account", LINKS.merchant]] }) }).catch(() => {});
 }
 
 // ---- Appeals (guideline 5.3): a refused item gets a statement and evidence files, which are scanned and assessed again. The third refusal goes to the owner.
@@ -863,7 +907,7 @@ async function refund(req, res) {
   if (!refundable({ status: o.status, paidAt, refundedBefore: before })) {
     return fail(res, 403, o.status === "refunded" ? "This purchase has already been refunded." : before ? "You were refunded for this item before, so the right to cancel no longer applies to this purchase (guideline 7.2)." : `The ${REFUND_DAYS} days to cancel this purchase have passed.`);
   }
-  const pay = await payee(o.sellerId);
+  const pay = await payee(o.sellerId, o.created);
   const r = await mollie("POST", `/payments/${o.paymentId}/refunds`, pay.token, { amount: { currency: o.currency, value: o.amount }, description: `Refund: ${o.title}`, ...(pay.seller && { testmode: !live() }) });
   if (r.status >= 300) return fail(res, 502, r.data?.detail || "The refund couldn't be processed. Email support@maestro-pro.app.");
   await writeRaw(ORDER(o.id), { ...o, status: "refunded", refundedAt: Date.now(), refundId: r.data.id });
@@ -877,7 +921,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

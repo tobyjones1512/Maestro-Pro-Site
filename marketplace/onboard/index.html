@@ -33,6 +33,12 @@
     <button class="pay__btn" type="submit">Pay the £5 fee</button>
     <p class="pay__msg" role="status"></p>
   </form>
+  <div id="re" hidden>
+    <h2>Welcome back</h2>
+    <p>We found a closed Merchant Account for this email address. Would you like to reactivate it? Your technology fee and payout details are kept. Everything you had for sale will be off sale until it has been reviewed again.</p>
+    <p><button id="reyes" class="pay__btn" type="button">Reactivate my account</button> <button id="reno" class="pay__btn pay__btn--ghost" type="button">No thanks</button></p>
+    <p id="remsg" class="pay__msg" role="status"></p>
+  </div>
   <p class="mp-note">Already have an account? <a href="/marketplace/seller/">Sign in</a>.</p>
 </section>
 
@@ -62,6 +68,7 @@
 <script src="/assets/nav.js" defer></script>
 <script type="module">
 import { api } from "/assets/marketplace.js?v=17";
+let reEmail = "";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
 const show = (n) => [1, 2, 3, 4].forEach((i) => ($("s" + i).hidden = i !== n));
@@ -86,10 +93,16 @@ $("f").addEventListener("submit", async (e) => {
   b.disabled = true; m.textContent = "";
   try {
     const d = await api("signup", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked } });
+    if (d.reactivate) { $("re").hidden = false; f.hidden = true; reEmail = f.email.value; return; }
     try { localStorage.setItem(K, d.key); } catch {}
     location.href = d.url;
   } catch (err) { m.textContent = err.message; b.disabled = false; }
 });
+$("reyes").addEventListener("click", async () => {
+  try { await api("reactivate", { method: "POST", body: { email: reEmail } }); $("remsg").textContent = "We have emailed you a link. Open it to reopen your account and sign in."; $("reyes").disabled = true; }
+  catch (err) { $("remsg").textContent = err.message; }
+});
+$("reno").addEventListener("click", () => { $("re").hidden = true; $("f").hidden = false; $("f").querySelector("button").disabled = false; });
 $("pay").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key })).url; } catch (err) { say(err.message); } });
 $("connect").addEventListener("click", async () => { try { location.href = (await api("connect-start", { method: "POST", key })).url; } catch (err) { say(err.message); } });
 load(q.get("m") ? 20 : 0);
