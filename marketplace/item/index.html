@@ -62,6 +62,7 @@
         <button type="button" id="cardpay" class="pay__btn" disabled>Pay by card</button>
       </div>
       <p class="pay__msg" id="paymsg" role="status"></p>
+      <p class="mp-note" id="stmt"></p>
     </div>
     </dialog>
     <button class="pay__btn" type="submit">Continue to payment</button>
@@ -145,7 +146,7 @@ function pay() {
   }
   async function refresh() {
     const mine = ++seq; Q = null; busy(true); say("");
-    try { const q = await call({ quote: true }); if (mine !== seq) return; Q = q; await mount(q); }
+    try { const q = await call({ quote: true }); if (mine !== seq) return; Q = q; $("stmt").textContent = (q.statement ? `Your bank statement will show "${q.statement}", the seller's business name, not Maestro Pro.` : "Your bank statement will show the seller's business name, not Maestro Pro.") + " Your bank may add its own prefix."; await mount(q); }
     catch (err) { if (mine === seq) lost(err); return; }
     if (mine === seq) busy(false);
   }

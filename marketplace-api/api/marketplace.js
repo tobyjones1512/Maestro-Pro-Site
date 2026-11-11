@@ -204,8 +204,9 @@ async function buy(req, res) {
     q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, cf, pct);
     // The card form (Mollie Components) is made for the profile that will take the payment.
     const who0 = await payee(l.sellerId);
-    const profileId = who0.seller?.profileId || process.env.MOLLIE_PROFILE_ID || (await mollie("GET", "/profiles/me", who0.token)).data?.id;
-    return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, fee: cf, total: q.total, exp: Date.now() + 10 * 60e3 }) });
+    const prof = (await mollie("GET", "/profiles/me", who0.token).catch(() => null))?.data;   // the profile's name is what a card statement shows
+    const profileId = who0.seller?.profileId || process.env.MOLLIE_PROFILE_ID || prof?.id;
+    return res.status(200).json({ profileId, statement: prof?.name || "", testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, fee: cf, total: q.total, exp: Date.now() + 10 * 60e3 }) });
   }
   if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, wallet.fee, pct).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
   if (pct) tipUSD = quote(l.priceUSD, 0, cur, r, tax.rate, wallet ? wallet.fee : await cardFee(cur, r), pct).tip / 10 ** decimals(cur) / r;   // what the tip comes to in dollars, for the seller's records
