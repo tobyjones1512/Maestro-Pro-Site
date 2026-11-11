@@ -55,6 +55,15 @@
       <section id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
         <h1>Account</h1><p class="sub">Your Merchant Account details.</p>
         <div class="card"><dl id="acct"></dl></div>
+        <div class="card" id="close">
+          <h2>Close my Merchant Account</h2>
+          <p>This takes all your content off the Marketplace and signs you out for good. People who already bought your items keep their downloads. Your sales records, tax records and refunds are kept, and you stay responsible for them. This can't be undone.</p>
+          <form id="closef" class="pay">
+            <label class="field">Type your email address to confirm<input name="e" type="email" required autocomplete="off"></label>
+            <button class="pay__btn" type="submit">Close my Merchant Account</button>
+            <p class="pay__msg" role="status"></p>
+          </form>
+        </div>
         <p class="mp-note">Need help? <a href="/support/">Contact support</a> or read the <a href="/marketplace/guidelines/">guidelines</a>.</p>
       </section>
       <section id="p-disp" role="tabpanel" aria-labelledby="t-disp" hidden>
@@ -170,6 +179,13 @@ async function load() {
   tab(t);
   if (s.products.some(inReview)) timer = setTimeout(load, 20000);   // each visit moves the review on
 }
+$("closef").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const m = e.target.querySelector(".pay__msg");
+  if (!confirm("Close your Merchant Account? Your content comes off the Marketplace and this can't be undone.")) return;
+  try { await api("close-account", { method: "POST", key, body: { confirm: e.target.e.value } }); try { localStorage.removeItem(K); sessionStorage.removeItem("mp-tab"); } catch {} key = ""; out(); }
+  catch (err) { m.textContent = err.message; }
+});
 $("bye").addEventListener("click", () => { try { localStorage.removeItem(K); sessionStorage.removeItem("mp-tab"); } catch {} key = ""; out(); });
 $("si").addEventListener("submit", async (e) => {
   e.preventDefault();

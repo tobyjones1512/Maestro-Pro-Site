@@ -51,7 +51,7 @@ async function who(req) {
   const [id, secret] = key.split(".");
   if (!/^[0-9a-f]{16}$/.test(id || "") || !secret) return null;
   const m = await readJson(SELLER(id));
-  return m && m.keyHash === sha(secret) ? m : null;
+  return m && !m.closed && m.keyHash === sha(secret) ? m : null;
 }
 /** A merchant may add content once the fee is paid and a Mollie account is connected. */
 const ready = (m) => Boolean(m.admin || (!m.barred && m.fee?.status === "paid" && m.access));
@@ -337,6 +337,7 @@ async function signup(req, res) {
   if (!EMAIL.test(em)) return fail(res, 400, "Enter a valid email address.");
   if (!agree) return fail(res, 400, "Please agree to the Merchant Content Review Guidelines.");
   const old = await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id)));
+  if (old?.closed) return fail(res, 409, "A Merchant Account for that email address was closed. Contact support to open a new one.");
   if (old?.fee?.status === "paid") return fail(res, 409, "There is already a Merchant Account for that email address. Ask for a sign-in link instead.");
   const secret = rand(24), m = { ...old, id: old?.id || rand(8), name: clip(name, 80), email: em, keyHash: sha(secret), created: old?.created || Date.now(), agreedAt: Date.now() };
   const f = await startFee(m).catch((e) => ({ error: e.message }));
@@ -376,7 +377,7 @@ async function feeRetry(req, res) {
 /** Emails a fresh sign-in link. The old link stops working, so a link can be asked for at most every ten minutes. Always answers the same, so it can't be used to find out who has an account. */
 async function signin(req, res) {
   const em = String(req.body?.email ?? "").trim().toLowerCase();
-  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
+  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))).then((x) => (x?.closed ? null : x)));
   if (m && !(m.signinAt > Date.now() - 600e3)) {
     const token = rand(24);   // one-time: it is swapped for a session key the first time it is used, and expires after 15 minutes
     await modify(SELLER(m.id), (x) => (x ? { ...x, linkHash: sha(token), linkExp: Date.now() + 900e3, signinAt: Date.now() } : undefined));
@@ -389,7 +390,7 @@ async function signin(req, res) {
 /** The Maestro Pro app signs a merchant in with a 6-digit code emailed to them (like the buyer's), instead of a link. */
 async function sellerCode(req, res) {
   const em = String(req.body?.email ?? "").trim().toLowerCase();
-  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
+  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))).then((x) => (x?.closed ? null : x)));
   if (!m) return fail(res, 404, "There is no Merchant Account for that email address.");
   if (m.codeAt > Date.now() - 60e3) return fail(res, 429, "Wait a minute before asking for another code.");
   const code = String(crypto.randomInt(100000, 1000000));
@@ -400,7 +401,7 @@ async function sellerCode(req, res) {
 }
 async function sellerVerify(req, res) {
   const em = String(req.body?.email ?? "").trim().toLowerCase(), code = String(req.body?.code ?? "").trim();
-  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))));
+  const m = EMAIL.test(em) && (await readJson(BY_EMAIL(em)).then((x) => x && readJson(SELLER(x.id))).then((x) => (x?.closed ? null : x)));
   if (!m?.codeHash || m.codeExp < Date.now() || m.tries >= 5) return fail(res, 400, "That code has expired. Ask for a new one.");
   if (m.codeHash !== sha(code + em)) { await modify(SELLER(m.id), (x) => (x ? { ...x, tries: (x.tries || 0) + 1 } : undefined)); return fail(res, 400, "That code isn't right."); }
   const secret = rand(24);
@@ -520,6 +521,30 @@ async function remove(req, res) {
     const { del } = await import("@vercel/blob");
     await del([...variantsOf(gone).map((v) => BUNDLE(v.id)), ...(gone.extras || []).map((e) => e.path), ...(gone.proof?.files || []).map((f) => f.path), ...(gone.appeal?.files || []).map((f) => f.path)]);
   } catch { /* leftover files are harmless */ }
+  res.status(200).json({ ok: true });
+}
+
+/** A merchant closes their own account. Their content comes off the Marketplace: anything that never went on sale is deleted, everything else is withdrawn from sale,
+ *  so buyers keep their downloads (a paid order always downloads). Nothing about orders, sales, tax or refunds is deleted, and the Mollie connection stays so refunds still work.
+ *  The account can no longer sign in, and the email address cannot sign up again without contacting support. */
+async function closeAccount(req, res) {
+  const me = await who(req);
+  if (!me) return fail(res, 401, "Not signed in.");
+  if (me.admin) return fail(res, 403, "The owner account can't be closed here.");
+  if (String(req.body?.confirm ?? "").trim().toLowerCase() !== String(me.email).toLowerCase()) return fail(res, 400, "Type the email address of your Merchant Account to confirm.");
+  const gone = [];
+  await modify(INDEX, (all) => {
+    const mine = (all || []).filter((x) => x.sellerId === me.id);
+    if (!mine.length) return undefined;
+    gone.push(...mine.filter(removable));
+    return all.filter((x) => !gone.includes(x)).map((x) => (x.sellerId === me.id ? { ...x, withdrawn: true, closedWithAccount: true } : x));
+  });
+  try {   // tidy up the files of what was never on sale
+    const { del } = await import("@vercel/blob");
+    const paths = gone.flatMap((p) => [...variantsOf(p).map((v) => BUNDLE(v.id)), ...(p.extras || []).map((e) => e.path), ...(p.proof?.files || []).map((f) => f.path), ...(p.appeal?.files || []).map((f) => f.path)]);
+    if (paths.length) await del(paths);
+  } catch { /* leftover files are harmless */ }
+  await modify(SELLER(me.id), (x) => (x ? { ...x, closed: true, closedAt: Date.now(), keyHash: undefined, linkHash: undefined, linkExp: undefined } : undefined));
   res.status(200).json({ ok: true });
 }
 
@@ -852,7 +877,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
