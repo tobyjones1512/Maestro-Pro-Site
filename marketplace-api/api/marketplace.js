@@ -181,8 +181,9 @@ async function buy(req, res) {
   if (!EMAIL.test(String(email ?? "").trim())) return fail(res, 400, "Enter a valid email address.");
   // An optional tip, as a percentage of the price or an amount in dollars. It is charged with the price.
   // The app pays with Apple Pay at the price it showed: the quote (asked for with quote: true) is signed, and its currency and rate are used again here.
-  const wallet = req.body?.applePayToken ? unsign(req.body.quoteToken) : null;
-  if (req.body?.applePayToken && (!wallet || wallet.id !== l.id || wallet.exp < Date.now())) return fail(res, 400, "The price has expired. Try again.");
+  const paying = req.body?.applePayToken || req.body?.cardToken;   // Apple Pay (the app or the website) or a card (Mollie Components): both pay the signed quote
+  const wallet = paying ? unsign(req.body.quoteToken) : null;
+  if (paying && (!wallet || wallet.id !== l.id || wallet.exp < Date.now())) return fail(res, 400, "The price has expired. Try again.");
   const t = req.body?.tip || {};   // the app sends the same tip (a percentage) with the quote and with the payment; the signed total below holds it to the price shown
   let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   if (!r) { cur = "USD"; r = 1; }
@@ -193,7 +194,10 @@ async function buy(req, res) {
   let q;
   if (req.body?.quote) {
     q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate);
-    return res.status(200).json({ currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, total: q.total, exp: Date.now() + 10 * 60e3 }) });
+    // The card form (Mollie Components) is made for the profile that will take the payment.
+    const who0 = await payee(l.sellerId);
+    const profileId = who0.seller?.profileId || process.env.MOLLIE_PROFILE_ID || (await mollie("GET", "/profiles/me", who0.token)).data?.id;
+    return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, total: q.total, exp: Date.now() + 10 * 60e3 }) });
   }
   if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
@@ -208,12 +212,12 @@ async function buy(req, res) {
       webhookUrl: `${API}/api/marketplace-webhook?o=${order.id}`,
       metadata: { order: order.id, listing: l.id },
       ...(how && { method: how }),
-      ...(wallet && { applePayPaymentToken: req.body.applePayToken }),
+      ...(wallet && (req.body.applePayToken ? { applePayPaymentToken: req.body.applePayToken } : { cardToken: req.body.cardToken })),
       ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.min(m, Math.max(1, Math.round((q.net + q.tip) * CUT) + q.tax)), currency) }, description: q.tax ? "Maestro Pro marketplace fee (30%) and tax" : "Maestro Pro marketplace fee (30%)" } }),
     });
   };
   // Apple Pay first when asked; then any method; then dollars, for a currency this account can't take.
-  const tries = wallet ? [[cur, r, "applepay"]] : [...(method === "applepay" ? [[cur, r, "applepay"]] : []), [cur, r], ...(cur !== "USD" ? [["USD", 1]] : [])];
+  const tries = wallet ? [[cur, r, req.body.cardToken ? "creditcard" : "applepay"]] : [...(method === "applepay" ? [[cur, r, "applepay"]] : []), [cur, r], ...(cur !== "USD" ? [["USD", 1]] : [])];
   let p, used = cur;
   for (const [c, rt, how] of tries) { used = c; p = await create(c, rt, how); if (p.status !== 422) break; }
   const url = p.data?._links?.checkout?.href;
@@ -222,7 +226,10 @@ async function buy(req, res) {
   order.tax = { cc, ip, name: tax.name, rate: tax.rate, inclusive: tax.inclusive, fx: used === "USD" ? 1 : r, ...q };
   await writeRaw(ORDER(order.id), order);
   await modify(ORDERS_OF(order.email.toLowerCase()), (a) => [...(a || []), { order: order.id, token: order.token, listing: l.id, title: l.title, t: order.created }]).catch(() => {});
-  if (wallet) return res.status(200).json({ status: (await sync(order).catch(() => order)).status, order: order.id, token: order.token });   // paid at once, or failed
+  if (wallet) {   // paid at once, failed, or (a card that needs 3-D Secure) waiting for the bank's check, which is at the url
+    const status = (await sync(order).catch(() => order)).status;
+    return res.status(200).json({ status, order: order.id, token: order.token, ...(status === "open" && url && { url }) });
+  }
   res.status(200).json({ url, order: order.id, token: order.token });
 }
 

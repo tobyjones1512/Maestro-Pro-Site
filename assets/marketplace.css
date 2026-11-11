@@ -304,3 +304,20 @@ html.wait::after{content:"";position:fixed;left:calc(50% - 17px);top:calc(50% - 
 .console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])) label{flex:0 0 calc(25% - 9px);min-width:8.5rem;margin:.2em 0}
 .console .card.form .pay>.pay__btn[type=submit]{margin-top:6px;padding:8px 20px;font-size:.9rem}
 @media(max-width:700px){.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])) label{flex-basis:calc(50% - 6px);min-width:0}}
+
+/* Paying on the item page: Apple Pay, then a card form made of Mollie's hosted fields. */
+.mp-ap{display:none;width:100%;height:46px;margin:0 0 10px;border:0;cursor:pointer;border-radius:10px}
+@supports (-webkit-appearance:-apple-pay-button){.mp-ap:not([hidden]){display:block;-webkit-appearance:-apple-pay-button;-apple-pay-button-type:buy;-apple-pay-button-style:black}}
+@media (prefers-color-scheme:dark){@supports (-webkit-appearance:-apple-pay-button){.mp-ap{-apple-pay-button-style:white-outline}}}
+.mp-or{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--fg2);font-size:.85rem}
+.mp-or::before,.mp-or::after{content:"";flex:1;height:1px;background:var(--hair)}
+#payui.is-busy{opacity:.6;pointer-events:none}
+#payui .field{display:block;margin:0 0 12px}
+.mp-lab{display:block;font-weight:600;font-size:.88rem;margin-bottom:6px}
+.mp-comp{min-height:44px;padding:0 12px;border:1.5px solid var(--hair);border-radius:9px;background:var(--bg);display:flex;align-items:center;box-sizing:border-box}
+.mp-comp.has-focus,.mp-comp:focus-within{border-color:var(--hl)}
+.mp-comp iframe{width:100%}
+.mp-comp__err{display:block;min-height:1em;margin-top:4px;color:var(--bad,#c0392b);font-size:.82rem}
+.mp-comp__row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#cardpay{width:100%;padding:12px 14px;font-size:1rem}
+html.app #payui{display:none!important}
