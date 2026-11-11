@@ -245,7 +245,7 @@ async function buy(req, res) {
 
 /** Apple Pay on the website only: Mollie's merchant session for the browser's validation URL. (The iOS app has no merchant validation step: its merchant ID is checked by Apple through the entitlement.) */
 async function applePaySession(req, res) {
-  if (!(await buyerWho(req))) return fail(res, 401, "Sign in to your buyer account to buy.");
+  if (!(await buyerWho(req)) && !(await who(req))) return fail(res, 401, "Sign in to pay.");   // a buyer, or a merchant paying the fee
   const { validationUrl, domain } = req.body || {};
   if (!/^https:\/\/[\w.-]+\.apple\.com\//.test(String(validationUrl)) || !["maestro-pro.app", "www.maestro-pro.app"].includes(domain)) return fail(res, 400, "That Apple Pay request isn't valid.");
   const m = await mollie("POST", "/wallets/applepay/sessions", process.env.MOLLIE_API_KEY, { validationUrl, domain });
@@ -344,13 +344,14 @@ async function download(req, res) {
 
 // ---- Merchant accounts
 /** Starts the £5 technology fee on the platform's Mollie account. */
-async function startFee(m) {
+async function startFee(m, wallet) {   // wallet: a card or Apple Pay token from the page, so the payment is made there instead of on Mollie's own page
   const p = await mollie("POST", "/payments", process.env.MOLLIE_API_KEY, {
+    ...wallet,
     amount: { currency: "GBP", value: feeFor(m) }, description: m.reactivating ? "Maestro Pro Marketplace technology fee (reactivation)" : "Maestro Pro Marketplace technology fee (one-time)",
     redirectUrl: `${SITE}/marketplace/onboard/?m=${m.id}`, webhookUrl: `${API}/api/marketplace-fee-webhook?m=${m.id}`, metadata: { merchant: m.id, kind: "fee" },
   });
   const url = p.data?._links?.checkout?.href;
-  if (!url) throw new Error(p.data?.detail || "Couldn't start the payment.");
+  if (wallet ? p.status >= 300 : !url) throw new Error(p.data?.detail || "Couldn't start the payment.");
   return { url, fee: { paymentId: p.data.id, status: "open", created: Date.now() } };
 }
 
@@ -370,12 +371,11 @@ async function signup(req, res) {
   }
   if (old?.fee?.status === "paid") return fail(res, 409, "There is already a Merchant Account for that email address. Ask for a sign-in link instead.");
   const secret = rand(24), m = { ...old, id: old?.id || rand(8), name: clip(name, 80), email: em, keyHash: sha(secret), created: old?.created || Date.now(), agreedAt: Date.now() };
-  const f = debugOK(req.body) ? { url: `${SITE}/marketplace/onboard/`, fee: DEBUG_FEE() } : await startFee(m).catch((e) => ({ error: e.message }));   // testing only: the debug code skips the fee
-  if (f.error) return fail(res, 502, f.error);
-  m.fee = f.fee;
+  const debug = debugOK(req.body);   // testing only: the debug code skips the fee
+  if (debug) m.fee = DEBUG_FEE();
   await writeRaw(SELLER(m.id), m);
   await writeRaw(BY_EMAIL(em), { id: m.id });
-  res.status(200).json({ url: f.url, key: `${m.id}.${secret}` });
+  res.status(200).json({ key: `${m.id}.${secret}`, ...(debug && { url: `${SITE}/marketplace/onboard/` }) });   // otherwise the page opens the payment box
 }
 
 /** The merchant's fee payment, brought up to date. The first time it is paid, the welcome email goes out. */
@@ -398,6 +398,26 @@ async function feeWebhook(req, res) {
   const m = /^[0-9a-f]{16}$/.test(req.query.m || "") && (await readJson(SELLER(req.query.m)));
   if (m) await syncFee(m).catch(() => {});
   res.status(200).end();
+}
+/** Paying the fee on the page, the way a purchase is paid: a signed quote, then Apple Pay or a card typed into Mollie Components. */
+async function feePay(req, res) {
+  const me = await who(req);
+  if (!me || me.admin) return fail(res, 401, "Not signed in.");
+  if (me.fee?.status === "paid") return fail(res, 409, "The technology fee is already paid.");
+  const b = req.body || {}, total = String(feeFor(me));
+  if (b.quote) {
+    const prof = (await mollie("GET", "/profiles/me", process.env.MOLLIE_API_KEY).catch(() => null))?.data;
+    return res.status(200).json({ profileId: process.env.MOLLIE_PROFILE_ID || prof?.id, statement: prof?.name || "", testmode: !live(), currency: "GBP", total, token: sign({ m: me.id, total, exp: Date.now() + 10 * 60e3 }) });
+  }
+  const q = unsign(b.quoteToken);
+  if (!q || q.m !== me.id || q.exp < Date.now() || q.total !== total) return fail(res, 400, "The price has expired. Try again.");
+  const wallet = b.applePayToken ? { method: "applepay", applePayPaymentToken: b.applePayToken } : b.cardToken ? { method: "creditcard", cardToken: b.cardToken } : null;
+  if (!wallet) return fail(res, 400, "Choose how to pay.");
+  const f = await startFee(me, wallet).catch((e) => ({ error: e.message }));
+  if (f.error) return fail(res, 502, f.error);
+  const m = await syncFee({ ...me, fee: f.fee }).catch(() => ({ ...me, fee: f.fee }));
+  if (m.fee === f.fee) await writeRaw(SELLER(me.id), m);   // not looked up yet: keep the payment so the webhook can find it
+  res.status(200).json({ status: m.fee.status, ...(m.fee.status === "open" && f.url && { url: f.url }) });   // a card that needs 3-D Secure goes to the bank's check at the url
 }
 async function feeRetry(req, res) {
   const me = await who(req);
@@ -945,7 +965,7 @@ async function refund(req, res) {
   res.status(200).json({ ok: true });
 }
 
-const routes = { reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+const routes = { reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];

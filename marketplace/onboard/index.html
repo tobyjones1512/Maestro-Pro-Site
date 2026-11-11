@@ -31,7 +31,7 @@
     <label class="field">Your name or business name<input name="name" type="text" required maxlength="80" autocomplete="name"></label>
     <label class="field">Email<input name="email" type="email" required autocomplete="email"></label>
     <label class="field"><input name="agree" type="checkbox" required> I have read and agree to the <a href="/marketplace/guidelines/" target="_blank">Merchant Content Review Guidelines</a>, and I will only sell music I own or have the rights to sell. I take all legal and financial responsibility for what I sell and for who I sell it to. <b>I understand that all tax obligations on my sales and earnings are mine alone, and that Maestro Pro and The Caffeine Media Company have none.</b></label>
-    <button class="pay__btn" type="submit">Pay the £5 fee</button>
+    <button class="pay__btn" type="submit">Continue to payment</button>
     <p class="pay__msg" role="status"></p>
   </form>
   <div id="re" hidden>
@@ -61,6 +61,26 @@
   <h2>You're ready to sell</h2>
   <p>Your account is open and your payouts are set up. <a class="pay__btn" style="display:inline-block;text-decoration:none" href="/marketplace/seller/">Add your first product</a></p>
 </section>
+<dialog id="paydlg" class="mp-dlg" aria-labelledby="pdt">
+<div id="payui">
+  <div class="mp-dlg__head"><h2 id="pdt">Technology fee</h2><button type="button" id="pdx" class="mp-dlg__x" aria-label="Close">&times;</button></div>
+  <p class="mp-dlg__sum" id="pdsum"></p>
+  <button type="button" id="ap" class="mp-ap" hidden aria-label="Pay with Apple Pay"></button>
+  <p class="mp-or" id="apor" hidden>or pay by card</p>
+  <div id="cardui">
+    <div class="field"><span class="mp-lab">Name on card</span><div id="c-holder" class="mp-comp"></div><small class="mp-comp__err" id="e-cardHolder"></small></div>
+    <div class="field"><span class="mp-lab">Card number</span><div id="c-number" class="mp-comp"></div><small class="mp-comp__err" id="e-cardNumber"></small></div>
+    <div class="mp-comp__row">
+      <div class="field"><span class="mp-lab">Expiry date</span><div id="c-expiry" class="mp-comp"></div><small class="mp-comp__err" id="e-expiryDate"></small></div>
+      <div class="field"><span class="mp-lab">Security code</span><div id="c-cvc" class="mp-comp"></div><small class="mp-comp__err" id="e-verificationCode"></small></div>
+    </div>
+    <button type="button" id="cardpay" class="pay__btn" disabled>Pay by card</button>
+  </div>
+  <p class="pay__msg" id="paymsg" role="status"></p>
+  <p class="mp-note" id="stmt"></p>
+  <p class="mp-note"><button type="button" id="mpage" class="pay__btn pay__btn--ghost">Pay on Mollie's own page instead</button></p>
+</div>
+</dialog>
 <p id="m" class="pay__msg" role="status"></p>
 </main>
 <footer class="foot">
@@ -70,7 +90,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api } from "/assets/marketplace.js?v=25";
+import { api } from "/assets/marketplace.js?v=26";
 let reEmail = "";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
@@ -86,7 +106,7 @@ async function load(waitForFee) {
   if (me.fee !== "paid") {
     show(2);
     if (waitForFee && me.fee === "open") { say("Checking your payment…"); await new Promise((r) => setTimeout(r, 3000)); return load(--waitForFee); }
-    $("s2t").textContent = me.fee === "open" ? "Your fee payment is waiting to be completed." : "Your last fee payment didn't go through. Nothing was charged.";
+    $("s2t").textContent = me.fee === "open" ? "Your fee payment is waiting to be completed." : me.fee === "none" ? "The one-time fee is the next step." : "Your last fee payment didn't go through. Nothing was charged.";
     say("");
   } else if (me.connected && !q.get("error")) location.replace("/marketplace/seller/");   // already a merchant: go to the console
   else show(me.connected ? 4 : 3);
@@ -99,7 +119,9 @@ $("f").addEventListener("submit", async (e) => {
     const d = await api("signup", { method: "POST", body: { name: f.name.value, email: f.email.value, agree: f.agree.checked, debugCode: q.get("debug") || undefined } });
     if (d.reactivate) { $("re").hidden = false; f.hidden = true; reEmail = f.email.value; return; }
     try { localStorage.setItem(K, d.key); } catch {}
-    location.href = d.url;
+    key = d.key;
+    if (d.url) return (location.href = d.url);   // testing only: the debug code skips the fee
+    await load(0); b.disabled = false; payOpen();
   } catch (err) { m.textContent = err.message; b.disabled = false; }
 });
 $("reyes").addEventListener("click", async () => {
@@ -107,7 +129,79 @@ $("reyes").addEventListener("click", async () => {
   catch (err) { $("remsg").textContent = err.message; }
 });
 $("reno").addEventListener("click", () => { $("re").hidden = true; $("f").hidden = false; $("f").querySelector("button").disabled = false; });
-$("pay").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key, body: { debugCode: q.get("debug") || undefined } })).url; } catch (err) { say(err.message); } });
+$("pay").addEventListener("click", () => payOpen());
+
+// ---- Paying the fee on the page, the way a purchase is paid: a signed quote, then Apple Pay or a card typed into Mollie Components (card details never reach our servers).
+let payOpen = () => {};
+(function () {
+  let Q = null, seq = 0, mollie = null, comps = null, working = false;
+  const dlg = $("paydlg"), pm = (t) => ($("paymsg").textContent = t || "");
+  const call = (extra) => api("fee-pay", { method: "POST", key, body: extra });
+  const busy = (on) => { working = on; $("cardpay").disabled = on || !comps; $("ap").disabled = on; $("payui").classList.toggle("is-busy", on); };
+  const done = (r) => {
+    if (r.url) return (location.href = r.url);   // the bank's check for a card
+    if (r.status !== "paid") throw new Error("The payment wasn't completed. You have not been charged.");
+    dlg.close(); load(0);
+  };
+  async function mount(q) {
+    if (comps || !q.profileId) return;
+    if (!window.Mollie) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://js.mollie.com/v1/mollie.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
+    mollie = window.Mollie(q.profileId, { locale: "en_GB", testmode: q.testmode });
+    const cs = getComputedStyle(document.body), base = { color: cs.color, fontSize: "16px", "::placeholder": { color: "#8a7d68" } };
+    const at = { cardHolder: "#c-holder", cardNumber: "#c-number", expiryDate: "#c-expiry", verificationCode: "#c-cvc" };
+    comps = {};
+    for (const [type, sel] of Object.entries(at)) {
+      const c = mollie.createComponent(type, { styles: { base } });
+      c.mount(sel);
+      c.addEventListener("change", (e) => { $("e-" + type).textContent = e.error && e.touched ? e.error : ""; });
+      comps[type] = c;
+    }
+  }
+  async function refresh() {
+    const mine = ++seq; Q = null; busy(true); pm("");
+    try {
+      const q = await call({ quote: true }); if (mine !== seq) return; Q = q;
+      $("pdsum").textContent = "Total £" + Number(q.total).toFixed(2);
+      $("stmt").textContent = "This is a one-time fee, paid to Maestro Pro.";
+      await mount(q);
+    } catch (err) { if (mine === seq) pm(err.message); return; }
+    if (mine === seq) busy(false);
+  }
+  payOpen = () => { dlg.showModal(); refresh(); };
+  $("pdx").addEventListener("click", () => { if (!working) dlg.close(); });
+  dlg.addEventListener("cancel", (e) => { if (working) e.preventDefault(); });
+  dlg.addEventListener("click", (e) => { if (e.target === dlg && !working) dlg.close(); });
+  $("mpage").addEventListener("click", async () => { try { location.href = (await api("fee-retry", { method: "POST", key, body: { debugCode: q.get("debug") || undefined } })).url; } catch (err) { pm(err.message); } });
+  $("cardpay").addEventListener("click", async () => {
+    if (!Q || !comps) return;
+    busy(true); pm("");
+    try {
+      const { token, error } = await mollie.createToken();
+      if (error) throw new Error(error.message || "Check the card details and try again.");
+      done(await call({ quoteToken: Q.token, cardToken: token }));
+    } catch (err) { pm(err.message); busy(false); }
+  });
+  if (window.ApplePaySession && ApplePaySession.canMakePayments()) {
+    $("ap").hidden = false; $("apor").hidden = false;
+    $("ap").addEventListener("click", () => {
+      if (!Q) return;
+      const s = new ApplePaySession(3, { countryCode: "GB", currencyCode: "GBP", supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"], merchantCapabilities: ["supports3DS"], lineItems: [{ label: "Technology fee", amount: Q.total }], total: { label: "Maestro Pro Marketplace", amount: Q.total } });
+      s.onvalidatemerchant = async (e) => {
+        try { s.completeMerchantValidation(await api("apple-pay-session", { method: "POST", key, body: { validationUrl: e.validationURL, domain: location.hostname } })); }
+        catch (err) { s.abort(); pm(err.message); }
+      };
+      s.onpaymentauthorized = async (e) => {
+        try {
+          const r = await call({ quoteToken: Q.token, applePayToken: JSON.stringify(e.payment.token) });
+          if (r.status !== "paid") throw new Error("The payment wasn't completed. You have not been charged.");
+          s.completePayment(ApplePaySession.STATUS_SUCCESS);
+          done(r);
+        } catch (err) { s.completePayment(ApplePaySession.STATUS_FAILURE); pm(err.message); }
+      };
+      s.begin();
+    });
+  }
+})();
 $("connect").addEventListener("click", async () => { try { location.href = (await api("connect-start", { method: "POST", key })).url; } catch (err) { say(err.message); } });
 load(q.get("m") ? 20 : 0);
 </script>
