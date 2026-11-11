@@ -7,7 +7,7 @@
 <title>Buy | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=25">
+<link rel="stylesheet" href="/assets/marketplace.css?v=26">
 </head>
 <body class="read">
 <a class="skip" href="#main">Skip to content</a>
@@ -46,7 +46,10 @@
       <div><dt>Tip</dt><dd id="st"></dd></div>
       <div class="mp-sum__total"><dt>Total</dt><dd id="sx"></dd></div>
     </dl>
-    <div id="payui" hidden>
+    <dialog id="paydlg" class="mp-dlg" aria-labelledby="pdt">
+    <div id="payui">
+      <div class="mp-dlg__head"><h2 id="pdt">Pay</h2><button type="button" id="pdx" class="mp-dlg__x" aria-label="Close">&times;</button></div>
+      <p class="mp-dlg__sum" id="pdsum"></p>
       <button type="button" id="ap" class="mp-ap" hidden aria-label="Pay with Apple Pay"></button>
       <p class="mp-or" id="apor" hidden>or pay by card</p>
       <div id="cardui">
@@ -58,7 +61,9 @@
         </div>
         <button type="button" id="cardpay" class="pay__btn" disabled>Pay by card</button>
       </div>
+      <p class="pay__msg" id="paymsg" role="status"></p>
     </div>
+    </dialog>
     <button class="pay__btn" type="submit">Continue to payment</button>
     <p class="pay__msg" role="status"></p>
     <p class="mp-note" id="taxnote"></p>
@@ -77,7 +82,7 @@
 import { api, esc, breakdown, money } from "/assets/marketplace.js?v=20";
 const $ = (id) => document.getElementById(id), id = new URLSearchParams(location.search).get("id"), f = $("f");
 const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
-let d, l, key = "";
+let d, l, key = "", payOpen = null;
 const dec = () => (d.currency === "JPY" || d.currency === "ISK" ? 0 : 2);
 // the tip in US dollars; a custom tip is typed in the buyer's own currency, so it is exact in that currency
 const customLocal = () => { const n = Math.round(Number(f.custom.value || 0) * 10 ** dec()) / 10 ** dec(); return Number.isFinite(n) ? Math.min(Math.max(n, 0), 500 * d.rate) : 0; };
@@ -110,11 +115,12 @@ function preview(file, name) {
 // ---- Paying on the page: Apple Pay, or a card typed into Mollie Components (Mollie-hosted fields: card details never reach our servers).
 // Both pay a price quoted by the server (signed, so the amount paid is the amount shown). The old button to Mollie's own page stays if this can't start.
 function pay() {
-  let Q = null, seq = 0, timer = 0, mollie = null, comps = null;
-  const msg = f.querySelector(".pay__msg"), say = (t) => { msg.textContent = t || ""; };
+  let Q = null, seq = 0, mollie = null, comps = null;
+  const dlg = $("paydlg"), say = (t) => { $("paymsg").textContent = t || ""; };
   const tipBody = () => (f.tip.value === "custom" ? { local: customLocal() } : { usd: tipUSD() });
   const call = (extra) => api("buy", { method: "POST", key, header: "X-MP-Buyer", body: { id, tip: tipBody(), ...extra } });
-  const busy = (on) => { $("cardpay").disabled = on || !comps; $("ap").disabled = on; $("payui").classList.toggle("is-busy", on); };
+  let working = false;
+  const busy = (on) => { working = on; $("cardpay").disabled = on || !comps; $("ap").disabled = on; $("payui").classList.toggle("is-busy", on); };
   const done = (r) => {
     if (r.url) return (location.href = r.url);   // the bank's check for a card
     if (r.status !== "paid") throw new Error("The payment wasn't completed. You have not been charged.");
@@ -135,7 +141,6 @@ function pay() {
       c.addEventListener("change", (e) => { $("e-" + type).textContent = e.error && e.touched ? e.error : ""; });
       comps[type] = c;
     }
-    f.querySelector("button[type=submit]").hidden = true;   // the page's own card form replaces the button to Mollie's page
   }
   async function refresh() {
     const mine = ++seq; Q = null; busy(true); say("");
@@ -143,8 +148,16 @@ function pay() {
     catch (err) { if (mine === seq) lost(err); return; }
     if (mine === seq) busy(false);
   }
-  $("payui").hidden = false;
-  f.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(refresh, 350); });
+  // The pay button on the page opens this box over the page: the price is quoted afresh for the tip chosen, then the card form and Apple Pay are shown.
+  const sub = f.querySelector("button[type=submit]");
+  if (sub) sub.textContent = "Pay";
+  payOpen = () => {
+    $("pdt").textContent = l.title; $("pdsum").textContent = "Total " + $("sx").textContent;
+    dlg.showModal(); refresh();
+  };
+  $("pdx").addEventListener("click", () => { if (!working) dlg.close(); });
+  dlg.addEventListener("cancel", (e) => { if (working) e.preventDefault(); });
+  dlg.addEventListener("click", (e) => { if (e.target === dlg && !working) dlg.close(); });
 
   $("cardpay").addEventListener("click", async () => {
     if (!Q || !comps) return;
@@ -214,8 +227,9 @@ try {
   $("item").hidden = false;
   f.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const m = f.querySelector(".pay__msg"), b = f.querySelector("button[type=submit]");
+    const m = f.querySelector(":scope > .pay__msg"), b = f.querySelector("button[type=submit]");
     if (!b) return;
+    if (payOpen) return payOpen();   // paying happens in the box over the page
     b.disabled = true; m.textContent = "";
     const tip = f.tip.value === "custom" ? { local: customLocal() } : { usd: tipUSD() };
     try { location.href = (await api("buy", { method: "POST", key, header: "X-MP-Buyer", body: { id, tip } })).url; }

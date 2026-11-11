@@ -321,3 +321,12 @@ html.wait::after{content:"";position:fixed;left:calc(50% - 17px);top:calc(50% - 
 .mp-comp__row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #cardpay{width:100%;padding:12px 14px;font-size:1rem}
 html.app #payui{display:none!important}
+
+/* The payment box: over the page, with the page dimmed behind it. */
+.mp-dlg{width:min(26rem,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:22px;border:1px solid var(--hair);border-radius:16px;background:var(--bg);color:var(--fg);box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.mp-dlg::backdrop{background:rgba(10,7,4,.62);backdrop-filter:blur(3px)}
+.mp-dlg__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mp-dlg__head h2{margin:0;font-size:1.25rem}
+.mp-dlg__x{all:unset;cursor:pointer;font-size:1.6rem;line-height:1;padding:0 4px;color:var(--fg2)}
+.mp-dlg__x:hover{color:var(--hl)}
+.mp-dlg__sum{margin:6px 0 16px;font-weight:700;font-variant-numeric:tabular-nums}
