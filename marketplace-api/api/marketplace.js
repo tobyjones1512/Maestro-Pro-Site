@@ -176,6 +176,9 @@ async function payee(sellerId, at) {
   return { token: await sellerToken(s, old || s), seller: s, extra: live() ? "" : "?testmode=true" };
 }
 
+/** The Apple Pay token goes to Mollie as a JSON object (the page sends it as text): sent as text, Mollie answers "paymentData is required". */
+const tokenObject = (t) => { try { const o = JSON.parse(t); return o && typeof o === "object" ? o : t; } catch { return t; } };
+
 async function buy(req, res) {
   const { id, method } = req.body || {};
   const buyer = await buyerWho(req);
@@ -222,7 +225,7 @@ async function buy(req, res) {
       webhookUrl: `${API}/api/marketplace-webhook?o=${order.id}`,
       metadata: { order: order.id, listing: l.id },
       ...(how && { method: how }),
-      ...(wallet && (req.body.applePayToken ? { applePayPaymentToken: req.body.applePayToken } : { cardToken: req.body.cardToken })),
+      ...(wallet && (req.body.applePayToken ? { applePayPaymentToken: tokenObject(req.body.applePayToken) } : { cardToken: req.body.cardToken })),
       ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.min(m, Math.max(1, Math.round((q.net - q.fee + q.tip) * CUT) + q.tax)), currency) }, description: q.tax ? "Maestro Pro marketplace fee (30%) and tax" : "Maestro Pro marketplace fee (30%)" } }),
     });
   };
@@ -411,7 +414,7 @@ async function feePay(req, res) {
   }
   const q = unsign(b.quoteToken);
   if (!q || q.m !== me.id || q.exp < Date.now() || q.total !== total) return fail(res, 400, "The price has expired. Try again.");
-  const wallet = b.applePayToken ? { method: "applepay", applePayPaymentToken: b.applePayToken } : b.cardToken ? { method: "creditcard", cardToken: b.cardToken } : null;
+  const wallet = b.applePayToken ? { method: "applepay", applePayPaymentToken: tokenObject(b.applePayToken) } : b.cardToken ? { method: "creditcard", cardToken: b.cardToken } : null;
   if (!wallet) return fail(res, 400, "Choose how to pay.");
   const f = await startFee(me, wallet).catch((e) => ({ error: e.message }));
   if (f.error) return fail(res, 502, f.error);
