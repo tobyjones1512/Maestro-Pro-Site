@@ -280,3 +280,27 @@ body.read>main{flex:0 0 auto}
 html.wait main.plain{visibility:hidden}
 html.wait::after{content:"";position:fixed;left:calc(50% - 17px);top:calc(50% - 17px);width:34px;height:34px;box-sizing:border-box;z-index:9;border:3px solid rgba(128,128,128,.3);border-top-color:#F6A828;border-radius:50%;animation:mpspin .8s linear infinite}
 @keyframes mpspin{to{transform:rotate(360deg)}}
+
+/* Account tab sections: a padded panel each, with the form sitting flat inside it. */
+.console .card.box{padding:20px 22px;margin-top:16px;overflow:visible}
+.console .card.box h2{margin:0 0 8px;font:600 1rem var(--sans);width:auto;max-width:none}
+.console .card.box p{margin:0 0 14px;max-width:68ch;color:var(--fg2)}
+.console .card.box p b{color:var(--fg)}
+.console .card.box .pay{background:none;border:0;box-shadow:none;padding:0;margin:0;max-width:28rem}
+.console .card.box .pay label.field{margin:0 0 12px}
+.console .card.box .pay__msg{margin:10px 0 0;min-height:1.2em}
+.console .card.danger{border-color:rgba(242,119,107,.45)}
+.console .card.danger h2{color:var(--bad)}
+.console .pay__btn--danger{background:var(--bad);color:#15100B}
+.console .pay__btn--danger:hover{background:#FF8A7E;color:#15100B}
+.console .card.box .pay__msg:empty{display:none}
+/* Add Product: one flat form in its panel (not a box inside a box), wider fields, genres in columns. */
+.console .card.form{padding:24px clamp(16px,3vw,32px);overflow:visible}
+.console .card.form .pay{background:none;border:0;box-shadow:none;padding:0;margin:0;max-width:46rem}
+.console .card.form .pay fieldset{margin:16px 0;padding:14px 16px 12px;background:rgba(255,255,255,.02)}
+.console .card.form .pay fieldset legend{padding:0 6px;font-weight:600}
+.console .card.form .pay input[type=file]{width:100%;box-sizing:border-box;padding:8px;background:var(--page);border:1px solid var(--hair);border-radius:7px;color:var(--fg2)}
+.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])){display:flex;flex-wrap:wrap;gap:0 12px}
+.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])) label{flex:0 0 calc(25% - 9px);min-width:8.5rem;margin:.2em 0}
+.console .card.form .pay>.pay__btn[type=submit]{margin-top:6px;padding:8px 20px;font-size:.9rem}
+@media(max-width:700px){.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])) label{flex-basis:calc(50% - 6px);min-width:0}}

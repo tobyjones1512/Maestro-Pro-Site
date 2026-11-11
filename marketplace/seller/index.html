@@ -7,7 +7,7 @@
 <title>Merchant account | Maestro Pro Marketplace</title>
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/maestro.css">
-<link rel="stylesheet" href="/assets/marketplace.css?v=22">
+<link rel="stylesheet" href="/assets/marketplace.css?v=24">
 </head>
 <body class="console">
 <div id="out" class="signin" hidden>
@@ -55,19 +55,19 @@
       <section id="p-account" role="tabpanel" aria-labelledby="t-account" hidden>
         <h1>Account</h1><p class="sub">Your Merchant Account details.</p>
         <div class="card"><dl id="acct"></dl></div>
-        <div class="card" id="payout">
+        <div class="card box" id="payout">
           <h2>Payouts</h2>
           <p>Your share of each sale is paid to the Mollie account you connected. You can connect a different one. New sales are paid to the new account. Refunds for earlier sales are still taken from the account that was paid.</p>
           <button id="chg" class="pay__btn" type="button">Change my Mollie account</button>
           <p class="pay__msg" id="chgm" role="status"></p>
         </div>
-        <div class="card" id="close">
+        <div class="card box danger" id="close">
           <h2>Close my Merchant Account</h2>
           <p>This takes all your content off the Marketplace and signs you out. People who already bought your items keep their downloads. Your sales records, tax records and refunds are kept, and you stay responsible for them.</p>
           <p><b>Reopening a closed account costs a £15 technology fee and can only be done after a month. If you reopen it and close it again, that is permanent: it can never be reopened, and your email address can never be used for another Merchant Account.</b></p>
           <form id="closef" class="pay">
             <label class="field">Type your email address to confirm<input name="e" type="email" required autocomplete="off"></label>
-            <button class="pay__btn" type="submit">Close my Merchant Account</button>
+            <button class="pay__btn pay__btn--danger" type="submit">Close my Merchant Account</button>
             <p class="pay__msg" role="status"></p>
           </form>
         </div>
