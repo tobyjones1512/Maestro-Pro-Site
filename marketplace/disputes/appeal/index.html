@@ -38,7 +38,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, uploadEvidence } from "/assets/marketplace.js?v=22";
+import { api, uploadEvidence } from "/assets/marketplace.js?v=23";
 const q = new URLSearchParams(location.search), d = q.get("d") || "", k = q.get("k") || "";
 const $ = (id) => document.getElementById(id), f = $("f"), m = f.querySelector(".pay__msg"), b = f.querySelector("button");
 try {

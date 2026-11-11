@@ -204,7 +204,7 @@ async function buy(req, res) {
     // The card form (Mollie Components) is made for the profile that will take the payment.
     const who0 = await payee(l.sellerId);
     const profileId = who0.seller?.profileId || process.env.MOLLIE_PROFILE_ID || (await mollie("GET", "/profiles/me", who0.token)).data?.id;
-    return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), fee: fmt(q.fee, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, fee: cf, total: q.total, exp: Date.now() + 10 * 60e3 }) });
+    return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, fee: cf, total: q.total, exp: Date.now() + 10 * 60e3 }) });
   }
   if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, wallet.fee).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
@@ -220,7 +220,7 @@ async function buy(req, res) {
       metadata: { order: order.id, listing: l.id },
       ...(how && { method: how }),
       ...(wallet && (req.body.applePayToken ? { applePayPaymentToken: req.body.applePayToken } : { cardToken: req.body.cardToken })),
-      ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.min(m, Math.max(1, Math.round((q.net + q.tip) * CUT) + q.tax)), currency) }, description: q.tax ? "Maestro Pro marketplace fee (30%) and tax" : "Maestro Pro marketplace fee (30%)" } }),
+      ...(pay.seller && { profileId: pay.seller.profileId, testmode: !live(), applicationFee: { amount: { currency, value: fmt(Math.min(m, Math.max(1, Math.round((q.net - q.fee + q.tip) * CUT) + q.tax)), currency) }, description: q.tax ? "Maestro Pro marketplace fee (30%) and tax" : "Maestro Pro marketplace fee (30%)" } }),
     });
   };
   // Apple Pay first when asked; then any method; then dollars, for a currency this account can't take.

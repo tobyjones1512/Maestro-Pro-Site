@@ -47,7 +47,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc } from "/assets/marketplace.js?v=22";
+import { api, esc } from "/assets/marketplace.js?v=23";
 const K = "mp-buyer-key", $ = (id) => document.getElementById(id);
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
 const ready = () => document.documentElement.classList.remove("wait");

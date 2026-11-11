@@ -29,9 +29,10 @@ export const taxFor = (cc) => { const t = TAX_ON ? TAX[String(cc || "").toUpperC
 export function quote(priceUSD, tipUSD, cur, fx, rate, fee) {
   const base = minor(priceUSD * (1 + rate), cur, fx), tip = Math.round(tipUSD * fx * 10 ** decimals(cur));   // the tip is on the price before tax and never changes the tax
   const tax = rate ? Math.round((base * rate) / (1 + rate)) : 0;
-  // The card fee is added to what the buyer pays, grossed up so that after Mollie takes its fee (pct of the whole payment + a fixed amount) the price and tip are left whole.
-  const sub = base + tip, card = fee ? Math.ceil((sub + fee.fixed) / (1 - fee.pct) - 1e-6) - sub : 0;
-  return { total: sub + card, tip, tax, net: base - tax, fee: card };
+  // Mollie's card fee is built into the price: it is grossed up so that after Mollie takes its fee (pct of the payment + a fixed amount) the price is left whole,
+  // then rounded to the nearest quarter (up or down). `fee` in the result is that built-in amount (it can be negative); it is not shown, and the marketplace share is not taken on it.
+  const step = decimals(cur) ? 25 : 1, price = fee ? Math.round((base + fee.fixed) / (1 - fee.pct) / step) * step : base, card = price - base;
+  return { total: price + tip, tip, tax, net: price - tax, fee: card };
 }
 
 /** A ledger row with its amounts in the currency of the country the tax is owed to (converted from US dollars when the buyer paid in another currency). */

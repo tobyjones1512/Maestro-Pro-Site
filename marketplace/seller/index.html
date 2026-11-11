@@ -43,7 +43,7 @@
         <div class="card" id="list"></div>
       </section>
       <section id="p-sales" role="tabpanel" aria-labelledby="t-sales" hidden>
-        <h1>Sales and Trends</h1><p class="sub">Proceeds are what is left after Maestro Pro's <span class="cut">30</span>%. The card processing fee is paid by the buyer on top of your price.</p>
+        <h1>Sales and Trends</h1><p class="sub">Proceeds are what is left after Maestro Pro's <span class="cut">30</span>%. Mollie's card fee is built into the buyer's price, so it does not reduce your proceeds.</p>
         <div class="stats" id="stats"></div>
         <h2>Recent sales</h2>
         <div class="card" id="recent"></div>
@@ -94,7 +94,7 @@
   </form></dialog>
 </div>
 <script type="module">
-import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile, uploadEvidence } from "/assets/marketplace.js?v=22";
+import { api, API, mountBuilder, builderFields, renderProducts, productsTable, inReview, esc, sendAppeal, showFile, uploadEvidence } from "/assets/marketplace.js?v=23";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), f = $("f"), TABS = ["products", "sales", "add", "account", "esc", "disp"];
 let key = "", timer = 0, canPublish = false, reopened = false; try { key = localStorage.getItem(K) || ""; } catch {}
 const hash = new URLSearchParams(location.hash.slice(1)), fromLink = hash.get("k"), once = hash.get("t");

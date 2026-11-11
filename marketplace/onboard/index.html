@@ -20,7 +20,7 @@
 <p id="err" class="notice" hidden></p>
 
 <section id="s1" hidden>
-  <p>Sell your sheet music, backing tracks and karaoke to Maestro Pro players. You set your own price, Maestro Pro keeps 30% of each sale and the rest is paid out to you. Mollie's card processing fee is added to the buyer's price, so it does not come out of your share. <b>You are responsible for all taxes on your sales and earnings</b> (income tax, VAT, sales tax and any registration or filing duties). Maestro Pro and The Caffeine Media Company do not collect, report or pay tax on your behalf.</p>
+  <p>Sell your sheet music, backing tracks and karaoke to Maestro Pro players. You set your own price, Maestro Pro keeps 30% of each sale and the rest is paid out to you. Mollie's card fee is built into the price the buyer pays, so it does not come out of your share. <b>You are responsible for all taxes on your sales and earnings</b> (income tax, VAT, sales tax and any registration or filing duties). Maestro Pro and The Caffeine Media Company do not collect, report or pay tax on your behalf.</p>
   <ol>
     <li>Pay the one-time <b>£5 technology fee</b>.</li>
     <li>Set up your payout details.</li>
@@ -68,7 +68,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api } from "/assets/marketplace.js?v=22";
+import { api } from "/assets/marketplace.js?v=23";
 let reEmail = "";
 const K = "mp-seller-key", $ = (id) => document.getElementById(id), q = new URLSearchParams(location.search);
 let key = ""; try { key = localStorage.getItem(K) || ""; } catch {}
