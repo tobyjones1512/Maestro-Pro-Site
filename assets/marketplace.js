@@ -16,11 +16,12 @@ export async function api(fn, { method = "GET", body, query = {}, key, header = 
 /** The price a visitor sees: with the tax built in where their country expects that. */
 export const shown = (usd, d) => usd * (1 + (d.tax?.inclusive ? d.tax.rate : 0));
 /** The checkout's breakdown, worked out exactly as the server does it. Returns amounts in the buyer's currency. */
-export function breakdown(priceUSD, tipUSD, { currency, rate, cardFee }, tax) {
+export function breakdown(priceUSD, tipUSD, { currency, rate, cardFee }, tax, tipPct = 0) {
   const dec = currency === "JPY" || currency === "ISK" ? 0 : 2, k = 10 ** dec, r = tax?.rate || 0, up = (u) => (dec ? Math.ceil(u * rate * 4 - 1e-6) * 25 : Math.ceil(u * rate - 1e-6));
-  const base = up(priceUSD * (1 + r)), tip = Math.round(tipUSD * rate * k), t = r ? Math.round((base * r) / (1 + r)) : 0;   // the tip is on the price before tax and never changes the tax
+  const base = up(priceUSD * (1 + r)), t = r ? Math.round((base * r) / (1 + r)) : 0;   // the tip is on the price before tax and never changes the tax
   // Mollie's card fee is built into the price (grossed up, then rounded to the nearest quarter), as the server does it
   const step = dec ? 25 : 1, price = cardFee ? Math.round((base + cardFee.fixed) / (1 - cardFee.pct) / step) * step : base;
+  const tip = tipPct ? Math.round((price * tipPct) / 100) : Math.round(tipUSD * rate * k);   // a percentage tip is of the price shown (Mollie's fee built in)
   return { total: (price + tip) / k, tip: tip / k, tax: t / k, net: (price - t) / k };
 }
 export const money = (n, currency) => new Intl.NumberFormat(undefined, { style: "currency", currency }).format(n);

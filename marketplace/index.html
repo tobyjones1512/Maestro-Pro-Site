@@ -37,7 +37,7 @@
 <script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
 <script src="/assets/nav.js" defer></script>
 <script type="module">
-import { api, esc, breakdown, money } from "/assets/marketplace.js?v=24";
+import { api, esc, breakdown, money } from "/assets/marketplace.js?v=25";
 const $ = (id) => document.getElementById(id), grid = $("grid");
 let d;
 const chips = (l) => l.formats.map((f) => `<span class="mp-chip${f === "PDF" || f === "Audio" ? " mp-chip--free" : ""}">${esc(f)}</span>`).join("");

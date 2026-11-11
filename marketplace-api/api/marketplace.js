@@ -194,23 +194,25 @@ async function buy(req, res) {
   let cur = currencyFor(req.headers["x-vercel-ip-country"]), r = await rate(cur);
   if (!r) { cur = "USD"; r = 1; }
   if (wallet) ({ cur, r } = wallet);
-  const tipUSD = t.local !== undefined ? Number(t.local) / r : t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : [0, 5, 10, 15].includes(Number(t.percent)) ? Math.round(l.priceUSD * Number(t.percent)) / 100 : 0;
+  const pct = t.local === undefined && t.usd === undefined && [0, 5, 10, 15].includes(Number(t.percent)) ? Number(t.percent) : 0;   // a percentage is of the price the buyer sees
+  let tipUSD = t.local !== undefined ? Number(t.local) / r : t.usd !== undefined ? Math.round(Number(t.usd) * 100) / 100 : 0;
   if (!Number.isFinite(tipUSD) || tipUSD < 0 || tipUSD > 500) return fail(res, 400, "A tip can be from $0 to $500.");
   const ip = String(country(req) || "").toUpperCase(), cc = ip, tax = taxFor(cc);   // the country is worked out from the buyer's connection
   let q;
   if (req.body?.quote) {
     const cf = wallet ? wallet.fee : await cardFee(cur, r);
-    q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, cf);
+    q = quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, cf, pct);
     // The card form (Mollie Components) is made for the profile that will take the payment.
     const who0 = await payee(l.sellerId);
     const profileId = who0.seller?.profileId || process.env.MOLLIE_PROFILE_ID || (await mollie("GET", "/profiles/me", who0.token)).data?.id;
     return res.status(200).json({ profileId, testmode: !live(), currency: cur, total: fmt(q.total, cur), net: fmt(q.net, cur), tax: fmt(q.tax, cur), tip: fmt(q.tip, cur), taxName: tax.name, taxRate: tax.rate, token: sign({ id: l.id, cur, r, fee: cf, total: q.total, exp: Date.now() + 10 * 60e3 }) });
   }
-  if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, wallet.fee).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
+  if (wallet && quote(l.priceUSD, tipUSD || 0, cur, r, tax.rate, wallet.fee, pct).total !== wallet.total) return fail(res, 409, "The price changed. Try again.");   // never charge more than the Apple Pay sheet showed
+  if (pct) tipUSD = quote(l.priceUSD, 0, cur, r, tax.rate, wallet ? wallet.fee : await cardFee(cur, r), pct).tip / 10 ** decimals(cur) / r;   // what the tip comes to in dollars, for the seller's records
   const order = { id: rand(), token: rand(), listing: l.id, sellerId: l.sellerId, title: l.title, email: String(email).trim(), usd: l.priceUSD, tipUSD, status: "open", created: Date.now() };
   const pay = await payee(l.sellerId);
   const create = async (currency, rt, how) => {
-    q = quote(l.priceUSD, tipUSD || 0, currency, rt, tax.rate, wallet ? wallet.fee : await cardFee(currency, rt));   // the total is rounded up once, so the price, tax and tip shown add up to it
+    q = quote(l.priceUSD, tipUSD || 0, currency, rt, tax.rate, wallet ? wallet.fee : await cardFee(currency, rt), pct);   // the total is rounded up once, so the price, tax and tip shown add up to it
     const m = q.total;
     return mollie("POST", "/payments", pay.token, {
       amount: { currency, value: fmt(m, currency) },

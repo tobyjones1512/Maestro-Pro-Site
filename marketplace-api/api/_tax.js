@@ -26,12 +26,13 @@ export const TAX_ON = false;
 export const taxFor = (cc) => { const t = TAX_ON ? TAX[String(cc || "").toUpperCase()] : null; return t ? { name: t[0], rate: t[1], inclusive: Boolean(t[2]) } : { name: "", rate: 0, inclusive: false }; };
 
 /** What a buyer pays, in minor units of their currency, and how it breaks down. The price with its tax is rounded up to the next quarter; the tip is the exact amount, not rounded up. */
-export function quote(priceUSD, tipUSD, cur, fx, rate, fee) {
-  const base = minor(priceUSD * (1 + rate), cur, fx), tip = Math.round(tipUSD * fx * 10 ** decimals(cur));   // the tip is on the price before tax and never changes the tax
+export function quote(priceUSD, tipUSD, cur, fx, rate, fee, tipPct = 0) {
+  const base = minor(priceUSD * (1 + rate), cur, fx);   // a tip never changes the tax
   const tax = rate ? Math.round((base * rate) / (1 + rate)) : 0;
   // Mollie's card fee is built into the price: it is grossed up so that after Mollie takes its fee (pct of the payment + a fixed amount) the price is left whole,
   // then rounded to the nearest quarter (up or down). `fee` in the result is that built-in amount (it can be negative); it is not shown, and the marketplace share is not taken on it.
   const step = decimals(cur) ? 25 : 1, price = fee ? Math.round((base + fee.fixed) / (1 - fee.pct) / step) * step : base, card = price - base;
+  const tip = tipPct ? Math.round((price * tipPct) / 100) : Math.round(tipUSD * fx * 10 ** decimals(cur));   // a percentage tip is of the price the buyer sees (Mollie's fee built in)
   return { total: price + tip, tip, tax, net: price - tax, fee: card };
 }
 
