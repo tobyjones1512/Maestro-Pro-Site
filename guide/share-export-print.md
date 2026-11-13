@@ -16,6 +16,7 @@ In the share sheet you can also Save to Files, AirDrop, email or message the fil
 
 ## More on this topic
 - [Export as MusicXML](https://maestro-pro.app/guide/export-as-musicxml/): MusicXML opens in MuseScore, Finale, Sibelius, Dorico, Notion and most other notation apps.
+- [Export as a MIDI file](https://maestro-pro.app/guide/export-as-midi/): Share, Export as MIDI saves the notes as a standard MIDI file for any other music program.
 - [Export as PDF](https://maestro-pro.app/guide/export-as-pdf/): A PDF score is passed on as it is; any other score is typeset in the key currently shown.
 - [Print a score](https://maestro-pro.app/guide/print-a-score/): Print opens the system print dialog.
 - [The Share menu](https://maestro-pro.app/guide/share-menu/): Press and hold a score in the library and choose Share for Export as MusicXML, Export as PDF and Print.

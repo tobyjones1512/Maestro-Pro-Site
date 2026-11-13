@@ -33,3 +33,4 @@ Count In plays a bar of clicks before the music. Lead-in Bars sets how many bars
 - [Automatic page turning](https://maestro-pro.app/guide/page-turning/): The page scrolls or curls over like a real book exactly when you need it.
 - [Notes and bars that light up](https://maestro-pro.app/guide/note-and-bar-highlighting/): Notes glow as they sound and a soft wash marks the bar; this needs the Performer plan or above.
 - [The Inspector](https://maestro-pro.app/guide/use-the-inspector/): The Inspector holds tempo, practice speed, loop, key, instrument and backing tracks.
+- [Turn pages and start playback with a pedal](https://maestro-pro.app/guide/midi-pedals-and-page-turners/): Give a MIDI pedal a job in Settings, Listening; a Bluetooth page turner works with no setting up.

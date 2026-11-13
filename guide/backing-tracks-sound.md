@@ -13,6 +13,7 @@ Under Backing Tracks & Sound each track has its own switch, to turn it off witho
 Reduce Vocals, on any track, cuts the singer down in a stereo recording by cancelling what is in the middle. It leaves a mono track, can take some middle instruments with it, and can't remove a voice from a mono recording.
 
 ## More on this topic
+- [Play the score through a MIDI instrument](https://maestro-pro.app/guide/play-through-a-midi-instrument/): Settings, Playback, Play Through MIDI Instrument sends the notes to your keyboard or sound module.
 - [Add a backing track](https://maestro-pro.app/guide/add-a-backing-track/): Add the first backing track with Add Backing Track, and it plays in time with the score.
 - [Add more than one backing track](https://maestro-pro.app/guide/add-another-backing-track/): A score can have several tracks, for example a rhythm section and a separate guide vocal.
 - [Track switches and levels](https://maestro-pro.app/guide/backing-track-levels-and-switches/): Each track has its own switch and its own level from minus 24 to plus 12 decibels.

@@ -16,7 +16,7 @@ The same choices are under the staff's name in the touch and hold menu of a bar.
 
 The notes are the same notes either way, so a tab staff plays, transposes, prints, exports and works with Wait for Me and Record like any other staff. Exported MusicXML keeps the tab, with each note's string and fret, for other notation apps.
 
-Tab uses standard guitar tuning (E A D G B E, lowest string to highest). Other tunings and other instruments' tab are not available. A cross (×) in place of a number marks a note the guitar cannot reach in this tuning.
+A tab staff starts in standard guitar tuning (E A D G B E, lowest string to highest). Other tunings, a bass, a ukulele and a capo are in [Tab tunings and capo](https://maestro-pro.app/guide/tab-tunings-and-capo/). A cross (×) in place of a number marks a note the guitar cannot reach in this tuning.
 
 Changing a staff needs the score editor, which is part of the Professional plan.
 

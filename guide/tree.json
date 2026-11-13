@@ -768,6 +768,31 @@
         "set-your-instrument"
        ],
        "children": []
+      },
+      {
+       "slug": "midi-pedals-and-page-turners",
+       "title": "Turn pages and start playback with a pedal",
+       "summary": "Give a MIDI pedal a job in Settings, Listening; a Bluetooth page turner works with no setting up.",
+       "url": "https://maestro-pro.app/guide/midi-pedals-and-page-turners/",
+       "md": "https://maestro-pro.app/guide/midi-pedals-and-page-turners.md",
+       "keywords": [
+        "pedal",
+        "page turn pedal",
+        "foot pedal",
+        "sustain pedal",
+        "soft pedal",
+        "bluetooth page turner",
+        "airturn",
+        "pageflip",
+        "hands free",
+        "start stop with foot"
+       ],
+       "see": [
+        "see-the-shortcuts",
+        "change-a-shortcut",
+        "follow-a-midi-instrument"
+       ],
+       "children": []
       }
      ]
     }
@@ -1646,6 +1671,29 @@
        "children": []
       },
       {
+       "slug": "midi-chords-and-both-hands",
+       "title": "Chords and both hands in Wait for Me by MIDI",
+       "summary": "With a MIDI instrument, Wait for Me wants every note of a chord, and can ask for both staves of a piano score at once.",
+       "url": "https://maestro-pro.app/guide/midi-chords-and-both-hands/",
+       "md": "https://maestro-pro.app/guide/midi-chords-and-both-hands.md",
+       "keywords": [
+        "chords",
+        "whole chord",
+        "both hands",
+        "two hands",
+        "piano",
+        "all staves",
+        "left hand",
+        "right hand",
+        "wait for me midi"
+       ],
+       "see": [
+        "follow-a-midi-instrument",
+        "what-is-wait-for-me"
+       ],
+       "children": []
+      },
+      {
        "slug": "steady-note-trainer",
        "title": "The steady-note trainer",
        "summary": "A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.",
@@ -1980,6 +2028,27 @@
      ],
      "see": [],
      "children": [
+      {
+       "slug": "play-through-a-midi-instrument",
+       "title": "Play the score through a MIDI instrument",
+       "summary": "Settings, Playback, Play Through MIDI Instrument sends the notes to your keyboard or sound module.",
+       "url": "https://maestro-pro.app/guide/play-through-a-midi-instrument/",
+       "md": "https://maestro-pro.app/guide/play-through-a-midi-instrument.md",
+       "keywords": [
+        "midi out",
+        "midi output",
+        "sound module",
+        "play on my keyboard",
+        "external sound",
+        "digital piano sound",
+        "send midi"
+       ],
+       "see": [
+        "follow-a-midi-instrument",
+        "midi-instrument-not-detected"
+       ],
+       "children": []
+      },
       {
        "slug": "add-a-backing-track",
        "title": "Add a backing track",
@@ -2816,6 +2885,151 @@
         "editor-notes-mode"
        ],
        "children": []
+      },
+      {
+       "slug": "tab-tunings-and-capo",
+       "title": "Tab tunings, bass, ukulele and capo",
+       "summary": "Give a tab staff another tuning (Drop D, DADGAD, Open G, bass, ukulele) or a capo from the staff's menu.",
+       "url": "https://maestro-pro.app/guide/tab-tunings-and-capo/",
+       "md": "https://maestro-pro.app/guide/tab-tunings-and-capo.md",
+       "keywords": [
+        "tuning",
+        "drop d",
+        "dadgad",
+        "open g",
+        "half step down",
+        "bass tab",
+        "4 string bass",
+        "5 string bass",
+        "ukulele tab",
+        "capo",
+        "alternate tuning",
+        "strings"
+       ],
+       "see": [
+        "guitar-tab",
+        "write-guitar-tab",
+        "tab-techniques",
+        "notes-and-tab-together"
+       ],
+       "children": []
+      },
+      {
+       "slug": "tab-techniques",
+       "title": "Hammer-ons, pull-offs, slides, bends and palm mutes",
+       "summary": "In Marks mode, a note on tab has buttons for Hammer-On, Pull-Off, Slide, Bend and Palm Mute.",
+       "url": "https://maestro-pro.app/guide/tab-techniques/",
+       "md": "https://maestro-pro.app/guide/tab-techniques.md",
+       "keywords": [
+        "hammer on",
+        "pull off",
+        "slide",
+        "bend",
+        "palm mute",
+        "P.M.",
+        "guitar technique",
+        "legato",
+        "tab marks"
+       ],
+       "see": [
+        "write-guitar-tab",
+        "guitar-tab",
+        "tab-tunings-and-capo"
+       ],
+       "children": []
+      },
+      {
+       "slug": "notes-and-tab-together",
+       "title": "Show notes with tab underneath",
+       "summary": "Guitar Tab Underneath prints a staff's music a second time as tab, and both stay in step.",
+       "url": "https://maestro-pro.app/guide/notes-and-tab-together/",
+       "md": "https://maestro-pro.app/guide/notes-and-tab-together.md",
+       "keywords": [
+        "linked tab",
+        "notation and tab",
+        "notes and tab",
+        "tab underneath",
+        "both staves",
+        "guitar part",
+        "linked staves"
+       ],
+       "see": [
+        "guitar-tab",
+        "write-guitar-tab",
+        "tab-tunings-and-capo"
+       ],
+       "children": []
+      },
+      {
+       "slug": "chord-symbols-and-diagrams",
+       "title": "Write chord symbols and show guitar chord diagrams",
+       "summary": "In Marks mode, tap Chord to write a chord over a note; Chords on the Page shows names or names with guitar diagrams.",
+       "url": "https://maestro-pro.app/guide/chord-symbols-and-diagrams/",
+       "md": "https://maestro-pro.app/guide/chord-symbols-and-diagrams.md",
+       "keywords": [
+        "chord symbol",
+        "chord name",
+        "chord diagram",
+        "guitar chord",
+        "chord box",
+        "slash chord",
+        "bass note",
+        "lead sheet",
+        "Am",
+        "G7",
+        "chords above the staff"
+       ],
+       "see": [
+        "open-the-score-editor",
+        "guitar-tab"
+       ],
+       "children": []
+      },
+      {
+       "slug": "two-voices-on-a-staff",
+       "title": "Write two voices on one staff",
+       "summary": "Add Second Voice gives a bar a second row of rests to write a second rhythm on the same staff.",
+       "url": "https://maestro-pro.app/guide/two-voices-on-a-staff/",
+       "md": "https://maestro-pro.app/guide/two-voices-on-a-staff.md",
+       "keywords": [
+        "voices",
+        "second voice",
+        "two voices",
+        "two rhythms",
+        "polyphony",
+        "stems up and down",
+        "melody and accompaniment on one staff"
+       ],
+       "see": [
+        "open-the-score-editor",
+        "editor-notes-mode"
+       ],
+       "children": []
+      },
+      {
+       "slug": "record-midi-into-the-editor",
+       "title": "Record what you play into the score, in time",
+       "summary": "Tap Record in the score editor and play a MIDI instrument to the metronome; the notes are written with their rhythm.",
+       "url": "https://maestro-pro.app/guide/record-midi-into-the-editor/",
+       "md": "https://maestro-pro.app/guide/record-midi-into-the-editor.md",
+       "keywords": [
+        "real time recording",
+        "record midi",
+        "live recording",
+        "play in notes",
+        "quantise",
+        "quantize",
+        "snap",
+        "metronome",
+        "count in",
+        "rhythm from playing"
+       ],
+       "see": [
+        "write-with-a-midi-instrument",
+        "editor-piano-keyboard",
+        "midi-instrument-not-detected"
+       ],
+       "children": []
       }
      ]
     },
@@ -3045,6 +3259,28 @@
        "see": [
         "share-menu",
         "export-as-pdf"
+       ],
+       "children": []
+      },
+      {
+       "slug": "export-as-midi",
+       "title": "Export as a MIDI file",
+       "summary": "Share, Export as MIDI saves the notes as a standard MIDI file for any other music program.",
+       "url": "https://maestro-pro.app/guide/export-as-midi/",
+       "md": "https://maestro-pro.app/guide/export-as-midi.md",
+       "keywords": [
+        "midi file",
+        "export midi",
+        ".mid",
+        "standard midi file",
+        "DAW",
+        "garageband",
+        "logic",
+        "sequencer"
+       ],
+       "see": [
+        "export-as-musicxml",
+        "share-menu"
        ],
        "children": []
       },

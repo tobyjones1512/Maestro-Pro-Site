@@ -40,6 +40,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Automatic page turning](https://maestro-pro.app/guide/page-turning/): The page scrolls or curls over like a real book exactly when you need it.
   - [Notes and bars that light up](https://maestro-pro.app/guide/note-and-bar-highlighting/): Notes glow as they sound and a soft wash marks the bar; this needs the Performer plan or above.
   - [The Inspector](https://maestro-pro.app/guide/use-the-inspector/): The Inspector holds tempo, practice speed, loop, key, instrument and backing tracks.
+  - [Turn pages and start playback with a pedal](https://maestro-pro.app/guide/midi-pedals-and-page-turners/): Give a MIDI pedal a job in Settings, Listening; a Bluetooth page turner works with no setting up.
 
 ## Plans and licences
 - [Plans and pricing](https://maestro-pro.app/guide/plans-and-pricing/): Free, Performer and Professional: what each plan includes, and how to buy.
@@ -84,6 +85,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Tune a B flat or E flat instrument](https://maestro-pro.app/guide/tune-a-b-flat-or-e-flat-instrument/): With your instrument set to B flat or E flat in the Inspector, the tuner shows the written note too.
   - [What is Wait for Me?](https://maestro-pro.app/guide/what-is-wait-for-me/): Wait for Me holds the score until the right note is played in tune.
   - [Follow a MIDI instrument instead of the microphone](https://maestro-pro.app/guide/follow-a-midi-instrument/): With a MIDI instrument connected, Wait for Me and Record follow the keys you press instead of listening through the microphone.
+  - [Chords and both hands in Wait for Me by MIDI](https://maestro-pro.app/guide/midi-chords-and-both-hands/): With a MIDI instrument, Wait for Me wants every note of a chord, and can ask for both staves of a piano score at once.
   - [The steady-note trainer](https://maestro-pro.app/guide/steady-note-trainer/): A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.
 - [Record & Review](https://maestro-pro.app/guide/record-review/): Record yourself playing a score, then review the take with the notes lit: green where you should have been, red where you actually were. It listens through the microphone, so it works with any instrument or your voice.
   - [Record yourself](https://maestro-pro.app/guide/record-yourself/): Press Record, play along after the count-in, then press Stop.
@@ -103,6 +105,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
 
 ## Sound and words
 - [Backing Tracks & Sound](https://maestro-pro.app/guide/backing-tracks-sound/): A backing track is a recording that plays with the score. The built-in instrument can play the notes on the page too.
+  - [Play the score through a MIDI instrument](https://maestro-pro.app/guide/play-through-a-midi-instrument/): Settings, Playback, Play Through MIDI Instrument sends the notes to your keyboard or sound module.
   - [Add a backing track](https://maestro-pro.app/guide/add-a-backing-track/): Add the first backing track with Add Backing Track, and it plays in time with the score.
   - [Add more than one backing track](https://maestro-pro.app/guide/add-another-backing-track/): A score can have several tracks, for example a rhythm section and a separate guide vocal.
   - [Track switches and levels](https://maestro-pro.app/guide/backing-track-levels-and-switches/): Each track has its own switch and its own level from minus 24 to plus 12 decibels.
@@ -145,6 +148,12 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Write and edit guitar tab](https://maestro-pro.app/guide/write-guitar-tab/): On a tab staff, touch a string to put in its open note, then use the Fret buttons; drag a note to another string.
   - [Write notes on the on-screen piano keyboard](https://maestro-pro.app/guide/editor-piano-keyboard/): The piano keys button in the score editor shows a keyboard; tap keys to write notes one after another while the bars being written stay at the top.
   - [Write notes with a MIDI keyboard or instrument](https://maestro-pro.app/guide/write-with-a-midi-instrument/): Plug a MIDI instrument into an iPad or Mac and play: each note is written at the selection in the score editor, and held keys make chords.
+  - [Tab tunings, bass, ukulele and capo](https://maestro-pro.app/guide/tab-tunings-and-capo/): Give a tab staff another tuning (Drop D, DADGAD, Open G, bass, ukulele) or a capo from the staff's menu.
+  - [Hammer-ons, pull-offs, slides, bends and palm mutes](https://maestro-pro.app/guide/tab-techniques/): In Marks mode, a note on tab has buttons for Hammer-On, Pull-Off, Slide, Bend and Palm Mute.
+  - [Show notes with tab underneath](https://maestro-pro.app/guide/notes-and-tab-together/): Guitar Tab Underneath prints a staff's music a second time as tab, and both stay in step.
+  - [Write chord symbols and show guitar chord diagrams](https://maestro-pro.app/guide/chord-symbols-and-diagrams/): In Marks mode, tap Chord to write a chord over a note; Chords on the Page shows names or names with guitar diagrams.
+  - [Write two voices on one staff](https://maestro-pro.app/guide/two-voices-on-a-staff/): Add Second Voice gives a bar a second row of rests to write a second rhythm on the same staff.
+  - [Record what you play into the score, in time](https://maestro-pro.app/guide/record-midi-into-the-editor/): Tap Record in the score editor and play a MIDI instrument to the metronome; the notes are written with their rhythm.
 - [Version History & GitHub](https://maestro-pro.app/guide/version-history-github/): Save versions of a score, try ideas on branches, merge them back, and keep it all on GitHub.
   - [Save a version](https://maestro-pro.app/guide/save-a-version/): In the score editor, History and Save Version keep a snapshot you can return to.
   - [Start a branch to try an idea](https://maestro-pro.app/guide/start-a-branch/): New Branch starts a separate line of edits from now or from any earlier version.
@@ -155,6 +164,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Where your GitHub token is kept](https://maestro-pro.app/guide/github-token-safety/): The token is kept in your device's Keychain and sent only to GitHub.
 - [Share, Export & Print](https://maestro-pro.app/guide/share-export-print/): Get a score, or a video of it, out of the app.
   - [Export as MusicXML](https://maestro-pro.app/guide/export-as-musicxml/): MusicXML opens in MuseScore, Finale, Sibelius, Dorico, Notion and most other notation apps.
+  - [Export as a MIDI file](https://maestro-pro.app/guide/export-as-midi/): Share, Export as MIDI saves the notes as a standard MIDI file for any other music program.
   - [Export as PDF](https://maestro-pro.app/guide/export-as-pdf/): A PDF score is passed on as it is; any other score is typeset in the key currently shown.
   - [Print a score](https://maestro-pro.app/guide/print-a-score/): Print opens the system print dialog.
   - [The Share menu](https://maestro-pro.app/guide/share-menu/): Press and hold a score in the library and choose Share for Export as MusicXML, Export as PDF and Print.

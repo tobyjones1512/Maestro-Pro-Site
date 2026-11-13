@@ -665,6 +665,52 @@ Because the app is told exactly which key is down:
 
 The same Settings page shows which MIDI instrument is connected. The tuner always uses the microphone.
 
+## midi-chords-and-both-hands | tuner-wait-for-me | Chords and both hands in Wait for Me by MIDI
+summary: With a MIDI instrument, Wait for Me wants every note of a chord, and can ask for both staves of a piano score at once.
+keywords: chords, whole chord, both hands, two hands, piano, all staves, left hand, right hand, wait for me midi
+see: follow-a-midi-instrument, what-is-wait-for-me
+
+When Wait for Me [follows a MIDI instrument](follow-a-midi-instrument), a chord counts only when every note of it is held down. Part of the chord shows nothing yet; a key that is not in the chord shows as a wrong note. With **Any Octave** on, each note can be played in any octave.
+
+To practise a piano score with both hands:
+
+1. Start Wait for Me with the MIDI instrument connected.
+2. Tap the options button (the sliders) in the Wait for Me panel.
+3. Under **Part to Follow** choose **All Staves (Both Hands)**.
+
+The score then waits for everything that sounds together on all the staves. Choose a single staff again to practise one hand.
+
+With the microphone, a chord still counts when one of its notes is heard, and one staff is followed at a time.
+
+## play-through-a-midi-instrument | backing-tracks-sound | Play the score through a MIDI instrument
+summary: Settings, Playback, Play Through MIDI Instrument sends the notes to your keyboard or sound module.
+keywords: midi out, midi output, sound module, play on my keyboard, external sound, digital piano sound, send midi
+see: follow-a-midi-instrument, midi-instrument-not-detected
+
+Maestro Pro can play a score on a connected MIDI keyboard, digital piano or sound module instead of its built-in sounds.
+
+1. Connect the instrument with USB (or pair a Bluetooth MIDI instrument with the device).
+2. Open **Settings**, **Playback**, and turn on **Play Through MIDI Instrument**. **MIDI Output** shows what it found.
+3. Play the score. The notes sound on your instrument, in whatever sound it is set to.
+
+The metronome and any backing track still come from the iPad or Mac. All staves are sent on MIDI channel 1. If nothing is connected, the built-in sounds are used. Turn the setting off to go back to the built-in sounds.
+
+## midi-pedals-and-page-turners | playing-a-score | Turn pages and start playback with a pedal
+summary: Give a MIDI pedal a job in Settings, Listening; a Bluetooth page turner works with no setting up.
+keywords: pedal, page turn pedal, foot pedal, sustain pedal, soft pedal, bluetooth page turner, airturn, pageflip, hands free, start stop with foot
+see: see-the-shortcuts, change-a-shortcut, follow-a-midi-instrument
+
+**A MIDI instrument's pedals**
+
+1. Open **Settings**, **Listening**.
+2. For **Sustain Pedal**, **Middle Pedal** and **Soft Pedal**, choose **Nothing**, **Play or Pause**, **Next Page**, **Previous Page** or **Go to Beginning**.
+
+Pressing the pedal then does that while a score is open. Leave a pedal on Nothing if you use it for playing.
+
+**A Bluetooth page turner**
+
+Pair the pedal with your iPad or Mac in the device's Bluetooth settings. These pedals press keyboard keys, usually Page Up and Page Down or the arrow keys. Page Down and Page Up already turn the page; if your pedal sends other keys, give those keys to Next Page and Previous Page in [keyboard shortcuts](change-a-shortcut).
+
 ## steady-note-trainer | tuner-wait-for-me | The steady-note trainer
 summary: A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.
 keywords: steady note, long note, trainer, hold a note, intonation
@@ -1039,7 +1085,7 @@ The same choices are under the staff's name in the touch and hold menu of a bar.
 
 The notes are the same notes either way, so a tab staff plays, transposes, prints, exports and works with Wait for Me and Record like any other staff. Exported MusicXML keeps the tab, with each note's string and fret, for other notation apps.
 
-Tab uses standard guitar tuning (E A D G B E, lowest string to highest). Other tunings and other instruments' tab are not available. A cross (×) in place of a number marks a note the guitar cannot reach in this tuning.
+A tab staff starts in standard guitar tuning (E A D G B E, lowest string to highest). Other tunings, a bass, a ukulele and a capo are in [Tab tunings and capo](tab-tunings-and-capo). A cross (×) in place of a number marks a note the guitar cannot reach in this tuning.
 
 Changing a staff needs the score editor, which is part of the Professional plan.
 
@@ -1098,6 +1144,100 @@ This is step entry: the note length comes from the strip, not from how long you 
 
 If nothing happens when you play, see [My MIDI instrument is not detected](midi-instrument-not-detected).
 
+## tab-tunings-and-capo | writing-editing-music | Tab tunings, bass, ukulele and capo
+summary: Give a tab staff another tuning (Drop D, DADGAD, Open G, bass, ukulele) or a capo from the staff's menu.
+keywords: tuning, drop d, dadgad, open g, half step down, bass tab, 4 string bass, 5 string bass, ukulele tab, capo, alternate tuning, strings
+see: guitar-tab, write-guitar-tab, tab-techniques, notes-and-tab-together
+
+A tab staff starts as a guitar in standard tuning. To change it:
+
+1. Open the [score editor](open-the-score-editor) and choose **Bars** mode.
+2. Open the bar's menu on the tab staff, then the staff's menu (or open **Staves**).
+3. Choose **Tuning** and pick one: Guitar, Drop D, DADGAD, Open G, Half Step Down, Bass, Bass 5 String or Ukulele.
+4. Choose **Capo** and a fret to put a capo on. Fret numbers are then counted from the capo.
+
+The staff takes as many lines as the instrument has strings, and every note finds its new fret. The notes still sound the same. A note the instrument cannot reach shows as a cross (×).
+
+Tuning and capo are saved with the score and written into exported MusicXML, so other apps show the same tab.
+
+## tab-techniques | writing-editing-music | Hammer-ons, pull-offs, slides, bends and palm mutes
+summary: In Marks mode, a note on tab has buttons for Hammer-On, Pull-Off, Slide, Bend and Palm Mute.
+keywords: hammer on, pull off, slide, bend, palm mute, P.M., guitar technique, legato, tab marks
+see: write-guitar-tab, guitar-tab, tab-tunings-and-capo
+
+1. In the score editor choose **Marks** mode.
+2. Tap a note on a tab staff (or on a staff with tab underneath).
+3. Tap **Hammer-On**, **Pull-Off**, **Slide**, **Bend** or **Palm Mute**. Tap it again to take it off.
+
+They print over the note as H, P, sl., a bend arrow with "full", and P.M. A hammer-on or pull-off shows its letter; if the notes have a slur, the slur draws the arc. The marks are saved in exported MusicXML. They do not change how the note sounds in playback.
+
+## notes-and-tab-together | writing-editing-music | Show notes with tab underneath
+summary: Guitar Tab Underneath prints a staff's music a second time as tab, and both stay in step.
+keywords: linked tab, notation and tab, notes and tab, tab underneath, both staves, guitar part, linked staves
+see: guitar-tab, write-guitar-tab, tab-tunings-and-capo
+
+A guitar part is often printed twice: ordinary notes on top and tab below. To get that:
+
+1. In the score editor choose **Bars** mode and open the menu of a staff of ordinary notes (or open **Staves**).
+2. Turn on **Guitar Tab Underneath**.
+
+The tab appears below the staves. It is the same music, not a copy: change a note on either staff and both change, and it plays only once. Drag a number on the tab to another string to choose where it is played. Turn the option off to go back to notes only.
+
+The tab is printed under the last staff of the score, which is directly below for a guitar part on its own.
+
+## chord-symbols-and-diagrams | writing-editing-music | Write chord symbols and show guitar chord diagrams
+summary: In Marks mode, tap Chord to write a chord over a note; Chords on the Page shows names or names with guitar diagrams.
+keywords: chord symbol, chord name, chord diagram, guitar chord, chord box, slash chord, bass note, lead sheet, Am, G7, chords above the staff
+see: open-the-score-editor, guitar-tab
+
+**Write a chord**
+
+1. In the score editor choose **Marks** mode and tap the note or rest the chord belongs over.
+2. Tap **Chord**, choose the root (C, D, E and so on), then the kind: major, m, 7, maj7, m7, sus4, sus2, 6, m6, 9, maj9, m9, dim, dim7, m7♭5, aug or 5.
+3. For a slash chord such as D/F♯, tap **Chord** again and choose **Bass Note**.
+
+**Remove Chord** in the same menu takes it away. The chords you write are also what the chord view shows.
+
+**Show them on the page**
+
+Tap **Chord** and, under **Chords on the Page**, choose **Hidden**, **Chord Names** or **Names and Guitar Diagrams**. A diagram shows six strings and four frets with a dot for each finger, × over a string that is not played and ○ over an open string. A score that came with chord symbols can show them the same way.
+
+Diagrams are for a guitar in standard tuning, one common fingering for each chord.
+
+## two-voices-on-a-staff | writing-editing-music | Write two voices on one staff
+summary: Add Second Voice gives a bar a second row of rests to write a second rhythm on the same staff.
+keywords: voices, second voice, two voices, two rhythms, polyphony, stems up and down, melody and accompaniment on one staff
+see: open-the-score-editor, editor-notes-mode
+
+A staff can carry two rhythms at once, for example a tune over a held note.
+
+1. In the score editor choose **Bars** mode. To do several bars at once, drag across them first.
+2. Open the bar's menu, then the staff's menu, and choose **Add Second Voice**.
+3. The bar gets a second row of rests, lower on the staff. In **Notes** mode write on those rests as usual.
+
+The upper voice has its stems up and the lower voice has them down. **Remove Second Voice** takes the lower voice out of the bar, with its notes. A staff can have two voices.
+
+## record-midi-into-the-editor | writing-editing-music | Record what you play into the score, in time
+summary: Tap Record in the score editor and play a MIDI instrument to the metronome; the notes are written with their rhythm.
+keywords: real time recording, record midi, live recording, play in notes, quantise, quantize, snap, metronome, count in, rhythm from playing
+see: write-with-a-midi-instrument, editor-piano-keyboard, midi-instrument-not-detected
+
+Step entry writes one note at a time at the length you choose. Recording writes the rhythm you actually play.
+
+1. Connect a MIDI instrument (or show the [on-screen piano](editor-piano-keyboard)). The **Record** button, a ring with a dot, appears at the top of the score editor.
+2. Hold **Record** and choose what notes snap to: **Quarter Notes**, **Eighth Notes** or **Sixteenth Notes**. Pick the shortest note in what you are about to play.
+3. Select the bar to start from and tap **Record**. You hear one bar of count in, then the metronome keeps time.
+4. Play. Tap **Stop** when you have finished (the end of the piece also stops it).
+
+Your notes are written from that bar on the selected staff. Notes played together become a chord, and a note held over a barline is tied. The bars you played through are replaced; Undo brings them back in one step.
+
+Things to know:
+
+- It writes one voice, so a note ends when the next one begins.
+- It does not write triplets.
+- If every note lands a little late or early, change **MIDI Recording Timing** in Settings, Listening.
+- The tempo is the score's tempo. Set a slower tempo first if you want more time.
+
 ## save-a-version | version-history-github | Save a version
 summary: In the score editor, History and Save Version keep a snapshot you can return to.
 keywords: save version, snapshot, history, version, backup, save, git, commit, repo, repository
@@ -1153,6 +1293,16 @@ keywords: export musicxml, musescore, finale, sibelius, dorico, notion, notation
 see: share-menu, export-as-pdf
 
 Press and hold a score in the library, choose **Share**, then **Export as MusicXML**. It opens in MuseScore, Finale, Sibelius, Dorico, Notion and most other notation apps. For a PDF score it is the music the app read from the page.
+
+## export-as-midi | share-export-print | Export as a MIDI file
+summary: Share, Export as MIDI saves the notes as a standard MIDI file for any other music program.
+keywords: midi file, export midi, .mid, standard midi file, DAW, garageband, logic, sequencer
+see: export-as-musicxml, share-menu
+
+1. Press and hold the score in the library and choose **Share**, or open the score and tap the Share button.
+2. Choose **Export as MIDI…**, then where to save or send it.
+
+The file (.mid) has the notes in the key shown, with repeats played out, at the score's tempo, and a track for each staff. Open it in GarageBand, Logic or any other program that reads MIDI. A PDF score must have been opened once first, so its notes have been read. Export needs the Performer plan or higher.
 
 ## export-as-pdf | share-export-print | Export as PDF
 summary: A PDF score is passed on as it is; any other score is typeset in the key currently shown.

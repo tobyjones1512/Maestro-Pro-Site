@@ -481,6 +481,21 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://maestro-pro.app/guide/midi-chords-and-both-hands/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/play-through-a-midi-instrument/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/midi-pedals-and-page-turners/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://maestro-pro.app/guide/steady-note-trainer/</loc>
     <lastmod>2026-11-13</lastmod>
     <priority>0.4</priority>
@@ -736,6 +751,36 @@
     <priority>0.4</priority>
   </url>
   <url>
+    <loc>https://maestro-pro.app/guide/tab-tunings-and-capo/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/tab-techniques/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/notes-and-tab-together/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/chord-symbols-and-diagrams/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/two-voices-on-a-staff/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/record-midi-into-the-editor/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
     <loc>https://maestro-pro.app/guide/save-a-version/</loc>
     <lastmod>2026-11-13</lastmod>
     <priority>0.4</priority>
@@ -772,6 +817,11 @@
   </url>
   <url>
     <loc>https://maestro-pro.app/guide/export-as-musicxml/</loc>
+    <lastmod>2026-11-13</lastmod>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://maestro-pro.app/guide/export-as-midi/</loc>
     <lastmod>2026-11-13</lastmod>
     <priority>0.4</priority>
   </url>
