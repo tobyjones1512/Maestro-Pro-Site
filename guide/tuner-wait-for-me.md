@@ -17,4 +17,5 @@ If your instrument is set to B♭ or E♭ in the Inspector, the written note is 
 - [Change the tuning pitch (A = 440 Hz)](https://maestro-pro.app/guide/change-concert-pitch/): A = 440 Hz can be changed between 415 and 466 for baroque or orchestral tuning.
 - [Tune a B flat or E flat instrument](https://maestro-pro.app/guide/tune-a-b-flat-or-e-flat-instrument/): With your instrument set to B flat or E flat in the Inspector, the tuner shows the written note too.
 - [What is Wait for Me?](https://maestro-pro.app/guide/what-is-wait-for-me/): Wait for Me holds the score until the right note is played in tune.
+- [Follow a MIDI instrument instead of the microphone](https://maestro-pro.app/guide/follow-a-midi-instrument/): With a MIDI instrument connected, Wait for Me and Record follow the keys you press instead of listening through the microphone.
 - [The steady-note trainer](https://maestro-pro.app/guide/steady-note-trainer/): A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.

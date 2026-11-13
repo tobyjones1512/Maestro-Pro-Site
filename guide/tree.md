@@ -83,6 +83,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Change the tuning pitch (A = 440 Hz)](https://maestro-pro.app/guide/change-concert-pitch/): A = 440 Hz can be changed between 415 and 466 for baroque or orchestral tuning.
   - [Tune a B flat or E flat instrument](https://maestro-pro.app/guide/tune-a-b-flat-or-e-flat-instrument/): With your instrument set to B flat or E flat in the Inspector, the tuner shows the written note too.
   - [What is Wait for Me?](https://maestro-pro.app/guide/what-is-wait-for-me/): Wait for Me holds the score until the right note is played in tune.
+  - [Follow a MIDI instrument instead of the microphone](https://maestro-pro.app/guide/follow-a-midi-instrument/): With a MIDI instrument connected, Wait for Me and Record follow the keys you press instead of listening through the microphone.
   - [The steady-note trainer](https://maestro-pro.app/guide/steady-note-trainer/): A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.
 - [Record & Review](https://maestro-pro.app/guide/record-review/): Record yourself playing a score, then review the take with the notes lit: green where you should have been, red where you actually were. It listens through the microphone, so it works with any instrument or your voice.
   - [Record yourself](https://maestro-pro.app/guide/record-yourself/): Press Record, play along after the count-in, then press Stop.
@@ -140,6 +141,10 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Beats per bar](https://maestro-pro.app/guide/editor-beats-per-bar/): Options has Beats per Bar: 4, 3 or a custom number, chosen to match the score when the editor opens.
   - [Edit a score that came from a PDF](https://maestro-pro.app/guide/edit-a-pdf-score/): The app first reads a PDF, and the editor works on a copy of what it read.
   - [Stop a resting hand changing notes](https://maestro-pro.app/guide/edit-with-apple-pencil-only/): The setting Edit with Apple Pencil Only stops a resting hand changing notes.
+  - [Guitar tab: read any staff as tablature](https://maestro-pro.app/guide/guitar-tab/): Any staff can be shown as guitar tablature: fret numbers on six string lines, with the rhythm on stems underneath.
+  - [Write and edit guitar tab](https://maestro-pro.app/guide/write-guitar-tab/): On a tab staff, touch a string to put in its open note, then use the Fret buttons; drag a note to another string.
+  - [Write notes on the on-screen piano keyboard](https://maestro-pro.app/guide/editor-piano-keyboard/): The piano keys button in the score editor shows a keyboard; tap keys to write notes one after another while the bars being written stay at the top.
+  - [Write notes with a MIDI keyboard or instrument](https://maestro-pro.app/guide/write-with-a-midi-instrument/): Plug a MIDI instrument into an iPad or Mac and play: each note is written at the selection in the score editor, and held keys make chords.
 - [Version History & GitHub](https://maestro-pro.app/guide/version-history-github/): Save versions of a score, try ideas on branches, merge them back, and keep it all on GitHub.
   - [Save a version](https://maestro-pro.app/guide/save-a-version/): In the score editor, History and Save Version keep a snapshot you can return to.
   - [Start a branch to try an idea](https://maestro-pro.app/guide/start-a-branch/): New Branch starts a separate line of edits from now or from any earlier version.
@@ -185,6 +190,7 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Band-in-a-Box files will not open](https://maestro-pro.app/guide/band-in-a-box-files/): They cannot be read; save as MusicXML for the notation and as audio for the backing.
   - [Import does nothing or a file is greyed out](https://maestro-pro.app/guide/import-does-nothing-or-greyed-out/): Choose All Files in the Files browser, or drag the file onto the window.
   - [Jazz tunes need the internet](https://maestro-pro.app/guide/jazz-tunes-need-internet/): Jazz tunes need an internet connection the first time you add them.
+  - [My MIDI instrument is not detected](https://maestro-pro.app/guide/midi-instrument-not-detected/): Check the cable and adapter, that the instrument is on, and Settings, Listening, which shows the connected MIDI instrument.
   - [An overfull bar in the editor](https://maestro-pro.app/guide/overfull-bar-in-editor/): Turn Free Editing off, or delete a note and the editor will tidy the bar.
 - [Buttons and icons](https://maestro-pro.app/guide/buttons-and-icons/): Every button and icon in Maestro Pro, with a picture of it and what it does.
   - [Playback bar icons](https://maestro-pro.app/guide/icons-playback-bar/): What each icon does: Go to Beginning, Previous Bar, Play, Next Bar and more.

@@ -1,7 +1,7 @@
 {
  "site": "https://maestro-pro.app",
  "about": "Every Maestro Pro guide, grouped. Each page has an HTML url and a Markdown url.",
- "generated": "2026-11-10",
+ "generated": "2026-11-13",
  "groups": [
   {
    "title": "Start here",
@@ -1485,7 +1485,10 @@
       "cents",
       "reference note",
       "steady note",
-      "pitch"
+      "pitch",
+      "midi",
+      "midi keyboard",
+      "digital piano"
      ],
      "see": [],
      "children": [
@@ -1609,9 +1612,36 @@
         "learn a piece"
        ],
        "see": [
+        "follow-a-midi-instrument",
         "microphone-cannot-hear-me",
         "wrong-octave-detected",
         "steady-note-trainer"
+       ],
+       "children": []
+      },
+      {
+       "slug": "follow-a-midi-instrument",
+       "title": "Follow a MIDI instrument instead of the microphone",
+       "summary": "With a MIDI instrument connected, Wait for Me and Record follow the keys you press instead of listening through the microphone.",
+       "url": "https://maestro-pro.app/guide/follow-a-midi-instrument/",
+       "md": "https://maestro-pro.app/guide/follow-a-midi-instrument.md",
+       "keywords": [
+        "midi",
+        "usb midi",
+        "midi keyboard",
+        "digital piano",
+        "midi instrument",
+        "bluetooth midi",
+        "listen with",
+        "no microphone",
+        "follow along",
+        "keyboard controller"
+       ],
+       "see": [
+        "what-is-wait-for-me",
+        "record-yourself",
+        "midi-instrument-not-detected",
+        "write-with-a-midi-instrument"
        ],
        "children": []
       },
@@ -1669,7 +1699,8 @@
        ],
        "see": [
         "record-with-a-backing-track",
-        "review-your-recording"
+        "review-your-recording",
+        "follow-a-midi-instrument"
        ],
        "children": []
       },
@@ -2358,7 +2389,13 @@
       "medley",
       "erase",
       "draw",
-      "musicxml"
+      "musicxml",
+      "guitar tab",
+      "tablature",
+      "tabs",
+      "piano keyboard",
+      "midi",
+      "midi keyboard"
      ],
      "see": [],
      "children": [
@@ -2673,6 +2710,110 @@
        "see": [
         "apple-pencil",
         "open-the-score-editor"
+       ],
+       "children": []
+      },
+      {
+       "slug": "guitar-tab",
+       "title": "Guitar tab: read any staff as tablature",
+       "summary": "Any staff can be shown as guitar tablature: fret numbers on six string lines, with the rhythm on stems underneath.",
+       "url": "https://maestro-pro.app/guide/guitar-tab/",
+       "md": "https://maestro-pro.app/guide/guitar-tab.md",
+       "keywords": [
+        "guitar tab",
+        "tabs",
+        "tablature",
+        "tab staff",
+        "fret numbers",
+        "strings",
+        "guitar",
+        "show as guitar tab",
+        "show as notes",
+        "read tab"
+       ],
+       "see": [
+        "write-guitar-tab",
+        "start-a-blank-score",
+        "editor-bars-mode",
+        "editor-piano-keyboard"
+       ],
+       "children": []
+      },
+      {
+       "slug": "write-guitar-tab",
+       "title": "Write and edit guitar tab",
+       "summary": "On a tab staff, touch a string to put in its open note, then use the Fret buttons; drag a note to another string.",
+       "url": "https://maestro-pro.app/guide/write-guitar-tab/",
+       "md": "https://maestro-pro.app/guide/write-guitar-tab.md",
+       "keywords": [
+        "write tab",
+        "edit tab",
+        "fret",
+        "fret number",
+        "change fret",
+        "string",
+        "move to another string",
+        "open string",
+        "guitar chord",
+        "tab editor"
+       ],
+       "see": [
+        "guitar-tab",
+        "editor-notes-mode",
+        "editor-piano-keyboard",
+        "write-with-a-midi-instrument"
+       ],
+       "children": []
+      },
+      {
+       "slug": "editor-piano-keyboard",
+       "title": "Write notes on the on-screen piano keyboard",
+       "summary": "The piano keys button in the score editor shows a keyboard; tap keys to write notes one after another while the bars being written stay at the top.",
+       "url": "https://maestro-pro.app/guide/editor-piano-keyboard/",
+       "md": "https://maestro-pro.app/guide/editor-piano-keyboard.md",
+       "keywords": [
+        "piano keyboard",
+        "on-screen keyboard",
+        "piano keys",
+        "tap notes",
+        "note entry",
+        "step entry",
+        "virtual piano",
+        "keyboard in editor",
+        "chord"
+       ],
+       "see": [
+        "editor-notes-mode",
+        "write-with-a-midi-instrument",
+        "write-guitar-tab"
+       ],
+       "children": []
+      },
+      {
+       "slug": "write-with-a-midi-instrument",
+       "title": "Write notes with a MIDI keyboard or instrument",
+       "summary": "Plug a MIDI instrument into an iPad or Mac and play: each note is written at the selection in the score editor, and held keys make chords.",
+       "url": "https://maestro-pro.app/guide/write-with-a-midi-instrument/",
+       "md": "https://maestro-pro.app/guide/write-with-a-midi-instrument.md",
+       "keywords": [
+        "midi",
+        "usb midi",
+        "midi keyboard",
+        "midi input",
+        "note entry",
+        "step entry",
+        "play notes in",
+        "digital piano",
+        "controller keyboard",
+        "bluetooth midi",
+        "mac",
+        "ipad"
+       ],
+       "see": [
+        "editor-piano-keyboard",
+        "follow-a-midi-instrument",
+        "midi-instrument-not-detected",
+        "editor-notes-mode"
        ],
        "children": []
       }
@@ -3510,6 +3651,27 @@
        "see": [
         "find-free-scores",
         "when-the-app-uses-the-internet"
+       ],
+       "children": []
+      },
+      {
+       "slug": "midi-instrument-not-detected",
+       "title": "My MIDI instrument is not detected",
+       "summary": "Check the cable and adapter, that the instrument is on, and Settings, Listening, which shows the connected MIDI instrument.",
+       "url": "https://maestro-pro.app/guide/midi-instrument-not-detected/",
+       "md": "https://maestro-pro.app/guide/midi-instrument-not-detected.md",
+       "keywords": [
+        "midi not working",
+        "midi keyboard not detected",
+        "no midi instrument",
+        "usb midi",
+        "bluetooth midi",
+        "keyboard does nothing",
+        "none connected"
+       ],
+       "see": [
+        "follow-a-midi-instrument",
+        "write-with-a-midi-instrument"
        ],
        "children": []
       },

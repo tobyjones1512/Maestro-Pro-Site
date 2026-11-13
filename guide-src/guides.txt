@@ -6,13 +6,13 @@
 @meta getting-started | start, first time, begin, new, welcome, introduction, what is, import, sample, play
 @meta your-library | library, import, files, pdf, musicxml, midi, folder, icloud, blank score, lyrics, karaoke, file types
 @meta playing-a-score | play, pause, speed, tempo, loop, count in, metronome, transpose, practice speed, bar, progress
-@meta tuner-wait-for-me | tuner, tune, wait for me, microphone, cents, reference note, steady note, pitch
+@meta tuner-wait-for-me | tuner, tune, wait for me, microphone, cents, reference note, steady note, pitch, midi, midi keyboard, digital piano
 @meta record-review | record, recording, review, take, microphone, practise, wrong notes
 @meta scales-arpeggios | scales, arpeggios, major, minor, blues, key, practice material
 @meta annotating | annotate, draw, pencil, ink, pen, marker, eraser, markup
 @meta backing-tracks-sound | backing track, audio, track, level, reduce vocals, built-in instrument, sound, match key
 @meta lyrics-karaoke | lyrics, karaoke, lrc, kar, cdg, syllables, words, singer
-@meta writing-editing-music | editor, edit, write, notes, rests, marks, dynamics, bars, form, medley, erase, draw, musicxml
+@meta writing-editing-music | editor, edit, write, notes, rests, marks, dynamics, bars, form, medley, erase, draw, musicxml, guitar tab, tablature, tabs, piano keyboard, midi, midi keyboard
 @meta version-history-github | version, history, branch, merge, roll back, github, git, repo, repository, connect github, commit, push, save, clash
 @meta share-export-print | share, export, print, pdf, musicxml, airdrop, files, video
 @meta play-together | play together, session, join, devices, ensemble, nudge, local network, teacher
@@ -467,7 +467,7 @@ summary: New Blank Score creates an empty score with the name, time signature, k
 keywords: new blank score, empty score, write a score, compose, create score, new score
 see: open-the-score-editor, professional-plan
 
-**New Blank Score** starts an empty score to write yourself. You choose the name, time signature, key, number of bars, staves (treble, bass or piano) and tempo. Writing and editing needs the score editor, which is part of the Professional plan.
+**New Blank Score** starts an empty score to write yourself. You choose the name, time signature, key, number of bars, staves (treble, bass, piano or guitar tab) and tempo. Writing and editing needs the score editor, which is part of the Professional plan.
 
 ## add-lyrics-with-backing | your-library | Lyrics with Backing
 summary: Choose a backing track and the app finds its timed lyrics online for a karaoke-style screen.
@@ -635,11 +635,35 @@ If your instrument is set to B♭ or E♭ in the Inspector, the tuner shows the 
 ## what-is-wait-for-me | tuner-wait-for-me | What is Wait for Me?
 summary: Wait for Me holds the score until the right note is played in tune.
 keywords: wait for me, waits for you, follows you, note by note, play along, learn a piece
-see: microphone-cannot-hear-me, wrong-octave-detected, steady-note-trainer
+see: follow-a-midi-instrument, microphone-cannot-hear-me, wrong-octave-detected, steady-note-trainer
 
-**Wait for Me** holds the score until you play the right note in tune, so you can work through a piece note by note at your own pace. It listens through the microphone, and the sound is analysed on the device.
+**Wait for Me** holds the score until you play the right note in tune, so you can work through a piece note by note at your own pace. It listens through the microphone, and the sound is analysed on the device. With a MIDI keyboard or other MIDI instrument plugged in, it follows the keys you press instead: see [Follow a MIDI instrument instead of the microphone](follow-a-midi-instrument).
 
 Wait for Me is part of the Performer and Professional plans. If it says it cannot hear you, see [The microphone cannot hear me](microphone-cannot-hear-me).
+
+## follow-a-midi-instrument | tuner-wait-for-me | Follow a MIDI instrument instead of the microphone
+summary: With a MIDI instrument connected, Wait for Me and Record follow the keys you press instead of listening through the microphone.
+keywords: midi, usb midi, midi keyboard, digital piano, midi instrument, bluetooth midi, listen with, no microphone, follow along, keyboard controller
+see: what-is-wait-for-me, record-yourself, midi-instrument-not-detected, write-with-a-midi-instrument
+
+Plug a MIDI keyboard, digital piano or other MIDI instrument into your iPad or Mac with USB. A Bluetooth MIDI instrument works too, once the device has paired with it. **Wait for Me** and **Record** then follow the keys you press instead of listening through the microphone. Nothing needs setting up: the Wait for Me panel says which instrument it is following.
+
+Because the app is told exactly which key is down:
+
+- A noisy room, a quiet instrument or headphones make no difference.
+- Tuning never counts against you. Only the right note and holding it long enough matter.
+- While you record, the built-in instrument and the metronome stay on, because there is no microphone for them to spoil.
+- A recording made this way keeps the notes you played, to review against the score, but no sound.
+
+### Choose what the app listens with
+
+**Settings ▸ Listening ▸ Listen With** has three choices:
+
+- **Automatic** (the default): a MIDI instrument whenever one is connected, otherwise the microphone.
+- **Microphone**: always the microphone. Choose this if a MIDI instrument is plugged in but you want to play or sing something else.
+- **MIDI Instrument**: always MIDI.
+
+The same Settings page shows which MIDI instrument is connected. The tuner always uses the microphone.
 
 ## steady-note-trainer | tuner-wait-for-me | The steady-note trainer
 summary: A trainer that listens as you hold a note steady, alongside the tuner and Wait for Me.
@@ -651,11 +675,13 @@ The tuner and Wait for Me are joined by a steady-note trainer, which uses the mi
 ## record-yourself | record-review | Record yourself
 summary: Press Record, play along after the count-in, then press Stop.
 keywords: record, recording, record myself, record button, cmd r, take
-see: record-with-a-backing-track, review-your-recording
+see: record-with-a-backing-track, review-your-recording, follow-a-midi-instrument
 
 Choose **Record**: the round record button in the toolbar, **More ▸ Record Myself**, or ⌘R on a Mac. After the count-in the score plays and you play along. Press Stop, or pause, when you have finished.
 
 While you record, the built-in instrument and the metronome are muted, so the microphone hears only you. The first time, the app asks to use the microphone.
+
+With a MIDI instrument connected, Record follows its keys instead of the microphone, and nothing is muted: see [Follow a MIDI instrument instead of the microphone](follow-a-midi-instrument).
 
 ## record-with-a-backing-track | record-review | Record when the score has a backing track
 summary: The app asks first, because the microphone would hear the backing: Mute It and Record, or Record Anyway.
@@ -996,6 +1022,82 @@ see: apple-pencil, open-the-score-editor
 
 Editing works with a finger or a Pencil. A setting, **Edit with Apple Pencil Only**, stops a resting hand changing notes.
 
+## guitar-tab | writing-editing-music | Guitar tab: read any staff as tablature
+summary: Any staff can be shown as guitar tablature: fret numbers on six string lines, with the rhythm on stems underneath.
+keywords: guitar tab, tabs, tablature, tab staff, fret numbers, strings, guitar, show as guitar tab, show as notes, read tab
+see: write-guitar-tab, start-a-blank-score, editor-bars-mode, editor-piano-keyboard
+
+**Guitar tab** (tablature) shows each note as a fret number on one of six lines, one line for each string, with the rhythm on stems underneath as in ordinary notation. Maestro Pro can show any staff as tab and turn it back into notes again.
+
+1. Open the score editor and choose **Bars** mode.
+2. Open the **Staves** menu.
+3. Choose **Show Staff 1 as Guitar Tab** (there is one for each staff). **Show Staff 1 as Notes** turns it back.
+4. **Add Guitar Tab Staff** adds a new, empty tab staff under the others.
+5. Press **Save**.
+
+The same choices are under the staff's name in the touch and hold menu of a bar. **New Blank Score** has **Guitar Tab** among its staves, to start a tab score from nothing. A MusicXML file that already has a tab staff opens as tab, on the strings the file asks for.
+
+The notes are the same notes either way, so a tab staff plays, transposes, prints, exports and works with Wait for Me and Record like any other staff. Exported MusicXML keeps the tab, with each note's string and fret, for other notation apps.
+
+Tab uses standard guitar tuning (E A D G B E, lowest string to highest). Other tunings and other instruments' tab are not available. A cross (×) in place of a number marks a note the guitar cannot reach in this tuning.
+
+Changing a staff needs the score editor, which is part of the Professional plan.
+
+## write-guitar-tab | writing-editing-music | Write and edit guitar tab
+summary: On a tab staff, touch a string to put in its open note, then use the Fret buttons; drag a note to another string.
+keywords: write tab, edit tab, fret, fret number, change fret, string, move to another string, open string, guitar chord, tab editor
+see: guitar-tab, editor-notes-mode, editor-piano-keyboard, write-with-a-midi-instrument
+
+On a tab staff the editor works in strings and frets. Use **Notes** mode.
+
+1. Choose a note length in the strip at the bottom.
+2. Touch a rest on the line of the string you want, and lift. The open string (fret 0) goes in, and is selected.
+3. Use the **Fret** buttons in the strip (minus and plus, with the fret number between them) to move it up or down one fret at a time.
+4. To play the same note on another string, drag the note up or down to that string. It moves only if that string can play the note.
+
+A key on the [on-screen piano](editor-piano-keyboard) or a [MIDI instrument](write-with-a-midi-instrument) also writes onto tab: the note goes on the string where its fret is lowest, and notes of a chord are spread over different strings.
+
+Lengths, rests, ties, dynamics, bars, repeats and everything else work as on any other staff. If a fret runs past the end of a string, the note moves to another string that can play it.
+
+## editor-piano-keyboard | writing-editing-music | Write notes on the on-screen piano keyboard
+summary: The piano keys button in the score editor shows a keyboard; tap keys to write notes one after another while the bars being written stay at the top.
+keywords: piano keyboard, on-screen keyboard, piano keys, tap notes, note entry, step entry, virtual piano, keyboard in editor, chord
+see: editor-notes-mode, write-with-a-midi-instrument, write-guitar-tab
+
+The **piano keys** button at the top of the score editor shows a piano keyboard above the modes. Press it again to hide the keyboard.
+
+1. Select the note or rest where you want to start. With nothing selected, writing starts at the chosen bar, or at the beginning.
+2. Choose a note length in the strip at the bottom.
+3. Tap a key. That note is written, and the selection moves on to the next note or rest, so you can tap a tune in from left to right.
+
+While the keyboard is showing, the row of bars you are writing moves to the top of the screen, so the keyboard never covers it.
+
+- Swipe the keyboard sideways for higher and lower notes. Each C is named; C4 is middle C.
+- The **stack** button beside the keyboard adds each key you tap to the note just written, to build a chord. Turn it off to carry on with single notes.
+- The **arrow** button skips to the next note or rest without writing anything.
+- A key tapped on a selected note changes that note's pitch.
+- **Undo** takes back one note at a time.
+
+Sharps and flats are spelled to suit the key signature. The keyboard writes on any staff, including [guitar tab](write-guitar-tab).
+
+## write-with-a-midi-instrument | writing-editing-music | Write notes with a MIDI keyboard or instrument
+summary: Plug a MIDI instrument into an iPad or Mac and play: each note is written at the selection in the score editor, and held keys make chords.
+keywords: midi, usb midi, midi keyboard, midi input, note entry, step entry, play notes in, digital piano, controller keyboard, bluetooth midi, mac, ipad
+see: editor-piano-keyboard, follow-a-midi-instrument, midi-instrument-not-detected, editor-notes-mode
+
+In the score editor you can write by playing. It works on iPad and Mac.
+
+1. Plug a MIDI keyboard or other MIDI instrument in with USB. A Bluetooth MIDI instrument works once the device has paired with it.
+2. Open the score editor and select the note or rest where you want to start.
+3. Choose a note length in the strip at the bottom.
+4. Play. Each note is written at the selection, which then moves on to the next note or rest.
+
+Hold one key and press others to write a chord. The [on-screen piano keyboard](editor-piano-keyboard) does not need to be showing; when it is, the keys you hold light up on it and the bars being written stay at the top of the screen.
+
+This is step entry: the note length comes from the strip, not from how long you hold the key, and the app does not record your timing. Choose the length before you play the note. Write a rest by skipping (the arrow button beside the on-screen keyboard) or in Rests mode.
+
+If nothing happens when you play, see [My MIDI instrument is not detected](midi-instrument-not-detected).
+
 ## save-a-version | version-history-github | Save a version
 summary: In the score editor, History and Save Version keep a snapshot you can return to.
 keywords: save version, snapshot, history, version, backup, save, git, commit, repo, repository
@@ -1201,6 +1303,7 @@ see: wrong-octave-detected, microphone-permission
 2. Raise **Microphone Sensitivity** in Settings ▸ Listening.
 3. Play one note at a time and keep other sound down.
 4. If it still hears the wrong octave, try [Accept Any Octave](wrong-octave-detected).
+5. If a MIDI instrument is plugged in, the app follows that and not the microphone. To use the microphone, choose **Microphone** in Settings ▸ Listening ▸ Listen With. See [Follow a MIDI instrument instead of the microphone](follow-a-midi-instrument).
 
 ## wrong-octave-detected | troubleshooting | It hears the wrong octave
 summary: Try Accept Any Octave if the tuner or Wait for Me still hears the wrong octave.
@@ -1243,6 +1346,18 @@ keywords: jazz tunes, jazz, internet, download jazz, offline
 see: find-free-scores, when-the-app-uses-the-internet
 
 Jazz tunes need the internet the first time you add them.
+
+## midi-instrument-not-detected | troubleshooting | My MIDI instrument is not detected
+summary: Check the cable and adapter, that the instrument is on, and Settings, Listening, which shows the connected MIDI instrument.
+keywords: midi not working, midi keyboard not detected, no midi instrument, usb midi, bluetooth midi, keyboard does nothing, none connected
+see: follow-a-midi-instrument, write-with-a-midi-instrument
+
+1. Open **Settings ▸ Listening**. **MIDI Instrument** shows the name of what is connected, or **None connected**.
+2. Check the instrument is switched on and the USB cable carries data (some cables only charge). An iPad with a USB-C port takes the cable directly; one with a Lightning port needs Apple's camera adapter.
+3. Unplug the instrument and plug it in again. The app picks it up without restarting.
+4. A Bluetooth MIDI instrument has to be paired with the iPad or Mac first, in the device's own Bluetooth MIDI settings or the instrument maker's app.
+5. In Settings ▸ Listening ▸ Listen With, choose **Automatic** or **MIDI Instrument**. With **Microphone** chosen, Wait for Me and Record ignore MIDI. The score editor always takes notes from a connected MIDI instrument.
+6. The instrument must send ordinary MIDI notes. A keyboard that only makes its own sound, with no MIDI or USB port, cannot be followed this way; use the microphone.
 
 ## overfull-bar-in-editor | troubleshooting | An overfull bar in the editor
 summary: Turn Free Editing off, or delete a note and the editor will tidy the bar.

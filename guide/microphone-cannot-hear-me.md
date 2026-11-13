@@ -8,6 +8,7 @@ Summary: Allow the microphone in Settings, raise Microphone Sensitivity, play on
 2. Raise **Microphone Sensitivity** in Settings ▸ Listening.
 3. Play one note at a time and keep other sound down.
 4. If it still hears the wrong octave, try [Accept Any Octave](https://maestro-pro.app/guide/wrong-octave-detected/).
+5. If a MIDI instrument is plugged in, the app follows that and not the microphone. To use the microphone, choose **Microphone** in Settings ▸ Listening ▸ Listen With. See [Follow a MIDI instrument instead of the microphone](https://maestro-pro.app/guide/follow-a-midi-instrument/).
 
 ## Related
 - [It hears the wrong octave](https://maestro-pro.app/guide/wrong-octave-detected/)

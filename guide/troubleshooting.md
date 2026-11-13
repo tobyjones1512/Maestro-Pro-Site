@@ -31,4 +31,5 @@ An overfull bar in the editor: turn Free Editing off, or delete a note and the e
 - [Band-in-a-Box files will not open](https://maestro-pro.app/guide/band-in-a-box-files/): They cannot be read; save as MusicXML for the notation and as audio for the backing.
 - [Import does nothing or a file is greyed out](https://maestro-pro.app/guide/import-does-nothing-or-greyed-out/): Choose All Files in the Files browser, or drag the file onto the window.
 - [Jazz tunes need the internet](https://maestro-pro.app/guide/jazz-tunes-need-internet/): Jazz tunes need an internet connection the first time you add them.
+- [My MIDI instrument is not detected](https://maestro-pro.app/guide/midi-instrument-not-detected/): Check the cable and adapter, that the instrument is on, and Settings, Listening, which shows the connected MIDI instrument.
 - [An overfull bar in the editor](https://maestro-pro.app/guide/overfull-bar-in-editor/): Turn Free Editing off, or delete a note and the editor will tidy the bar.
