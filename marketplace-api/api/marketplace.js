@@ -15,6 +15,7 @@ import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsO
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { buildEmail as buildCaffeineEmail, sendCaffeineMail, inboundAddress } from "./_caffeine-email.js";
+import { saveMessage, loadMessage, listMessages, markRead, deleteMessage, newId } from "./_caffeine-mail.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import { startScan, pollScan } from "./_vt.js";
 import guidelines from "../lib/guidelines.js";
@@ -1003,12 +1004,14 @@ async function adminEmail(req, res) {
   };
   const sender = SENDERS[fromKey];
   if (!sender) return fail(res, 400, "Choose a valid from address.");
-  const to = String(b.to || "").trim();
+  // Accept "Name <addr>" as well as a bare address.
+  const toRaw = String(b.to || "").trim();
+  const toAngle = /<([^<>\s]+@[^<>\s]+)>/.exec(toRaw);
+  const to = toAngle ? toAngle[1] : toRaw;
   if (!/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(to) || to.length > 200) return fail(res, 400, "Enter a valid email address to send to.");
-  const splitAddrs = (v) => String(v || "").split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean);
-  const validAddr = (a) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(a);
-  const cc = splitAddrs(b.cc).filter(validAddr);
-  const bcc = splitAddrs(b.bcc).filter(validAddr);
+  const emailList = (v) => (String(v || "").match(/[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+/g) || []);
+  const cc = emailList(b.cc).slice(0, 25);
+  const bcc = emailList(b.bcc).slice(0, 25);
   const subject = String(b.subject || "").trim();
   if (!subject || subject.length > 200) return fail(res, 400, "Enter a subject (max 200 characters).");
   const body = String(b.body || "").trim();
@@ -1017,7 +1020,7 @@ async function adminEmail(req, res) {
   const label = String(b.label || "").trim().slice(0, 60);
   const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
   const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
-  const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
+  const buttons = (btnLabel && /^https?:\/\//i.test(btnUrl)) ? [[btnLabel, btnUrl]] : [];
   const footnote = fromKey === "noreply@thecaffeinemediacompany.com" ? "This mailbox is not monitored." : "";
   const mail = buildCaffeineEmail({ name, reply: body, label, fromName: "Caffeine Media", signoff: sender.signoff, footnote, buttons });
   // attachments: { filename, content (base64), content_type } — NOT scanned (admin uploads)
@@ -1041,56 +1044,90 @@ async function adminEmail(req, res) {
   const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts, cc, bcc });
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
-  await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: fromKey, to, cc, bcc, subject, text: mail.text, html: mail.html, attachments: cleanAtts, date: new Date().toISOString(), read: true });
+  try {
+    await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: fromKey, to, cc, bcc, subject, text: mail.text, html: mail.html, attachments: cleanAtts, date: new Date().toISOString(), read: true });
+  } catch (e) { console.error("saveMessage (sent)", e?.message); }
   return res.status(200).json({ ok: true, id: result && result.id });
 }
 
 
 async function mailInbound(req, res) {
   if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
+  // Optional shared secret: set CAFFEINE_INBOUND_SECRET and append ?secret=... to the webhook URL.
+  const inboundSecret = process.env.CAFFEINE_INBOUND_SECRET || "";
+  if (inboundSecret) {
+    const given = String(req.query?.secret || req.headers["x-webhook-secret"] || "");
+    if (given !== inboundSecret) return fail(res, 401, "Unauthorised.");
+  }
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body || "{}"); } catch { body = {}; } }
   body = body || {};
+  const type = String(body.type || "");
+  if (type && type !== "email.received") return res.status(200).json({ ok: true, ignored: type });
   const data = body.data || body;
   let from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
   const toList = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : []);
-  const to = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).join(", ");
+  let to = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).filter(Boolean).join(", ");
+  if (!to && Array.isArray(data.received_for)) to = data.received_for.join(", ");
   let subject = data.subject || "";
   let text = data.text || data.body || "";
   let html = data.html || "";
-  let emailId = data.email_id || data.id;
-  let headers = data.headers || {};
-  if ((!text && !html) && emailId && process.env.RESEND_API_KEY) {
+  const emailId = data.email_id || data.id;
+
+  // Webhooks carry metadata only: fetch the body from the received-email API.
+  if (emailId && process.env.RESEND_API_KEY) {
     try {
-      const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-      if (r.ok) { const j = await r.json(); text = j.text || text; html = j.html || html; subject = j.subject || subject; if (j.from) from = j.from; if (j.headers) headers = { ...headers, ...j.headers }; }
-    } catch { /* best effort */ }
+      const r = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+      });
+      if (r.ok) {
+        const j = await r.json();
+        text = j.text || text;
+        html = j.html || html;
+        subject = j.subject || subject;
+        if (!from) from = j.from || "";
+        if (!to && (j.to || j.received_for)) to = (j.to || j.received_for).join(", ");
+      }
+    } catch (e) { console.error("inbound body", e?.message); }
   }
-  // attachments
-  let attachments = Array.isArray(data.attachments) ? data.attachments : [];
-  if (!attachments.length && emailId && process.env.RESEND_API_KEY) {
+
+  // Attachments: list metadata, then download each one while its signed URL is valid.
+  let attItems = Array.isArray(data.attachments) ? data.attachments : [];
+  if (emailId && process.env.RESEND_API_KEY) {
     try {
-      const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}/attachments`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-      if (r.ok) { const j = await r.json(); attachments = Array.isArray(j) ? j : (j.data || j.attachments || []); }
-    } catch { /* best effort */ }
+      const r = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}/attachments`, {
+        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const list = Array.isArray(j) ? j : (j.data || j.attachments || []);
+        if (list.length) attItems = list;
+      }
+    } catch (e) { console.error("inbound attachments", e?.message); }
   }
   const attList = [];
-  for (const a of attachments) {
+  for (const a of attItems) {
     const name = a.filename || a.name || "attachment";
-    const aid = a.id || a.attachment_id;
     let content = a.content || "";
-    if (!content && aid && emailId && process.env.RESEND_API_KEY) {
+    if (!content && a.download_url) {
       try {
-        const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(aid)}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-        if (r.ok) { const j = await r.json(); content = j.content || j.data || ""; }
-      } catch { /* ignore */ }
-    } else if (!content && a.url) {
-      try { const r = await fetch(a.url); if (r.ok) content = Buffer.from(await r.arrayBuffer()).toString("base64"); } catch { /* ignore */ }
+        const r = await fetch(a.download_url);
+        if (r.ok) content = Buffer.from(await r.arrayBuffer()).toString("base64");
+      } catch (e) { console.error("inbound attachment download", e?.message); }
     }
+    if (!content) continue; // metadata only; skip so the UI does not show a dead file
     attList.push({ filename: name, content, content_type: a.content_type || a.type });
   }
-  const msg = { id: newId(), folder: "inbox", from, to, subject: subject || "(no subject)", text, html, attachments: attList, date: new Date().toISOString(), read: false };
-  await saveMessage(msg);
+
+  if (emailId) {
+    try {
+      const existing = await listMessages("inbox", "");
+      if (existing.some((m) => m.resendId === emailId)) return res.status(200).json({ ok: true, duplicate: true });
+    } catch (e) { console.error("inbound dedupe", e?.message); }
+  }
+  const msg = { id: newId(), folder: "inbox", from: from || "Unknown sender", to, subject: subject || "(no subject)", text, html, attachments: attList, date: new Date().toISOString(), read: false, resendId: emailId };
+  try { await saveMessage(msg); }
+  catch (e) { console.error("saveMessage (inbound)", e?.message); return fail(res, 500, "Could not store message."); }
   res.status(200).json({ ok: true, id: msg.id });
 }
 
@@ -1131,7 +1168,8 @@ async function mailMarkRead(req, res) {
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const id = String(b.id || "");
   if (!id) return fail(res, 400, "Missing id.");
-  await markRead(id, b.read !== false);
+  const updated = await markRead(id, b.read !== false);
+  if (!updated) return fail(res, 404, "Not found.");
   res.status(200).json({ ok: true });
 }
 
@@ -1172,12 +1210,22 @@ async function mailReply(req, res) {
   const subject = orig.subject && /^re:/i.test(orig.subject) ? orig.subject : `Re: ${orig.subject || ""}`;
   const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
   const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
-  const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
-  const mail = buildCaffeineEmail({ name: (to || "").split("@")[0] || "there", reply: body, label: "Caffeine Media", fromName: "Caffeine Media", signoff: sender.signoff, buttons });
+  const buttons = (btnLabel && /^https?:\/\//i.test(btnUrl)) ? [[btnLabel, btnUrl]] : [];
+  // Friendly greeting: use the sender's display name, else the local part of their address.
+  let greet = "there";
+  const dm = /^\s*"?([^"<]+?)"?\s*</.exec(String(to || ""));
+  if (dm && dm[1].trim()) greet = dm[1].trim();
+  else {
+    const local = String(to || "").split("@")[0].trim();
+    if (local && /^[a-z0-9._%+-]+$/i.test(local)) greet = local;
+  }
+  const mail = buildCaffeineEmail({ name: greet, reply: body, label: "Caffeine Media", fromName: "Caffeine Media", signoff: sender.signoff, buttons });
   const result = await sendCaffeineMail({ from: sender.from, to, reply_to: inboundAddress(), subject, text: mail.text, html: mail.html, idem: "cm-reply-" + Date.now() });
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
-  await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: sender.email, to, subject, text: mail.text, html: mail.html, attachments: [], date: new Date().toISOString(), read: true, inReplyTo: id });
+  try {
+    await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: sender.email, to, subject, text: mail.text, html: mail.html, attachments: [], date: new Date().toISOString(), read: true, inReplyTo: id });
+  } catch (e) { console.error("saveMessage (reply)", e?.message); }
   res.status(200).json({ ok: true, id: result && result.id });
 }
 

@@ -23,8 +23,8 @@ export async function saveMessage(msg) {
   const idx = await loadIndex(folder);
   const summary = {
     id: msg.id, folder, from: msg.from, to: msg.to, subject: msg.subject,
-    date: msg.date, read: !!msg.read, hasAttachments: !!(msg.attachments && msg.attachments.length),
-    preview: String(msg.text || "").replace(/\s+/g, " ").slice(0, 120)
+    date: msg.date, read: !!msg.read, hasAttachments: !!(msg.attachments && msg.attachments.length), resendId: msg.resendId || "",
+    preview: String(msg.text || (msg.html || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 120)
   };
   const i = idx.findIndex((m) => m.id === msg.id);
   if (i >= 0) idx[i] = summary; else idx.unshift(summary);
