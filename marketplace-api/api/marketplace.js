@@ -1119,12 +1119,14 @@ async function mailInbound(req, res) {
   if (!emailId && !from) return res.status(200).json({ ok: true, ignored: "empty" });
 
   // Webhooks carry metadata only: fetch the body from the received-email API.
+  let fetched = false;
   if (emailId && process.env.RESEND_API_KEY) {
     try {
       const r = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
         headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
       });
       if (r.ok) {
+        fetched = true;
         const j = await r.json();
         text = j.text || text;
         html = j.html || html;
@@ -1138,6 +1140,9 @@ async function mailInbound(req, res) {
 
   const notifHeader = headers["x-caffeine-notification"] || headers["X-Caffeine-Notification"];
   if (String(notifHeader || "") === "1") return res.status(200).json({ ok: true, ignored: "notification" });
+
+  // If the body could not be loaded, ask Resend to retry rather than storing an empty email.
+  if (emailId && !fetched && !text && !html) return fail(res, 500, "Could not load message.");
 
   // Attachments: list metadata, then download each one while its signed URL is valid.
   let attItems = Array.isArray(data.attachments) ? data.attachments : [];
