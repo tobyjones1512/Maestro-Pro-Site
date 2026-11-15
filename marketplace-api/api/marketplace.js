@@ -1006,6 +1006,10 @@ async function adminEmail(req, res) {
   if (!sender) return fail(res, 400, "Choose a valid from address.");
   const to = String(b.to || "").trim();
   if (!/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(to) || to.length > 200) return fail(res, 400, "Enter a valid email address to send to.");
+  const splitAddrs = (v) => String(v || "").split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean);
+  const validAddr = (a) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(a);
+  const cc = splitAddrs(b.cc).filter(validAddr);
+  const bcc = splitAddrs(b.bcc).filter(validAddr);
   const subject = String(b.subject || "").trim();
   if (!subject || subject.length > 200) return fail(res, 400, "Enter a subject (max 200 characters).");
   const body = String(b.body || "").trim();
@@ -1035,9 +1039,16 @@ async function adminEmail(req, res) {
     cleanAtts.push({ filename: fn, content, content_type: String(a.content_type || "").trim() || undefined });
   }
   const replyTo = inboundAddress();
-  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts });
+  // Only noreply@ is sent directly. For hello@/toby@, return the HTML so the user can paste it into their own client.
+  if (fromKey !== "noreply@thecaffeinemediacompany.com") {
+    try {
+      await upsertThread(to, subject, fromKey, { dir: "out", by: fromKey, text: body, attachments: cleanAtts.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() });
+    } catch (e) { console.error("upsertThread", e?.message); }
+    return res.status(200).json({ ok: true, copied: true, html: mail.html, text: mail.text, subject });
+  }
+  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts, cc, bcc });
+  if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
   if (result && result.ok && result.id) await storeRelay(result.id, to, fromKey);
-  // record the sent email as an outbound message in a thread so it appears in the inbox
   try {
     await upsertThread(to, subject, fromKey, { dir: "out", by: fromKey, text: body, attachments: cleanAtts.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() });
   } catch (e) { console.error("upsertThread", e?.message); }

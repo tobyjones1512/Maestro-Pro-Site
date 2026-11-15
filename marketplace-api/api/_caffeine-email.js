@@ -50,7 +50,7 @@ export function buildEmail({ name, reply, buttons = [], label = "", signoff = "T
     + "<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;max-width:600px;border-radius:14px;overflow:hidden\">\n"
     + "<tr><td style=\"background:" + C.ink + ";border-radius:14px 14px 0 0;padding:18px 28px\"><table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr><td width=\"46\" valign=\"middle\"><img src=\"" + LOGO + "\" width=\"38\" height=\"38\" alt=\"\" style=\"display:block;border-radius:9px\"></td><td valign=\"middle\" style=\"font:800 21px " + FONT + ";color:" + C.paper + ";letter-spacing:-.01em;text-transform:uppercase\">" + esc(fromName) + "</td><td align=\"right\" valign=\"middle\" style=\"font:650 11px " + FONT + ";letter-spacing:.1em;text-transform:uppercase;color:" + C.field + "\">" + esc(label) + "</td></tr></table></td></tr>\n"
     + "<tr><td style=\"height:4px;background:" + C.field + ";font-size:0;line-height:0\">&nbsp;</td></tr>\n"
-    + "<tr><td class=\"card\" style=\"background:" + C.card + ";padding:32px 34px 30px;font:16px/1.6 " + FONT + ";color:" + C.ink + "\">\n"
+    + "<tr><td class=\"card\" style=\"background:" + C.card + ";padding:32px 34px 30px;font:16px/1.6 " + FONT + ";color:" + C.ink + ";border-radius:14px\">\n"
     + "<p class=\"ink\" style=\"margin:0 0 18px;font:800 22px/1.3 " + SERIF + ";color:" + C.ink + "\">" + esc(hi) + "</p>\n"
     + body + btns + "\n"
     + "<p class=\"ink\" style=\"margin:26px 0 0;font:16px/1.5 " + FONT + ";color:" + C.ink + "\">Best regards,<br><strong>" + esc(signoff) + "</strong></p>"
@@ -64,9 +64,11 @@ export function buildEmail({ name, reply, buttons = [], label = "", signoff = "T
   return { html, text };
 }
 
-export async function sendCaffeineMail({ from, to, reply_to, subject, text, html, idem, attachments }) {
+export async function sendCaffeineMail({ from, to, reply_to, subject, text, html, idem, attachments, cc, bcc }) {
   if (!process.env.RESEND_API_KEY) return false;
   const payload = { from, to: [to], reply_to: reply_to || from, subject, text, html };
+  if (Array.isArray(cc) && cc.length) payload.cc = cc;
+  if (Array.isArray(bcc) && bcc.length) payload.bcc = bcc;
   if (Array.isArray(attachments) && attachments.length) {
     payload.attachments = attachments.map((a) => ({ filename: a.filename, content: a.content, ...(a.content_type ? { content_type: a.content_type } : {}) }));
   }
