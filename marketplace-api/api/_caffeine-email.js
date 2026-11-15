@@ -87,25 +87,31 @@ function inboundParts() {
 
 export function inboundDomain() { return inboundParts().domain; }
 
-export function makeAlias(recipient) {
+export function makeAlias(recipient, fromKey) {
   const { local, domain } = inboundParts();
-  const payload = Buffer.from(String(recipient || "")).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ r: String(recipient || ""), f: String(fromKey || "") })).toString("base64url");
   const sig = crypto.createHmac("sha256", SECRET).update(payload).digest("base64url").slice(0, 12);
   return `${local}+${payload}.${sig}@${domain}`;
 }
 
 export function parseAlias(to) {
   const { local, domain } = inboundParts();
-  const addr = Array.isArray(to) ? to[0] : to;
-  const re = new RegExp("^" + local.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\+([^@]+)@" + domain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$", "i");
-  const m = re.exec(String(addr || "").trim());
+  const addr = Array.isArray(to) ? to.join(", ") : String(to || "");
+  const re = new RegExp(local.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\+([^\s,<>]+)@" + domain.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  const m = re.exec(addr);
   if (!m) return null;
   const parts = m[1].split(".");
   if (parts.length !== 2) return null;
   const payload = parts[0], sig = parts[1];
   const expected = crypto.createHmac("sha256", SECRET).update(payload).digest("base64url").slice(0, 12);
   if (sig !== expected) return null;
-  try { return Buffer.from(payload, "base64url").toString("utf8"); } catch { return null; }
+  try {
+    const obj = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return { recipient: obj.r, fromKey: obj.f };
+  } catch {
+    // legacy: payload was plain recipient
+    try { return { recipient: Buffer.from(payload, "base64url").toString("utf8"), fromKey: "" }; } catch { return null; }
+  }
 }
 
 export function stripGreetingSignature(text) {

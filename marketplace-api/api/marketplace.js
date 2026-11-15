@@ -997,9 +997,9 @@ async function adminEmail(req, res) {
   if (!okAuth) return fail(res, 401, "Unauthorised.");
   const fromKey = String(b.from || "").trim().toLowerCase();
   const SENDERS = {
-    "hello@thecaffeinemediacompany.com": { from: "The Caffeine Media Company <hello@thecaffeinemediacompany.com>", name: "The Caffeine Media Company", reply: "hello@thecaffeinemediacompany.com" },
-    "toby@thecaffeinemediacompany.com": { from: "Toby Jones <toby@thecaffeinemediacompany.com>", name: "Toby Jones", reply: "toby@thecaffeinemediacompany.com" },
-    "noreply@thecaffeinemediacompany.com": { from: "The Caffeine Media Company <noreply@thecaffeinemediacompany.com>", name: "The Caffeine Media Company", reply: "hello@thecaffeinemediacompany.com" },
+    "hello@thecaffeinemediacompany.com": { from: "The Caffeine Media Company <hello@thecaffeinemediacompany.com>", name: "The Caffeine Media Company", reply: "hello@thecaffeinemediacompany.com", signoff: "The Caffeine Media Company" },
+    "toby@thecaffeinemediacompany.com": { from: "Toby Jones <toby@thecaffeinemediacompany.com>", name: "Toby Jones", reply: "toby@thecaffeinemediacompany.com", signoff: "Toby Jones" },
+    "noreply@thecaffeinemediacompany.com": { from: "The Caffeine Media Company <noreply@thecaffeinemediacompany.com>", name: "The Caffeine Media Company", reply: "noreply@thecaffeinemediacompany.com", signoff: "The Caffeine Media Company" },
   };
   const sender = SENDERS[fromKey];
   if (!sender) return fail(res, 400, "Choose a valid from address.");
@@ -1011,8 +1011,12 @@ async function adminEmail(req, res) {
   if (!body || body.length > 20000) return fail(res, 400, "Enter a message (max 20,000 characters).");
   const name = String(b.name || "").trim().slice(0, 100);
   const label = String(b.label || "Caffeine Media").trim().slice(0, 60) || "Caffeine Media";
-  const mail = buildCaffeineEmail({ name, reply: body, label, fromName: sender.name, signoff: sender.name === "Toby Jones" ? "Toby Jones" : "The Caffeine Media Company" });
-  const alias = makeAlias(to);
+  const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
+  const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
+  const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
+  const footnote = fromKey === "noreply@thecaffeinemediacompany.com" ? "This mailbox is not monitored." : "";
+  const mail = buildCaffeineEmail({ name, reply: body, label, fromName: "Caffeine Media", signoff: sender.signoff, footnote, buttons });
+  const alias = makeAlias(to, fromKey);
   const result = await sendCaffeineMail({ from: sender.from, to, reply_to: alias, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2) });
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
@@ -1028,8 +1032,10 @@ async function caffeineInbound(req, res) {
   const from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
   const toList = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : []);
   const toAddr = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).join(", ");
-  const recipient = parseAlias(toAddr);
-  if (!recipient) return res.status(200).json({ ok: true, ignored: true });
+  const parsed = parseAlias(toAddr);
+  if (!parsed || !parsed.recipient) return res.status(200).json({ ok: true, ignored: true });
+  const recipient = parsed.recipient;
+  const fromKey = parsed.fromKey || "";
 
   let text = data.text || data.body || "";
   let html = data.html || "";
@@ -1043,7 +1049,6 @@ async function caffeineInbound(req, res) {
   }
   const fromEmail = String(from).match(/[^\s<>]+@[^\s<>]+/)?.[0] || String(from);
 
-  // Fetch attachments list if not present
   let attachments = Array.isArray(data.attachments) ? data.attachments : [];
   if (!attachments.length && emailId && process.env.RESEND_API_KEY) {
     try {
@@ -1052,31 +1057,25 @@ async function caffeineInbound(req, res) {
     } catch { /* best effort */ }
   }
 
-  // Download + scan each attachment with VirusTotal
   const scanned = [];
   for (const a of attachments) {
     const name = a.filename || a.name || "attachment";
     const aid = a.id || a.attachment_id;
     let buf = null;
     if (a.content) {
-      try { buf = Buffer.from(a.content, a.content_encoding === "base64" ? "base64" : "base64"); } catch { buf = null; }
+      try { buf = Buffer.from(a.content, "base64"); } catch { buf = null; }
     } else if (aid && emailId && process.env.RESEND_API_KEY) {
       try {
         const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(aid)}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-        if (r.ok) {
-          const j = await r.json();
-          const c = j.content || j.data;
-          if (c) buf = Buffer.from(c, "base64");
-        }
+        if (r.ok) { const j = await r.json(); const c = j.content || j.data; if (c) buf = Buffer.from(c, "base64"); }
       } catch { /* ignore */ }
     } else if (a.url) {
       try { const r = await fetch(a.url); if (r.ok) buf = Buffer.from(await r.arrayBuffer()); } catch { /* ignore */ }
     }
     if (!buf) { scanned.push({ name, status: "unscanned", note: "Could not download." }); continue; }
     let { scan } = await startScan(buf, name);
-    // poll until complete or timeout (~20s)
     const deadline = Date.now() + 20000;
-    while (scan.status === "pending" || scan.status === "queued" || scan.status === "error") {
+    while (scan.status === "pending" || scan.status === "queued") {
       if (Date.now() > deadline) break;
       await new Promise((r) => setTimeout(r, 2000));
       const polled = await pollScan(scan);
@@ -1089,7 +1088,7 @@ async function caffeineInbound(req, res) {
   const flagged = scanned.filter((x) => x.scan && x.scan.status === "flagged");
   if (flagged.length) {
     const lines = flagged.map((x) => `- ${x.name}: ${x.scan.link || "flagged"}`).join("\n");
-    await sendCaffeineMail({ from: `The Caffeine Media Company <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: makeAlias(recipient), subject: `Blocked attachment: ${subject || "(no subject)"}`, text: `One or more attachments were flagged by VirusTotal and not forwarded.\n\n${lines}\n\nFrom: ${fromEmail}`, html: "", idem: "cm-block-" + Date.now() });
+    await sendCaffeineMail({ from: `The Caffeine Media Company <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: makeAlias(recipient, fromKey || "hello"), subject: `Blocked attachment: ${subject || "(no subject)"}`, text: `One or more attachments were flagged by VirusTotal and not forwarded.\n\n${lines}\n\nFrom: ${fromEmail}`, html: "", idem: "cm-block-" + Date.now(), attachments: [] });
     return res.status(200).json({ ok: true, blocked: true });
   }
 
@@ -1097,16 +1096,21 @@ async function caffeineInbound(req, res) {
 
   const owner = ownerAddress(fromEmail);
   if (!owner) {
-    // incoming from a recipient: notify Toby (with attachments)
-    await sendCaffeineMail({ from: `The Caffeine Media Company <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: makeAlias(recipient), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `From: ${fromEmail}\nTo: ${toAddr}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
+    // recipient replying
+    if (fromKey === "noreply@thecaffeinemediacompany.com" || fromKey === "noreply") {
+      // do not forward; send plain text auto-reply
+      await sendCaffeineMail({ from: `The Caffeine Media Company <noreply@thecaffeinemediacompany.com>`, to: fromEmail, reply_to: `noreply@thecaffeinemediacompany.com`, subject: `Re: ${subject || ""}`.trim(), text: "This mailbox is not monitored and your email has not been received.", html: "", idem: "cm-noreply-" + Date.now() });
+      return res.status(200).json({ ok: true, noreply: true });
+    }
+    await sendCaffeineMail({ from: `The Caffeine Media Company <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: makeAlias(recipient, fromKey || "hello"), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `From: ${fromEmail}\nTo: ${toAddr}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
     return res.status(200).json({ ok: true, forwarded: true });
   }
-  // owner replying from mail client: strip + reformat, send to recipient (with attachments)
+  // owner replying from mail client
   const clean = stripGreetingSignature(text || html.replace(/<[^>]+>/g, " "));
-  const mail = buildCaffeineEmail({ name: "there", reply: `Hi,\n\n${clean}`, label: "Caffeine Media", fromName: "Toby Jones", signoff: "Toby Jones" });
+  const mail = buildCaffeineEmail({ name: "there", reply: `Hi,\n\n${clean}`, label: "Caffeine Media", fromName: "Caffeine Media", signoff: "Toby Jones", footnote: "", buttons: [] });
   mail.html = mail.html.replace(/Hi there,/g, "Hi,");
   mail.text = mail.text.replace(/Hi there,/g, "Hi,");
-  const result = await sendCaffeineMail({ from: "Toby Jones <toby@thecaffeinemediacompany.com>", to: recipient, reply_to: makeAlias(recipient), subject: subject || "Re:", text: mail.text, html: mail.html, idem: "cm-relay-" + Date.now(), attachments: cleanAttachments });
+  const result = await sendCaffeineMail({ from: "Toby Jones <toby@thecaffeinemediacompany.com>", to: recipient, reply_to: makeAlias(recipient, "toby@thecaffeinemediacompany.com"), subject: subject || "Re:", text: mail.text, html: mail.html, idem: "cm-relay-" + Date.now(), attachments: cleanAttachments });
   if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
   return res.status(200).json({ ok: true, sent: true });
 }
