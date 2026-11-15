@@ -1014,6 +1014,7 @@ async function adminEmail(req, res) {
   const bcc = emailList(b.bcc).slice(0, 25);
   const subject = String(b.subject || "").trim();
   if (!subject || subject.length > 200) return fail(res, 400, "Enter a subject (max 200 characters).");
+  const inReplyTo = String(b.inReplyTo || "").trim().slice(0, 200);
   const body = String(b.body || "").trim();
   if (!body || body.length > 20000) return fail(res, 400, "Enter a message (max 20,000 characters).");
   const name = String(b.name || "").trim().slice(0, 100);
@@ -1045,13 +1046,51 @@ async function adminEmail(req, res) {
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
   try {
-    await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: fromKey, to, cc, bcc, subject, text: mail.text, html: mail.html, attachments: cleanAtts, date: new Date().toISOString(), read: true });
+    await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: fromKey, to, cc, bcc, subject, text: mail.text, html: mail.html, attachments: cleanAtts, date: new Date().toISOString(), read: true, inReplyTo: inReplyTo || undefined });
   } catch (e) { console.error("saveMessage (sent)", e?.message); }
   return res.status(200).json({ ok: true, id: result && result.id });
 }
 
 
+// Emails a heads-up to hello@ when someone replies. Sent from noreply@ and tagged so the
+// inbound webhook can recognise (and never loop on) its own notifications.
+async function notifyReply(msg, headers) {
+  const subject = String(msg.subject || "(no subject)");
+  const h = headers || {};
+  const looksReply = /^\s*re\s*:/i.test(subject) || !!(h["in-reply-to"] || h["In-Reply-To"] || h["references"] || h["References"]);
+  if (!looksReply) return;
+  const preview = String(msg.text || (msg.html || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 220);
+  const url = "https://thecaffeinemediacompany.com/admin/?message=" + encodeURIComponent(msg.id);
+  const lines = [
+    (msg.from || "Someone") + " replied to an email in your inbox.",
+    "Subject: " + subject,
+  ];
+  if (preview) lines.push("\u201C" + preview + "\u201D");
+  lines.push("Open the mail panel to read the full message and reply.");
+  const mail = buildCaffeineEmail({
+    greeting: "",
+    reply: lines.join("\n"),
+    label: "New reply",
+    fromName: "Caffeine Media",
+    signoff: "The Caffeine Media Company",
+    buttons: [["Open in Mail", url]],
+  });
+  const result = await sendCaffeineMail({
+    from: "Caffeine Media <noreply@thecaffeinemediacompany.com>",
+    to: "hello@thecaffeinemediacompany.com",
+    reply_to: "hello@thecaffeinemediacompany.com",
+    subject: "New reply: " + subject.replace(/^\s*re\s*:\s*/i, ""),
+    text: mail.text,
+    html: mail.html,
+    idem: "cm-notify-" + msg.id,
+    headers: { "X-Caffeine-Notification": "1" },
+  });
+  if (result === false) console.error("notifyReply: Resend not configured");
+  else if (result && result.ok === false) console.error("notifyReply:", result.error);
+}
+
 async function mailInbound(req, res) {
+
   if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
   // Optional shared secret: set CAFFEINE_INBOUND_SECRET and append ?secret=... to the webhook URL.
   const inboundSecret = process.env.CAFFEINE_INBOUND_SECRET || "";
@@ -1066,12 +1105,16 @@ async function mailInbound(req, res) {
   if (type && type !== "email.received") return res.status(200).json({ ok: true, ignored: type });
   const data = body.data || body;
   let from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
+  if (String(from).toLowerCase().includes("noreply@thecaffeinemediacompany.com")) {
+    return res.status(200).json({ ok: true, ignored: "notification" });
+  }
   const toList = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : []);
   let to = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).filter(Boolean).join(", ");
   if (!to && Array.isArray(data.received_for)) to = data.received_for.join(", ");
   let subject = data.subject || "";
   let text = data.text || data.body || "";
   let html = data.html || "";
+  let headers = data.headers || {};
   const emailId = data.email_id || data.id;
 
   // Webhooks carry metadata only: fetch the body from the received-email API.
@@ -1087,9 +1130,13 @@ async function mailInbound(req, res) {
         subject = j.subject || subject;
         if (!from) from = j.from || "";
         if (!to && (j.to || j.received_for)) to = (j.to || j.received_for).join(", ");
+        if (j.headers) headers = j.headers;
       }
     } catch (e) { console.error("inbound body", e?.message); }
   }
+
+  const notifHeader = headers["x-caffeine-notification"] || headers["X-Caffeine-Notification"];
+  if (String(notifHeader || "") === "1") return res.status(200).json({ ok: true, ignored: "notification" });
 
   // Attachments: list metadata, then download each one while its signed URL is valid.
   let attItems = Array.isArray(data.attachments) ? data.attachments : [];
@@ -1128,6 +1175,8 @@ async function mailInbound(req, res) {
   const msg = { id: newId(), folder: "inbox", from: from || "Unknown sender", to, subject: subject || "(no subject)", text, html, attachments: attList, date: new Date().toISOString(), read: false, resendId: emailId };
   try { await saveMessage(msg); }
   catch (e) { console.error("saveMessage (inbound)", e?.message); return fail(res, 500, "Could not store message."); }
+  try { await notifyReply(msg, headers); }
+  catch (e) { console.error("notifyReply", e?.message); }
   res.status(200).json({ ok: true, id: msg.id });
 }
 
