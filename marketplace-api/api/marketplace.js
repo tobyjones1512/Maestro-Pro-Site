@@ -14,8 +14,7 @@ import { SUPPORT, SITE, API, CUT, FEE_GBP, decimals, cors, rand, sha, isAdmin, s
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
-import { buildEmail as buildCaffeineEmail, sendCaffeineMail, makeAlias, parseAlias, stripGreetingSignature, ownerAddress, inboundForwardTo, inboundAddress, storeRelay, lookupRelay } from "./_caffeine-email.js";
-import { upsertThread, listThreads, loadThread, markRead, threadIdFor, loadIndex, saveIndex, markDone, deleteThread } from "./_caffeine-threads.js";
+import { buildEmail as buildCaffeineEmail, sendCaffeineMail, inboundAddress } from "./_caffeine-email.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import { startScan, pollScan } from "./_vt.js";
 import guidelines from "../lib/guidelines.js";
@@ -1039,51 +1038,35 @@ async function adminEmail(req, res) {
     cleanAtts.push({ filename: fn, content, content_type: String(a.content_type || "").trim() || undefined });
   }
   const replyTo = inboundAddress();
-  // Only noreply@ is sent directly. For hello@/toby@, return the HTML so the user can paste it into their own client.
-  if (fromKey !== "noreply@thecaffeinemediacompany.com") {
-    try {
-      await upsertThread(to, subject, fromKey, { dir: "out", by: fromKey, text: body, attachments: cleanAtts.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() });
-    } catch (e) { console.error("upsertThread", e?.message); }
-    return res.status(200).json({ ok: true, copied: true, html: mail.html, text: mail.text, subject });
-  }
   const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts, cc, bcc });
-  if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
-  if (result && result.ok && result.id) await storeRelay(result.id, to, fromKey);
-  try {
-    await upsertThread(to, subject, fromKey, { dir: "out", by: fromKey, text: body, attachments: cleanAtts.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() });
-  } catch (e) { console.error("upsertThread", e?.message); }
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
+  await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: fromKey, to, cc, bcc, subject, text: mail.text, html: mail.html, attachments: cleanAtts, date: new Date().toISOString(), read: true });
   return res.status(200).json({ ok: true, id: result && result.id });
 }
 
-async function caffeineInbound(req, res) {
+
+async function mailInbound(req, res) {
   if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body || "{}"); } catch { body = {}; } }
   body = body || {};
   const data = body.data || body;
-  const from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
+  let from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
   const toList = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : []);
-  const toAddr = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).join(", ");
-
-  // Also support legacy plus-alias routing if present
-  const parsed = parseAlias(toAddr);
-
+  const to = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).join(", ");
+  let subject = data.subject || "";
   let text = data.text || data.body || "";
   let html = data.html || "";
-  let subject = data.subject || "";
   let emailId = data.email_id || data.id;
   let headers = data.headers || {};
-  let inReplyTo = headers["in-reply-to"] || headers["in_reply_to"] || data.in_reply_to || data.inReplyTo || "";
   if ((!text && !html) && emailId && process.env.RESEND_API_KEY) {
     try {
       const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-      if (r.ok) { const j = await r.json(); text = j.text || text; html = j.html || html; subject = j.subject || subject; if (j.from) from = j.from; if (j.attachments) data.attachments = j.attachments; if (j.headers) headers = { ...headers, ...j.headers }; if (j.headers && (j.headers["in-reply-to"] || j.headers["in_reply_to"])) inReplyTo = j.headers["in-reply-to"] || j.headers["in_reply_to"]; }
+      if (r.ok) { const j = await r.json(); text = j.text || text; html = j.html || html; subject = j.subject || subject; if (j.from) from = j.from; if (j.headers) headers = { ...headers, ...j.headers }; }
     } catch { /* best effort */ }
   }
-  const fromEmail = String(from).match(/[^\s<>]+@[^\s<>]+/)?.[0] || String(from);
-
+  // attachments
   let attachments = Array.isArray(data.attachments) ? data.attachments : [];
   if (!attachments.length && emailId && process.env.RESEND_API_KEY) {
     try {
@@ -1091,101 +1074,39 @@ async function caffeineInbound(req, res) {
       if (r.ok) { const j = await r.json(); attachments = Array.isArray(j) ? j : (j.data || j.attachments || []); }
     } catch { /* best effort */ }
   }
-
-  const scanned = [];
+  const attList = [];
   for (const a of attachments) {
     const name = a.filename || a.name || "attachment";
     const aid = a.id || a.attachment_id;
-    let buf = null;
-    if (a.content) {
-      try { buf = Buffer.from(a.content, "base64"); } catch { buf = null; }
-    } else if (aid && emailId && process.env.RESEND_API_KEY) {
+    let content = a.content || "";
+    if (!content && aid && emailId && process.env.RESEND_API_KEY) {
       try {
         const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}/attachments/${encodeURIComponent(aid)}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-        if (r.ok) { const j = await r.json(); const c = j.content || j.data; if (c) buf = Buffer.from(c, "base64"); }
+        if (r.ok) { const j = await r.json(); content = j.content || j.data || ""; }
       } catch { /* ignore */ }
-    } else if (a.url) {
-      try { const r = await fetch(a.url); if (r.ok) buf = Buffer.from(await r.arrayBuffer()); } catch { /* ignore */ }
+    } else if (!content && a.url) {
+      try { const r = await fetch(a.url); if (r.ok) content = Buffer.from(await r.arrayBuffer()).toString("base64"); } catch { /* ignore */ }
     }
-    if (!buf) { scanned.push({ name, status: "unscanned", note: "Could not download." }); continue; }
-    let { scan } = await startScan(buf, name);
-    const deadline = Date.now() + 6000;
-    while (scan.status === "pending" || scan.status === "queued") {
-      if (Date.now() > deadline) break;
-      await new Promise((r) => setTimeout(r, 2000));
-      const polled = await pollScan(scan);
-      scan = polled.scan;
-      if (scan.status === "clean" || scan.status === "flagged") break;
-    }
-    scanned.push({ name, buf, scan, content_type: a.content_type || a.type });
+    attList.push({ filename: name, content, content_type: a.content_type || a.type });
   }
-
-  const flagged = scanned.filter((x) => x.scan && x.scan.status === "flagged");
-  if (flagged.length) {
-    const lines = flagged.map((x) => `- ${x.name}: ${x.scan.link || "flagged"}`).join("\n");
-    await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: inboundAddress(), subject: `Blocked attachment: ${subject || "(no subject)"}`, text: `One or more attachments were flagged by VirusTotal and not forwarded.\n\n${lines}\n\nFrom: ${fromEmail}`, html: "", idem: "cm-block-" + Date.now(), attachments: [] });
-    return res.status(200).json({ ok: true, blocked: true });
-  }
-
-  const cleanAttachments = scanned.filter((x) => x.buf).map((x) => ({ filename: x.name, content: x.buf.toString("base64"), content_type: x.content_type }));
-
-  const owner = ownerAddress(fromEmail);
-  if (!owner) {
-    // recipient replying: store as thread, notify sender (hello/toby) with button to admin panel
-    const fromKey = (parsed && parsed.fromKey) || "";
-    if (fromKey === "noreply@thecaffeinemediacompany.com" || fromKey === "noreply") {
-      await sendCaffeineMail({ from: `Caffeine Media <noreply@thecaffeinemediacompany.com>`, to: fromEmail, reply_to: inboundAddress(), subject: `Re: ${subject || ""}`.trim(), text: "This mailbox is not monitored and your email has not been received.", html: "", idem: "cm-noreply-" + Date.now() });
-      return res.status(200).json({ ok: true, noreply: true });
-    }
-    const recipient = (parsed && parsed.recipient) || fromEmail;
-    const notifyTo = (fromKey && fromKey.includes("toby")) ? "toby@thecaffeinemediacompany.com" : "hello@thecaffeinemediacompany.com";
-    const msg = { dir: "in", by: fromEmail, text: text || "", attachments: cleanAttachments.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() };
-    let thread = null;
-    try { thread = await upsertThread(recipient, subject || "(no subject)", fromKey || "hello@thecaffeinemediacompany.com", msg); }
-    catch (e) { console.error("upsertThread failed", e?.message); }
-    const tid = thread ? thread.id : (await (async () => { const { threadIdFor } = await import("./_caffeine-threads.js"); return threadIdFor(recipient, subject || "(no subject)"); })());
-    const adminUrl = `https://thecaffeinemediacompany.com/admin/?thread=${tid}`;
-    // notify with a button to open the thread in the admin panel
-    // rebuild html with a button by using buildEmail
-    const mail = buildCaffeineEmail({ name: "there", reply: `You have a new reply from **${fromEmail}**.\n\nSubject: ${subject || "(no subject)"}\n\n${(text || "").slice(0, 500)}`, label: "Caffeine Media", fromName: "Caffeine Media", signoff: "The Caffeine Media Company", buttons: [["Open thread", adminUrl]] });
-    await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: notifyTo, reply_to: inboundAddress(), subject: `New reply: ${subject || "(no subject)"}`, text: mail.text, html: mail.html, idem: "cm-notify2-" + Date.now() });
-    return res.status(200).json({ ok: true, threaded: true, threadId: tid });
-  }
-  // owner replying from mail client: find recipient via In-Reply-To or legacy alias
-  let recipient = parsed ? parsed.recipient : null;
-  if (!recipient) {
-    const rel = await lookupRelay(inReplyTo);
-    if (rel) recipient = rel.recipient;
-  }
-  if (!recipient) {
-    // can't route; forward to Toby for manual handling
-    await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: inboundAddress(), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `Could not route reply (no recipient mapping).\nFrom: ${fromEmail}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
-    return res.status(200).json({ ok: true, unrouted: true });
-  }
-  const clean = stripGreetingSignature(text || html.replace(/<[^>]+>/g, " "));
-  const mail = buildCaffeineEmail({ name: "there", reply: `Hi,\n\n${clean}`, label: "Caffeine Media", fromName: "Caffeine Media", signoff: "Toby Jones", footnote: "", buttons: [] });
-  mail.html = mail.html.replace(/Hi there,/g, "Hi,");
-  mail.text = mail.text.replace(/Hi there,/g, "Hi,");
-  const result = await sendCaffeineMail({ from: "Caffeine Media <toby@thecaffeinemediacompany.com>", to: recipient, reply_to: inboundAddress(), subject: subject || "Re:", text: mail.text, html: mail.html, idem: "cm-relay-" + Date.now(), attachments: cleanAttachments });
-  if (result && result.ok && result.id) await storeRelay(result.id, recipient, "toby@thecaffeinemediacompany.com");
-  if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
-  return res.status(200).json({ ok: true, sent: true });
+  const msg = { id: newId(), folder: "inbox", from, to, subject: subject || "(no subject)", text, html, attachments: attList, date: new Date().toISOString(), read: false };
+  await saveMessage(msg);
+  res.status(200).json({ ok: true, id: msg.id });
 }
 
-
-async function adminThreads(req, res) {
+async function mailList(req, res) {
   if (req.method !== "GET") return fail(res, 405, "Method not allowed.");
   const key = String(req.headers["x-admin-key"] || req.query?.key || "");
   const adminPw = process.env.ADMIN_PASSWORD || "";
   const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const folder = String(req.query?.folder || "inbox");
   const q = String(req.query?.q || "");
-  const status = String(req.query?.status || "open");
-  const list = await listThreads(q, status);
-  res.status(200).json({ ok: true, threads: list });
+  const list = await listMessages(folder, q);
+  res.status(200).json({ ok: true, messages: list });
 }
 
-async function adminThread(req, res) {
+async function mailMessage(req, res) {
   if (req.method !== "GET") return fail(res, 405, "Method not allowed.");
   const key = String(req.headers["x-admin-key"] || req.query?.key || "");
   const adminPw = process.env.ADMIN_PASSWORD || "";
@@ -1193,63 +1114,13 @@ async function adminThread(req, res) {
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const id = String(req.query?.id || "");
   if (!id) return fail(res, 400, "Missing id.");
-  const thread = await loadThread(id);
-  if (!thread) return fail(res, 404, "Not found.");
-  await markRead(id);
-  res.status(200).json({ ok: true, thread });
+  const msg = await loadMessage(id);
+  if (!msg) return fail(res, 404, "Not found.");
+  await markRead(id, true);
+  res.status(200).json({ ok: true, message: msg });
 }
 
-async function adminReply(req, res) {
-  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
-  let b = req.body;
-  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
-  b = b || {};
-  const key = String(req.headers["x-admin-key"] || b.key || "");
-  const adminPw = process.env.ADMIN_PASSWORD || "";
-  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
-  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
-  const id = String(b.threadId || "");
-  const body = String(b.body || "").trim();
-  if (!id) return fail(res, 400, "Missing threadId.");
-  if (!body) return fail(res, 400, "Enter a message.");
-  const thread = await loadThread(id);
-  if (!thread) return fail(res, 404, "Thread not found.");
-  const fromKey = thread.fromKey || "hello@thecaffeinemediacompany.com";
-  const sender = fromKey.includes("toby") ? { from: "Caffeine Media <toby@thecaffeinemediacompany.com>", signoff: "Toby Jones", email: "toby@thecaffeinemediacompany.com" }
-    : fromKey.includes("noreply") ? { from: "Caffeine Media <noreply@thecaffeinemediacompany.com>", signoff: "The Caffeine Media Company", email: "noreply@thecaffeinemediacompany.com" }
-    : { from: "Caffeine Media <hello@thecaffeinemediacompany.com>", signoff: "The Caffeine Media Company", email: "hello@thecaffeinemediacompany.com" };
-  const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
-  const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
-  const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
-  const atts = Array.isArray(b.attachments) ? b.attachments : [];
-  const cleanAtts = [];
-  for (const a of atts) {
-    const fn = String(a && a.filename || "").trim().slice(0, 200);
-    const content = String(a && a.content || "").trim();
-    if (!fn || !content) continue;
-    if (!/^[A-Za-z0-9+\/_=-]+$/.test(content)) continue;
-    const buf = Buffer.from(content, "base64");
-    if (!buf.length || buf.length > 4 * 1024 * 1024) continue;
-    cleanAtts.push({ filename: fn, content, content_type: String(a.content_type || "").trim() || undefined });
-  }
-  const mail = buildCaffeineEmail({ name: thread.customer ? thread.customer.split("@")[0] : "there", reply: body, label: "Caffeine Media", fromName: "Caffeine Media", signoff: sender.signoff, buttons });
-  const mailText = mail.text.replace(/^Hi [^,]*,/, "Hi,");
-  const mailHtml = mail.html.replace(/Hi [^<]*,/, "Hi,");
-  const result = await sendCaffeineMail({ from: sender.from, to: thread.customer, reply_to: inboundAddress(), subject: thread.subject ? `Re: ${thread.subject}` : "Re:", text: mailText, html: mailHtml, idem: "cm-reply-" + Date.now(), attachments: cleanAtts });
-  if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
-  const msg = { dir: "out", by: sender.email, text: body, attachments: cleanAtts, at: new Date().toISOString() };
-  thread.messages.push(msg);
-  thread.lastAt = msg.at;
-  thread.unread = 0;
-  await saveThread(thread);
-  const idx = await loadIndex();
-  const j = idx.findIndex((t) => t.id === id);
-  if (j >= 0) { idx[j].lastAt = msg.at; idx[j].unread = 0; idx[j].count = thread.messages.length; await saveIndex(idx); }
-  if (result && result.ok && result.id) await storeRelay(result.id, thread.customer, sender.email);
-  res.status(200).json({ ok: true, thread });
-}
-
-async function adminThreadDone(req, res) {
+async function mailMarkRead(req, res) {
   if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
   let b = req.body;
   if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
@@ -1260,28 +1131,57 @@ async function adminThreadDone(req, res) {
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const id = String(b.id || "");
   if (!id) return fail(res, 400, "Missing id.");
-  const done = b.done !== false;
-  const thread = await markDone(id, done);
-  if (!thread) return fail(res, 404, "Not found.");
-  res.status(200).json({ ok: true, thread });
-}
-
-async function adminThreadDelete(req, res) {
-  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
-  let b = req.body;
-  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
-  b = b || {};
-  const key = String(req.headers["x-admin-key"] || b.key || "");
-  const adminPw = process.env.ADMIN_PASSWORD || "";
-  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
-  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
-  const id = String(b.id || "");
-  if (!id) return fail(res, 400, "Missing id.");
-  await deleteThread(id);
+  await markRead(id, b.read !== false);
   res.status(200).json({ ok: true });
 }
 
-const routes = { "admin-email": adminEmail, "admin-thread-done": adminThreadDone, "admin-thread-delete": adminThreadDelete, "admin-threads": adminThreads, "admin-thread": adminThread, "admin-reply": adminReply, "caffeine-inbound": caffeineInbound, reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+async function mailDelete(req, res) {
+  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
+  let b = req.body;
+  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
+  b = b || {};
+  const key = String(req.headers["x-admin-key"] || b.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const id = String(b.id || "");
+  if (!id) return fail(res, 400, "Missing id.");
+  await deleteMessage(id);
+  res.status(200).json({ ok: true });
+}
+
+async function mailReply(req, res) {
+  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
+  let b = req.body;
+  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
+  b = b || {};
+  const key = String(req.headers["x-admin-key"] || b.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const id = String(b.messageId || "");
+  const body = String(b.body || "").trim();
+  if (!id || !body) return fail(res, 400, "Missing messageId or body.");
+  const orig = await loadMessage(id);
+  if (!orig) return fail(res, 404, "Original not found.");
+  const fromKey = String(b.from || "hello@thecaffeinemediacompany.com").trim().toLowerCase();
+  const sender = fromKey.includes("toby") ? { from: "Caffeine Media <toby@thecaffeinemediacompany.com>", signoff: "Toby Jones", email: "toby@thecaffeinemediacompany.com" }
+    : fromKey.includes("noreply") ? { from: "Caffeine Media <noreply@thecaffeinemediacompany.com>", signoff: "The Caffeine Media Company", email: "noreply@thecaffeinemediacompany.com" }
+    : { from: "Caffeine Media <hello@thecaffeinemediacompany.com>", signoff: "The Caffeine Media Company", email: "hello@thecaffeinemediacompany.com" };
+  const to = orig.from;
+  const subject = orig.subject && /^re:/i.test(orig.subject) ? orig.subject : `Re: ${orig.subject || ""}`;
+  const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
+  const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
+  const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
+  const mail = buildCaffeineEmail({ name: (to || "").split("@")[0] || "there", reply: body, label: "Caffeine Media", fromName: "Caffeine Media", signoff: sender.signoff, buttons });
+  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: inboundAddress(), subject, text: mail.text, html: mail.html, idem: "cm-reply-" + Date.now() });
+  if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
+  if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
+  await saveMessage({ id: (result && result.id) ? result.id : newId(), folder: "sent", from: sender.email, to, subject, text: mail.text, html: mail.html, attachments: [], date: new Date().toISOString(), read: true, inReplyTo: id });
+  res.status(200).json({ ok: true, id: result && result.id });
+}
+
+const routes = { "admin-email": adminEmail, "mail-inbound": mailInbound, "mail-list": mailList, "mail-message": mailMessage, "mail-markread": mailMarkRead, "mail-delete": mailDelete, "mail-reply": mailReply };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
