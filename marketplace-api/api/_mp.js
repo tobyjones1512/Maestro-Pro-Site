@@ -13,13 +13,13 @@ export const SUPPORT = "support@maestro-pro.app";
 export const OWNER = "hello@thecaffeinemediacompany.com";
 export const FEE_GBP = "5.00";   // the one-time technology fee for a Merchant Account
 export const CUT = 0.3;   // the marketplace's share of every seller's sale
-const ORIGINS = [SITE, "https://www.maestro-pro.app", "http://localhost:8000"];
+const ORIGINS = [SITE, "https://www.maestro-pro.app", "http://localhost:8000", "https://thecaffeinemediacompany.com", "https://www.thecaffeinemediacompany.com", "https://admin.thecaffeinemediacompany.com", "http://localhost:4321"];
 
 export function cors(req, res) {
   const o = req.headers.origin;
   if (ORIGINS.includes(o)) { res.setHeader("Access-Control-Allow-Origin", o); res.setHeader("Vary", "Origin"); }
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-MP-Key, X-MP-Buyer");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-MP-Key, X-MP-Buyer, X-Admin-Key");
   if (req.method === "OPTIONS") { res.status(204).end(); return true; }
   return false;
 }
