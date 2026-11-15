@@ -14,7 +14,7 @@ import { SUPPORT, SITE, API, CUT, FEE_GBP, decimals, cors, rand, sha, isAdmin, s
 import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsOf } from "./_bundle.js";
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
-import { buildEmail as buildCaffeineEmail, sendCaffeineMail, makeAlias, parseAlias, stripGreetingSignature, ownerAddress, inboundForwardTo } from "./_caffeine-email.js";
+import { buildEmail as buildCaffeineEmail, sendCaffeineMail, makeAlias, parseAlias, stripGreetingSignature, ownerAddress, inboundForwardTo, inboundAddress, storeRelay, lookupRelay } from "./_caffeine-email.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import { startScan, pollScan } from "./_vt.js";
 import guidelines from "../lib/guidelines.js";
@@ -997,9 +997,9 @@ async function adminEmail(req, res) {
   if (!okAuth) return fail(res, 401, "Unauthorised.");
   const fromKey = String(b.from || "").trim().toLowerCase();
   const SENDERS = {
-    "hello@thecaffeinemediacompany.com": { from: "The Caffeine Media Company <hello@thecaffeinemediacompany.com>", name: "The Caffeine Media Company", reply: "hello@thecaffeinemediacompany.com", signoff: "The Caffeine Media Company" },
-    "toby@thecaffeinemediacompany.com": { from: "Toby Jones <toby@thecaffeinemediacompany.com>", name: "Toby Jones", reply: "toby@thecaffeinemediacompany.com", signoff: "Toby Jones" },
-    "noreply@thecaffeinemediacompany.com": { from: "The Caffeine Media Company <noreply@thecaffeinemediacompany.com>", name: "The Caffeine Media Company", reply: "noreply@thecaffeinemediacompany.com", signoff: "The Caffeine Media Company" },
+    "hello@thecaffeinemediacompany.com": { from: "Caffeine Media <hello@thecaffeinemediacompany.com>", name: "Caffeine Media", reply: "hello@thecaffeinemediacompany.com", signoff: "The Caffeine Media Company" },
+    "toby@thecaffeinemediacompany.com": { from: "Caffeine Media <toby@thecaffeinemediacompany.com>", name: "Caffeine Media", reply: "toby@thecaffeinemediacompany.com", signoff: "Toby Jones" },
+    "noreply@thecaffeinemediacompany.com": { from: "Caffeine Media <noreply@thecaffeinemediacompany.com>", name: "Caffeine Media", reply: "noreply@thecaffeinemediacompany.com", signoff: "The Caffeine Media Company" },
   };
   const sender = SENDERS[fromKey];
   if (!sender) return fail(res, 400, "Choose a valid from address.");
@@ -1016,8 +1016,9 @@ async function adminEmail(req, res) {
   const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
   const footnote = fromKey === "noreply@thecaffeinemediacompany.com" ? "This mailbox is not monitored." : "";
   const mail = buildCaffeineEmail({ name, reply: body, label, fromName: "Caffeine Media", signoff: sender.signoff, footnote, buttons });
-  const alias = makeAlias(to, fromKey);
-  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: alias, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2) });
+  const replyTo = inboundAddress();
+  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2) });
+  if (result && result.ok && result.id) await storeRelay(result.id, to, fromKey);
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
   return res.status(200).json({ ok: true, id: result && result.id });
@@ -1032,19 +1033,20 @@ async function caffeineInbound(req, res) {
   const from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
   const toList = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : []);
   const toAddr = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).join(", ");
+
+  // Also support legacy plus-alias routing if present
   const parsed = parseAlias(toAddr);
-  if (!parsed || !parsed.recipient) return res.status(200).json({ ok: true, ignored: true });
-  const recipient = parsed.recipient;
-  const fromKey = parsed.fromKey || "";
 
   let text = data.text || data.body || "";
   let html = data.html || "";
   let subject = data.subject || "";
   let emailId = data.email_id || data.id;
+  let headers = data.headers || {};
+  let inReplyTo = headers["in-reply-to"] || headers["in_reply_to"] || data.in_reply_to || data.inReplyTo || "";
   if ((!text && !html) && emailId && process.env.RESEND_API_KEY) {
     try {
       const r = await fetch(`https://api.resend.com/emails/${encodeURIComponent(emailId)}`, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
-      if (r.ok) { const j = await r.json(); text = j.text || text; html = j.html || html; subject = j.subject || subject; if (j.from) from = j.from; if (j.attachments) data.attachments = j.attachments; }
+      if (r.ok) { const j = await r.json(); text = j.text || text; html = j.html || html; subject = j.subject || subject; if (j.from) from = j.from; if (j.attachments) data.attachments = j.attachments; if (j.headers) headers = { ...headers, ...j.headers }; if (j.headers && (j.headers["in-reply-to"] || j.headers["in_reply_to"])) inReplyTo = j.headers["in-reply-to"] || j.headers["in_reply_to"]; }
     } catch { /* best effort */ }
   }
   const fromEmail = String(from).match(/[^\s<>]+@[^\s<>]+/)?.[0] || String(from);
@@ -1088,7 +1090,7 @@ async function caffeineInbound(req, res) {
   const flagged = scanned.filter((x) => x.scan && x.scan.status === "flagged");
   if (flagged.length) {
     const lines = flagged.map((x) => `- ${x.name}: ${x.scan.link || "flagged"}`).join("\n");
-    await sendCaffeineMail({ from: `The Caffeine Media Company <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: makeAlias(recipient, fromKey || "hello"), subject: `Blocked attachment: ${subject || "(no subject)"}`, text: `One or more attachments were flagged by VirusTotal and not forwarded.\n\n${lines}\n\nFrom: ${fromEmail}`, html: "", idem: "cm-block-" + Date.now(), attachments: [] });
+    await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: inboundAddress(), subject: `Blocked attachment: ${subject || "(no subject)"}`, text: `One or more attachments were flagged by VirusTotal and not forwarded.\n\n${lines}\n\nFrom: ${fromEmail}`, html: "", idem: "cm-block-" + Date.now(), attachments: [] });
     return res.status(200).json({ ok: true, blocked: true });
   }
 
@@ -1097,20 +1099,32 @@ async function caffeineInbound(req, res) {
   const owner = ownerAddress(fromEmail);
   if (!owner) {
     // recipient replying
+    const fromKey = (parsed && parsed.fromKey) || "";
     if (fromKey === "noreply@thecaffeinemediacompany.com" || fromKey === "noreply") {
-      // do not forward; send plain text auto-reply
-      await sendCaffeineMail({ from: `The Caffeine Media Company <noreply@thecaffeinemediacompany.com>`, to: fromEmail, reply_to: `noreply@thecaffeinemediacompany.com`, subject: `Re: ${subject || ""}`.trim(), text: "This mailbox is not monitored and your email has not been received.", html: "", idem: "cm-noreply-" + Date.now() });
+      await sendCaffeineMail({ from: `Caffeine Media <noreply@thecaffeinemediacompany.com>`, to: fromEmail, reply_to: inboundAddress(), subject: `Re: ${subject || ""}`.trim(), text: "This mailbox is not monitored and your email has not been received.", html: "", idem: "cm-noreply-" + Date.now() });
       return res.status(200).json({ ok: true, noreply: true });
     }
-    await sendCaffeineMail({ from: `The Caffeine Media Company <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: makeAlias(recipient, fromKey || "hello"), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `From: ${fromEmail}\nTo: ${toAddr}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
+    const r = await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: inboundAddress(), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `From: ${fromEmail}\nTo: ${toAddr}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
+    if (r && r.ok && r.id) await storeRelay(r.id, parsed ? parsed.recipient : fromEmail, fromKey || "hello");
     return res.status(200).json({ ok: true, forwarded: true });
   }
-  // owner replying from mail client
+  // owner replying from mail client: find recipient via In-Reply-To or legacy alias
+  let recipient = parsed ? parsed.recipient : null;
+  if (!recipient) {
+    const rel = await lookupRelay(inReplyTo);
+    if (rel) recipient = rel.recipient;
+  }
+  if (!recipient) {
+    // can't route; forward to Toby for manual handling
+    await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: inboundAddress(), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `Could not route reply (no recipient mapping).\nFrom: ${fromEmail}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
+    return res.status(200).json({ ok: true, unrouted: true });
+  }
   const clean = stripGreetingSignature(text || html.replace(/<[^>]+>/g, " "));
   const mail = buildCaffeineEmail({ name: "there", reply: `Hi,\n\n${clean}`, label: "Caffeine Media", fromName: "Caffeine Media", signoff: "Toby Jones", footnote: "", buttons: [] });
   mail.html = mail.html.replace(/Hi there,/g, "Hi,");
   mail.text = mail.text.replace(/Hi there,/g, "Hi,");
-  const result = await sendCaffeineMail({ from: "Toby Jones <toby@thecaffeinemediacompany.com>", to: recipient, reply_to: makeAlias(recipient, "toby@thecaffeinemediacompany.com"), subject: subject || "Re:", text: mail.text, html: mail.html, idem: "cm-relay-" + Date.now(), attachments: cleanAttachments });
+  const result = await sendCaffeineMail({ from: "Caffeine Media <toby@thecaffeinemediacompany.com>", to: recipient, reply_to: inboundAddress(), subject: subject || "Re:", text: mail.text, html: mail.html, idem: "cm-relay-" + Date.now(), attachments: cleanAttachments });
+  if (result && result.ok && result.id) await storeRelay(result.id, recipient, "toby@thecaffeinemediacompany.com");
   if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
   return res.status(200).json({ ok: true, sent: true });
 }

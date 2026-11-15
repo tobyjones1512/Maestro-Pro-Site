@@ -23,11 +23,15 @@ function blocks(text) {
   }
   return out;
 }
-const inline = (t) => esc(t).replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, (m, txt, target) => {
-  const url = /^https?:\/\//.test(target.trim()) ? target.trim() : null;
-  return url ? "<a href=\"" + esc(url) + "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"lnk\" style=\"" + linkStyle + "\">" + esc(txt) + "</a>" : esc(txt);
-});
-const plain = (t) => String(t).replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, (m, txt, target) => {
+const inline = (t) => esc(t)
+  .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+  .replace(/(^|[^*])\*([^*\n]+)\*(?![*])/g, "$1<em>$2</em>")
+  .replace(/_([^_\n]+)_/g, "<em>$1</em>")
+  .replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, (m, txt, target) => {
+    const url = /^https?:\/\//.test(target.trim()) ? target.trim() : null;
+    return url ? "<a href=\"" + esc(url) + "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"lnk\" style=\"" + linkStyle + "\">" + esc(txt) + "</a>" : esc(txt);
+  });
+const plain = (t) => String(t).replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/(^|[^*])\*([^*\n]+)\*(?![*])/g, "$1$2").replace(/_([^_\n]+)_/g, "$1").replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, (m, txt, target) => {
   const url = /^https?:\/\//.test(target.trim()) ? target.trim() : null;
   return url ? txt + " (" + url + ")" : txt;
 });
@@ -141,4 +145,32 @@ export function ownerAddress(addr) {
 
 export function inboundForwardTo() {
   return process.env.CAFFEINE_FORWARD_TO || "inbound@thecaffeinemedia.com";
+}
+
+export function inboundAddress() {
+  return process.env.CAFFEINE_INBOUND_ADDRESS || "2a0ee022@oldaupi.resend.app";
+}
+
+export async function storeRelay(messageId, recipient, fromKey) {
+  if (!messageId || !recipient) return;
+  try {
+    const { writeRaw } = await import("./_blob.js");
+    await writeRaw(`caffeine-relay/${String(messageId).replace(/[^a-zA-Z0-9-]/g, "")}.json`, { recipient, fromKey: fromKey || "", at: Date.now() });
+  } catch (e) { console.error("storeRelay", e?.message); }
+}
+
+export async function lookupRelay(inReplyTo) {
+  if (!inReplyTo) return null;
+  const str = String(inReplyTo);
+  // extract a UUID-like or token from the in-reply-to header
+  const m = str.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)
+        || str.match(/[0-9a-f]{20,}/i);
+  if (!m) return null;
+  const id = m[0];
+  try {
+    const { readJson } = await import("./_blob.js");
+    const data = await readJson(`caffeine-relay/${id}.json`);
+    if (data && data.recipient) return data;
+  } catch (e) { console.error("lookupRelay", e?.message); }
+  return null;
 }
