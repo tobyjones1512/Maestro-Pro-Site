@@ -1116,6 +1116,7 @@ async function mailInbound(req, res) {
   let html = data.html || "";
   let headers = data.headers || {};
   const emailId = data.email_id || data.id;
+  if (!emailId && !from) return res.status(200).json({ ok: true, ignored: "empty" });
 
   // Webhooks carry metadata only: fetch the body from the received-email API.
   if (emailId && process.env.RESEND_API_KEY) {
@@ -1188,7 +1189,14 @@ async function mailList(req, res) {
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const folder = String(req.query?.folder || "inbox");
   const q = String(req.query?.q || "");
-  const list = await listMessages(folder, q);
+  let list = await listMessages(folder, q);
+  // Defensive cleanup: drop records created by malformed webhook payloads.
+  const junk = list.filter((m) => (!m.from || m.from === "Unknown sender") && (!m.subject || m.subject === "(no subject)"));
+  if (junk.length) {
+    for (const m of junk) { try { await deleteMessage(m.id); } catch (e) { console.error("prune", e?.message); } }
+    const drop = new Set(junk.map((m) => m.id));
+    list = list.filter((m) => !drop.has(m.id));
+  }
   res.status(200).json({ ok: true, messages: list });
 }
 
