@@ -1098,7 +1098,7 @@ async function caffeineInbound(req, res) {
     }
     if (!buf) { scanned.push({ name, status: "unscanned", note: "Could not download." }); continue; }
     let { scan } = await startScan(buf, name);
-    const deadline = Date.now() + 20000;
+    const deadline = Date.now() + 6000;
     while (scan.status === "pending" || scan.status === "queued") {
       if (Date.now() > deadline) break;
       await new Promise((r) => setTimeout(r, 2000));
@@ -1129,13 +1129,16 @@ async function caffeineInbound(req, res) {
     const recipient = (parsed && parsed.recipient) || fromEmail;
     const notifyTo = (fromKey && fromKey.includes("toby")) ? "toby@thecaffeinemediacompany.com" : "hello@thecaffeinemediacompany.com";
     const msg = { dir: "in", by: fromEmail, text: text || "", attachments: cleanAttachments.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() };
-    const thread = await upsertThread(recipient, subject || "(no subject)", fromKey || "hello@thecaffeinemediacompany.com", msg);
-    const adminUrl = `https://thecaffeinemediacompany.com/admin/?thread=${thread.id}`;
+    let thread = null;
+    try { thread = await upsertThread(recipient, subject || "(no subject)", fromKey || "hello@thecaffeinemediacompany.com", msg); }
+    catch (e) { console.error("upsertThread failed", e?.message); }
+    const tid = thread ? thread.id : (await (async () => { const { threadIdFor } = await import("./_caffeine-threads.js"); return threadIdFor(recipient, subject || "(no subject)"); })());
+    const adminUrl = `https://thecaffeinemediacompany.com/admin/?thread=${tid}`;
     // notify with a button to open the thread in the admin panel
     // rebuild html with a button by using buildEmail
     const mail = buildCaffeineEmail({ name: "there", reply: `You have a new reply from **${fromEmail}**.\n\nSubject: ${subject || "(no subject)"}\n\n${(text || "").slice(0, 500)}`, label: "Caffeine Media", fromName: "Caffeine Media", signoff: "The Caffeine Media Company", buttons: [["Open thread", adminUrl]] });
     await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: notifyTo, reply_to: inboundAddress(), subject: `New reply: ${subject || "(no subject)"}`, text: mail.text, html: mail.html, idem: "cm-notify2-" + Date.now() });
-    return res.status(200).json({ ok: true, threaded: true, threadId: thread.id });
+    return res.status(200).json({ ok: true, threaded: true, threadId: tid });
   }
   // owner replying from mail client: find recipient via In-Reply-To or legacy alias
   let recipient = parsed ? parsed.recipient : null;
