@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { readJson, writeRaw } from "./_blob.js";
+import { del } from "@vercel/blob";
 
 const INDEX = "caffeine-threads/_index.json";
 const threadPath = (id) => `caffeine-threads/${id}.json`;
@@ -46,11 +47,13 @@ export async function upsertThread(customer, subject, fromKey, message) {
   return thread;
 }
 
-export async function listThreads(q) {
+export async function listThreads(q, status) {
   const idx = await loadIndex();
+  let out = idx;
+  if (status && status !== "all") out = out.filter((t) => (t.status || "open") === status);
   const query = String(q || "").trim().toLowerCase();
-  if (!query) return idx;
-  return idx.filter((t) => (t.customer || "").toLowerCase().includes(query) || (t.subject || "").toLowerCase().includes(query));
+  if (query) out = out.filter((t) => (t.customer || "").toLowerCase().includes(query) || (t.subject || "").toLowerCase().includes(query));
+  return out;
 }
 
 export async function markRead(id) {
@@ -62,4 +65,23 @@ export async function markRead(id) {
   const i = idx.findIndex((t) => t.id === id);
   if (i >= 0) { idx[i].unread = 0; await saveIndex(idx); }
   return thread;
+}
+
+export async function markDone(id, done) {
+  const thread = await loadThread(id);
+  if (!thread) return null;
+  thread.status = done ? "done" : "open";
+  await saveThread(thread);
+  const idx = await loadIndex();
+  const i = idx.findIndex((t) => t.id === id);
+  if (i >= 0) { idx[i].status = thread.status; await saveIndex(idx); }
+  return thread;
+}
+
+export async function deleteThread(id) {
+  try { await del(`caffeine-threads/${id}.json`); } catch (e) { console.error("del thread", e?.message); }
+  const idx = await loadIndex();
+  const next = idx.filter((t) => t.id !== id);
+  await saveIndex(next);
+  return true;
 }

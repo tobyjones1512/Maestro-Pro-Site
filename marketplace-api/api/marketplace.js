@@ -15,7 +15,7 @@ import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsO
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { buildEmail as buildCaffeineEmail, sendCaffeineMail, makeAlias, parseAlias, stripGreetingSignature, ownerAddress, inboundForwardTo, inboundAddress, storeRelay, lookupRelay } from "./_caffeine-email.js";
-import { upsertThread, listThreads, loadThread, markRead, threadIdFor, loadIndex, saveIndex } from "./_caffeine-threads.js";
+import { upsertThread, listThreads, loadThread, markRead, threadIdFor, loadIndex, saveIndex, markDone, deleteThread } from "./_caffeine-threads.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import { startScan, pollScan } from "./_vt.js";
 import guidelines from "../lib/guidelines.js";
@@ -1037,6 +1037,10 @@ async function adminEmail(req, res) {
   const replyTo = inboundAddress();
   const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts });
   if (result && result.ok && result.id) await storeRelay(result.id, to, fromKey);
+  // record the sent email as an outbound message in a thread so it appears in the inbox
+  try {
+    await upsertThread(to, subject, fromKey, { dir: "out", by: fromKey, text: body, attachments: cleanAtts.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() });
+  } catch (e) { console.error("upsertThread", e?.message); }
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
   return res.status(200).json({ ok: true, id: result && result.id });
@@ -1124,7 +1128,7 @@ async function caffeineInbound(req, res) {
     }
     const recipient = (parsed && parsed.recipient) || fromEmail;
     const notifyTo = (fromKey && fromKey.includes("toby")) ? "toby@thecaffeinemediacompany.com" : "hello@thecaffeinemediacompany.com";
-    const msg = { dir: "in", by: fromEmail, text: text || "", attachments: cleanAttachments.map((a) => a.filename), at: new Date().toISOString() };
+    const msg = { dir: "in", by: fromEmail, text: text || "", attachments: cleanAttachments.map((a) => ({ filename: a.filename, content: a.content, content_type: a.content_type })), at: new Date().toISOString() };
     const thread = await upsertThread(recipient, subject || "(no subject)", fromKey || "hello@thecaffeinemediacompany.com", msg);
     const adminUrl = `https://thecaffeinemediacompany.com/admin/?thread=${thread.id}`;
     // notify with a button to open the thread in the admin panel
@@ -1162,7 +1166,8 @@ async function adminThreads(req, res) {
   const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const q = String(req.query?.q || "");
-  const list = await listThreads(q);
+  const status = String(req.query?.status || "open");
+  const list = await listThreads(q, status);
   res.status(200).json({ ok: true, threads: list });
 }
 
@@ -1202,12 +1207,23 @@ async function adminReply(req, res) {
   const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
   const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
   const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
+  const atts = Array.isArray(b.attachments) ? b.attachments : [];
+  const cleanAtts = [];
+  for (const a of atts) {
+    const fn = String(a && a.filename || "").trim().slice(0, 200);
+    const content = String(a && a.content || "").trim();
+    if (!fn || !content) continue;
+    if (!/^[A-Za-z0-9+\/_=-]+$/.test(content)) continue;
+    const buf = Buffer.from(content, "base64");
+    if (!buf.length || buf.length > 4 * 1024 * 1024) continue;
+    cleanAtts.push({ filename: fn, content, content_type: String(a.content_type || "").trim() || undefined });
+  }
   const mail = buildCaffeineEmail({ name: thread.customer ? thread.customer.split("@")[0] : "there", reply: body, label: "Caffeine Media", fromName: "Caffeine Media", signoff: sender.signoff, buttons });
   const mailText = mail.text.replace(/^Hi [^,]*,/, "Hi,");
   const mailHtml = mail.html.replace(/Hi [^<]*,/, "Hi,");
-  const result = await sendCaffeineMail({ from: sender.from, to: thread.customer, reply_to: inboundAddress(), subject: thread.subject ? `Re: ${thread.subject}` : "Re:", text: mailText, html: mailHtml, idem: "cm-reply-" + Date.now() });
+  const result = await sendCaffeineMail({ from: sender.from, to: thread.customer, reply_to: inboundAddress(), subject: thread.subject ? `Re: ${thread.subject}` : "Re:", text: mailText, html: mailHtml, idem: "cm-reply-" + Date.now(), attachments: cleanAtts });
   if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
-  const msg = { dir: "out", by: sender.email, text: body, at: new Date().toISOString() };
+  const msg = { dir: "out", by: sender.email, text: body, attachments: cleanAtts, at: new Date().toISOString() };
   thread.messages.push(msg);
   thread.lastAt = msg.at;
   thread.unread = 0;
@@ -1219,7 +1235,39 @@ async function adminReply(req, res) {
   res.status(200).json({ ok: true, thread });
 }
 
-const routes = { "admin-email": adminEmail, "admin-threads": adminThreads, "admin-thread": adminThread, "admin-reply": adminReply, "caffeine-inbound": caffeineInbound, reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+async function adminThreadDone(req, res) {
+  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
+  let b = req.body;
+  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
+  b = b || {};
+  const key = String(req.headers["x-admin-key"] || b.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const id = String(b.id || "");
+  if (!id) return fail(res, 400, "Missing id.");
+  const done = b.done !== false;
+  const thread = await markDone(id, done);
+  if (!thread) return fail(res, 404, "Not found.");
+  res.status(200).json({ ok: true, thread });
+}
+
+async function adminThreadDelete(req, res) {
+  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
+  let b = req.body;
+  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
+  b = b || {};
+  const key = String(req.headers["x-admin-key"] || b.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const id = String(b.id || "");
+  if (!id) return fail(res, 400, "Missing id.");
+  await deleteThread(id);
+  res.status(200).json({ ok: true });
+}
+
+const routes = { "admin-email": adminEmail, "admin-thread-done": adminThreadDone, "admin-thread-delete": adminThreadDelete, "admin-threads": adminThreads, "admin-thread": adminThread, "admin-reply": adminReply, "caffeine-inbound": caffeineInbound, reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
