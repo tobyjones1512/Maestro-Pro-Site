@@ -15,6 +15,7 @@ import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsO
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { buildEmail as buildCaffeineEmail, sendCaffeineMail, makeAlias, parseAlias, stripGreetingSignature, ownerAddress, inboundForwardTo, inboundAddress, storeRelay, lookupRelay } from "./_caffeine-email.js";
+import { upsertThread, listThreads, loadThread, markRead, threadIdFor, loadIndex, saveIndex } from "./_caffeine-threads.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import { startScan, pollScan } from "./_vt.js";
 import guidelines from "../lib/guidelines.js";
@@ -1016,8 +1017,25 @@ async function adminEmail(req, res) {
   const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
   const footnote = fromKey === "noreply@thecaffeinemediacompany.com" ? "This mailbox is not monitored." : "";
   const mail = buildCaffeineEmail({ name, reply: body, label, fromName: "Caffeine Media", signoff: sender.signoff, footnote, buttons });
+  // attachments: { filename, content (base64), content_type } — NOT scanned (admin uploads)
+  const atts = Array.isArray(b.attachments) ? b.attachments : [];
+  const cleanAtts = [];
+  let total = 0;
+  for (const a of atts) {
+    const fn = String(a && a.filename || "").trim().slice(0, 200);
+    const content = String(a && a.content || "").trim();
+    if (!fn || !content) continue;
+    // basic base64 validation
+    if (!/^[A-Za-z0-9+\/=_-]+$/.test(content)) continue;
+    const buf = Buffer.from(content, "base64");
+    if (!buf.length) continue;
+    if (buf.length > 4 * 1024 * 1024) return fail(res, 400, "An attachment is larger than 4 MB.");
+    total += buf.length;
+    if (total > 8 * 1024 * 1024) return fail(res, 400, "Attachments total more than 8 MB.");
+    cleanAtts.push({ filename: fn, content, content_type: String(a.content_type || "").trim() || undefined });
+  }
   const replyTo = inboundAddress();
-  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2) });
+  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts });
   if (result && result.ok && result.id) await storeRelay(result.id, to, fromKey);
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
@@ -1098,15 +1116,22 @@ async function caffeineInbound(req, res) {
 
   const owner = ownerAddress(fromEmail);
   if (!owner) {
-    // recipient replying
+    // recipient replying: store as thread, notify sender (hello/toby) with button to admin panel
     const fromKey = (parsed && parsed.fromKey) || "";
     if (fromKey === "noreply@thecaffeinemediacompany.com" || fromKey === "noreply") {
       await sendCaffeineMail({ from: `Caffeine Media <noreply@thecaffeinemediacompany.com>`, to: fromEmail, reply_to: inboundAddress(), subject: `Re: ${subject || ""}`.trim(), text: "This mailbox is not monitored and your email has not been received.", html: "", idem: "cm-noreply-" + Date.now() });
       return res.status(200).json({ ok: true, noreply: true });
     }
-    const r = await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: inboundForwardTo(), reply_to: inboundAddress(), subject: subject ? `Fwd: ${subject}` : "Forwarded message", text: `From: ${fromEmail}\nTo: ${toAddr}\n\n${text || "(no body)"}`, html: "", idem: "cm-in-" + Date.now(), attachments: cleanAttachments });
-    if (r && r.ok && r.id) await storeRelay(r.id, parsed ? parsed.recipient : fromEmail, fromKey || "hello");
-    return res.status(200).json({ ok: true, forwarded: true });
+    const recipient = (parsed && parsed.recipient) || fromEmail;
+    const notifyTo = (fromKey && fromKey.includes("toby")) ? "toby@thecaffeinemediacompany.com" : "hello@thecaffeinemediacompany.com";
+    const msg = { dir: "in", by: fromEmail, text: text || "", attachments: cleanAttachments.map((a) => a.filename), at: new Date().toISOString() };
+    const thread = await upsertThread(recipient, subject || "(no subject)", fromKey || "hello@thecaffeinemediacompany.com", msg);
+    const adminUrl = `https://thecaffeinemediacompany.com/admin/?thread=${thread.id}`;
+    // notify with a button to open the thread in the admin panel
+    // rebuild html with a button by using buildEmail
+    const mail = buildCaffeineEmail({ name: "there", reply: `You have a new reply from **${fromEmail}**.\n\nSubject: ${subject || "(no subject)"}\n\n${(text || "").slice(0, 500)}`, label: "Caffeine Media", fromName: "Caffeine Media", signoff: "The Caffeine Media Company", buttons: [["Open thread", adminUrl]] });
+    await sendCaffeineMail({ from: `Caffeine Media <hello@thecaffeinemediacompany.com>`, to: notifyTo, reply_to: inboundAddress(), subject: `New reply: ${subject || "(no subject)"}`, text: mail.text, html: mail.html, idem: "cm-notify2-" + Date.now() });
+    return res.status(200).json({ ok: true, threaded: true, threadId: thread.id });
   }
   // owner replying from mail client: find recipient via In-Reply-To or legacy alias
   let recipient = parsed ? parsed.recipient : null;
@@ -1130,7 +1155,71 @@ async function caffeineInbound(req, res) {
 }
 
 
-const routes = { "admin-email": adminEmail, "caffeine-inbound": caffeineInbound, reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
+async function adminThreads(req, res) {
+  if (req.method !== "GET") return fail(res, 405, "Method not allowed.");
+  const key = String(req.headers["x-admin-key"] || req.query?.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const q = String(req.query?.q || "");
+  const list = await listThreads(q);
+  res.status(200).json({ ok: true, threads: list });
+}
+
+async function adminThread(req, res) {
+  if (req.method !== "GET") return fail(res, 405, "Method not allowed.");
+  const key = String(req.headers["x-admin-key"] || req.query?.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const id = String(req.query?.id || "");
+  if (!id) return fail(res, 400, "Missing id.");
+  const thread = await loadThread(id);
+  if (!thread) return fail(res, 404, "Not found.");
+  await markRead(id);
+  res.status(200).json({ ok: true, thread });
+}
+
+async function adminReply(req, res) {
+  if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
+  let b = req.body;
+  if (typeof b === "string") { try { b = JSON.parse(b || "{}"); } catch { b = {}; } }
+  b = b || {};
+  const key = String(req.headers["x-admin-key"] || b.key || "");
+  const adminPw = process.env.ADMIN_PASSWORD || "";
+  const mpKey = process.env.MARKETPLACE_ADMIN_KEY || "";
+  if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
+  const id = String(b.threadId || "");
+  const body = String(b.body || "").trim();
+  if (!id) return fail(res, 400, "Missing threadId.");
+  if (!body) return fail(res, 400, "Enter a message.");
+  const thread = await loadThread(id);
+  if (!thread) return fail(res, 404, "Thread not found.");
+  const fromKey = thread.fromKey || "hello@thecaffeinemediacompany.com";
+  const sender = fromKey.includes("toby") ? { from: "Caffeine Media <toby@thecaffeinemediacompany.com>", signoff: "Toby Jones", email: "toby@thecaffeinemediacompany.com" }
+    : fromKey.includes("noreply") ? { from: "Caffeine Media <noreply@thecaffeinemediacompany.com>", signoff: "The Caffeine Media Company", email: "noreply@thecaffeinemediacompany.com" }
+    : { from: "Caffeine Media <hello@thecaffeinemediacompany.com>", signoff: "The Caffeine Media Company", email: "hello@thecaffeinemediacompany.com" };
+  const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
+  const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
+  const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
+  const mail = buildCaffeineEmail({ name: thread.customer ? thread.customer.split("@")[0] : "there", reply: body, label: "Caffeine Media", fromName: "Caffeine Media", signoff: sender.signoff, buttons });
+  const mailText = mail.text.replace(/^Hi [^,]*,/, "Hi,");
+  const mailHtml = mail.html.replace(/Hi [^<]*,/, "Hi,");
+  const result = await sendCaffeineMail({ from: sender.from, to: thread.customer, reply_to: inboundAddress(), subject: thread.subject ? `Re: ${thread.subject}` : "Re:", text: mailText, html: mailHtml, idem: "cm-reply-" + Date.now() });
+  if (result && result.ok === false) return fail(res, 502, result.error || "send failed");
+  const msg = { dir: "out", by: sender.email, text: body, at: new Date().toISOString() };
+  thread.messages.push(msg);
+  thread.lastAt = msg.at;
+  thread.unread = 0;
+  await saveThread(thread);
+  const idx = await loadIndex();
+  const j = idx.findIndex((t) => t.id === id);
+  if (j >= 0) { idx[j].lastAt = msg.at; idx[j].unread = 0; idx[j].count = thread.messages.length; await saveIndex(idx); }
+  if (result && result.ok && result.id) await storeRelay(result.id, thread.customer, sender.email);
+  res.status(200).json({ ok: true, thread });
+}
+
+const routes = { "admin-email": adminEmail, "admin-threads": adminThreads, "admin-thread": adminThread, "admin-reply": adminReply, "caffeine-inbound": caffeineInbound, reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
