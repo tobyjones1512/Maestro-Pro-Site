@@ -13,7 +13,7 @@ export const SUPPORT = "support@maestro-pro.app";
 export const OWNER = "hello@thecaffeinemediacompany.com";
 export const FEE_GBP = "5.00";   // the one-time technology fee for a Merchant Account
 export const CUT = 0.3;   // the marketplace's share of every seller's sale
-const ORIGINS = [SITE, "https://www.maestro-pro.app", "http://localhost:8000", "https://thecaffeinemediacompany.com", "https://www.thecaffeinemediacompany.com", "https://admin.thecaffeinemediacompany.com", "http://localhost:4321"];
+const ORIGINS = [SITE, "https://www.maestro-pro.app", "http://localhost:8000", "https://thecaffeinemediacompany.com", "https://www.thecaffeinemediacompany.com", "https://admin.thecaffeinemediacompany.com", "http://localhost:4321", "null"];
 
 export function cors(req, res) {
   const o = req.headers.origin;
