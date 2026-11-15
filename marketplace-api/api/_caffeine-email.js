@@ -25,14 +25,14 @@ function blocks(text) {
 }
 const inline = (t) => esc(t).replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, (m, txt, target) => {
   const url = /^https?:\/\//.test(target.trim()) ? target.trim() : null;
-  return url ? "<a href=\"" + esc(url) + "\" class=\"lnk\" style=\"" + linkStyle + "\">" + esc(txt) + "</a>" : esc(txt);
+  return url ? "<a href=\"" + esc(url) + "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"lnk\" style=\"" + linkStyle + "\">" + esc(txt) + "</a>" : esc(txt);
 });
 const plain = (t) => String(t).replace(/\*\*([^*\n]+)\*\*/g, "$1").replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, (m, txt, target) => {
   const url = /^https?:\/\//.test(target.trim()) ? target.trim() : null;
   return url ? txt + " (" + url + ")" : txt;
 });
 
-export function buildEmail({ name, reply, buttons = [], label = "Caffeine Media", signoff = "The Caffeine Media Company", footnote = "", fromName = "Caffeine Media" }) {
+export function buildEmail({ name, reply, buttons = [], label = "", signoff = "The Caffeine Media Company", footnote = "", fromName = "Caffeine Media" }) {
   const bl = blocks(reply), hi = "Hi " + (name || "there") + ",";
   const body = bl.map((b) => b.type === "bullets"
     ? "<ul style=\"margin:0 0 16px;padding-left:22px\">" + b.items.map((l) => "<li style=\"margin:4px 0\">" + inline(l) + "</li>").join("") + "</ul>"

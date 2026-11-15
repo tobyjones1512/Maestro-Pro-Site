@@ -1010,7 +1010,7 @@ async function adminEmail(req, res) {
   const body = String(b.body || "").trim();
   if (!body || body.length > 20000) return fail(res, 400, "Enter a message (max 20,000 characters).");
   const name = String(b.name || "").trim().slice(0, 100);
-  const label = String(b.label || "Caffeine Media").trim().slice(0, 60) || "Caffeine Media";
+  const label = String(b.label || "").trim().slice(0, 60);
   const btnLabel = String(b.buttonLabel || "").trim().slice(0, 60);
   const btnUrl = String(b.buttonUrl || "").trim().slice(0, 500);
   const buttons = (btnLabel && btnUrl) ? [[btnLabel, btnUrl]] : [];
