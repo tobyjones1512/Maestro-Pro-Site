@@ -1129,7 +1129,8 @@ async function importReceived(meta, { notify = false, onlyIfFull = false } = {})
   const headers = src.headers && typeof src.headers === "object" ? src.headers : {};
   const from = String(headers.from || headers.From || addrText(src.from) || "");
   const people = addrList(src.to, src.cc, src.received_for);
-  if (!isCaffeineMail(people) && (full.ok || /@maestro-pro\.app/i.test(people.join(" ")))) return { skip: true, ignored: "recipient" };
+  // Not ours. Without the full email the real recipient is not certain, so it is only left for the next check, not ruled out for good.
+  if (!isCaffeineMail(people)) return { skip: full.ok || /@maestro-pro\.app/i.test(people.join(" ")), ignored: "recipient" };
   // Our own "new reply" notifications must never come back in as mail.
   if (/noreply@thecaffeinemediacompany\.com/i.test(from) || String(headers["x-caffeine-notification"] || headers["X-Caffeine-Notification"] || "") === "1") return { skip: true, ignored: "notification" };
 
