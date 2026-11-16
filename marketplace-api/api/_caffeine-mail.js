@@ -23,7 +23,7 @@ export async function saveMessage(msg) {
   const idx = await loadIndex(folder);
   const summary = {
     id: msg.id, folder, from: msg.from, to: msg.to, subject: msg.subject,
-    date: msg.date, read: !!msg.read, hasAttachments: !!(msg.attachments && msg.attachments.length), resendId: msg.resendId || "",
+    date: msg.date, read: !!msg.read, hasAttachments: !!(msg.attachments && msg.attachments.length), resendId: msg.resendId || "", ...(msg.pending && { pending: true }),
     preview: String(msg.text || (msg.html || "").replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim().slice(0, 120)
   };
   const i = idx.findIndex((m) => m.id === msg.id);
@@ -58,10 +58,20 @@ export async function markRead(id, read) {
   return msg;
 }
 
+// Resend's ids of received emails that must not be brought in (again): deleted here, or not Caffeine Media's.
+const SKIPPED = "caffeine-mail/_skipped.json";
+export async function loadSkipped() { try { return (await readJson(SKIPPED)) || []; } catch { return []; } }
+export async function addSkipped(ids) {
+  const next = [...new Set([...(await loadSkipped()), ...ids.filter(Boolean)])].slice(-5000);
+  await writeRaw(SKIPPED, next);
+}
+
 export async function deleteMessage(id) {
   try { await del(msgPath(id)); } catch (e) { console.error("del msg", e?.message); }
   for (const folder of ["inbox", "sent"]) {
     const idx = await loadIndex(folder);
+    const gone = idx.find((m) => m.id === id);
+    if (gone && folder === "inbox" && gone.resendId) await addSkipped([gone.resendId]).catch((e) => console.error("skip", e?.message));
     const next = idx.filter((m) => m.id !== id);
     if (next.length !== idx.length) await saveIndex(folder, next);
   }

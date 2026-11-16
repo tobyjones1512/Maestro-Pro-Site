@@ -15,7 +15,7 @@ import { BUNDLE, ALLOWED, COVER, ext, readBlob, readRange, bundleInfo, variantsO
 import { step, sweep, ownerDecide, MAX_REFUSALS, GUIDELINE } from "./_review.js";
 import { buildEmail, sendMail, LINKS } from "./_email.js";
 import { buildEmail as buildCaffeineEmail, sendCaffeineMail, inboundAddress } from "./_caffeine-email.js";
-import { saveMessage, loadMessage, listMessages, markRead, deleteMessage, newId } from "./_caffeine-mail.js";
+import { saveMessage, loadMessage, listMessages, markRead, deleteMessage, newId, loadSkipped, addSkipped } from "./_caffeine-mail.js";
 import { code, disputes, fileDispute, respond as respondDispute, decide as decideDispute, appeal as fileAppeal, decideAppeal, appealState, STRIKES, RESPOND_DAYS, APPEAL_DAYS } from "./_disputes.js";
 import { startScan, pollScan } from "./_vt.js";
 import guidelines from "../lib/guidelines.js";
@@ -1042,7 +1042,9 @@ async function adminEmail(req, res) {
     cleanAtts.push({ filename: fn, content, content_type: String(a.content_type || "").trim() || undefined });
   }
   const replyTo = inboundAddress();
-  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts, cc, bcc });
+  // A reply names the email it answers, so it lands in the same conversation in the recipient's mail app.
+  const answered = inReplyTo ? String((await loadMessage(inReplyTo).catch(() => null))?.messageId || "").replace(/[\r\n]/g, "") : "";
+  const result = await sendCaffeineMail({ from: sender.from, to, reply_to: replyTo, subject, text: mail.text, html: mail.html, idem: "cm-admin-" + Date.now() + "-" + Math.random().toString(36).slice(2), attachments: cleanAtts, cc, bcc, ...(answered && { headers: { "In-Reply-To": answered, References: answered } }) });
   if (result === false) return fail(res, 502, "Email could not be sent (Resend not configured).");
   if (result && result.ok === false) return fail(res, 502, "The email could not be sent: " + String(result.error || "unknown error").slice(0, 200));
   try {
@@ -1089,8 +1091,103 @@ async function notifyReply(msg, headers) {
   else if (result && result.ok === false) console.error("notifyReply:", result.error);
 }
 
-async function mailInbound(req, res) {
+// ---- The Caffeine Media inbox. Resend receives the mail; the webhook stores it as it arrives, and every time the inbox is opened it is
+// checked against Resend's own list, so an email the webhook missed (or could not load) still turns up.
+// The Resend account also receives the Maestro Pro support mailboxes, so only mail addressed to Caffeine Media is kept.
+async function resendGet(path) {
+  if (!process.env.RESEND_API_KEY) return { ok: false, status: 0, error: "RESEND_API_KEY is not set." };
+  for (let i = 0; ; i++) {
+    try {
+      const r = await fetch("https://api.resend.com" + path, { headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` } });
+      if (r.status === 429 && i < 3) { await new Promise((ok) => setTimeout(ok, 1100)); continue; }   // Resend allows a couple of requests a second
+      const j = await r.json().catch(() => ({}));
+      return r.ok ? { ok: true, data: j } : { ok: false, status: r.status, error: String(j.message || j.error || "Resend " + r.status).slice(0, 200) };
+    } catch (e) { return { ok: false, status: 0, error: e?.message || "Resend could not be reached." }; }
+  }
+}
+const addrText = (x) => (typeof x === "string" ? x : (x && (x.email || x.address)) || "");
+const addrList = (...v) => v.flat().map(addrText).filter(Boolean);
+function isCaffeineMail(addresses) {
+  const [local, domain] = inboundAddress().toLowerCase().split("@");
+  return addresses.some((a) => {
+    const m = /([^\s<>"',;]+)@([^\s<>"',;]+)/.exec(String(a).toLowerCase());
+    return m && (m[2] === "thecaffeinemediacompany.com" || (m[2] === domain && m[1].split("+")[0] === local));
+  });
+}
+const MAX_STORED_FILES = 3 * 1024 * 1024;   // a stored email has to fit in one response when it is opened
 
+/** Stores one received email, read from Resend by its id. `meta` is what the caller already knows (the webhook's data, or a row of Resend's list).
+ *  Answers { id } when stored, { skip } when it is not Caffeine Media's, { ignored } otherwise. If Resend will not give the body, what is known is
+ *  stored as `pending` (sender and subject show, and opening it tries again), unless `onlyIfFull`. */
+async function importReceived(meta, { notify = false, onlyIfFull = false } = {}) {
+  const id = String(meta.id || meta.email_id || "");
+  if (!id) return { ignored: "empty" };
+  const full = await resendGet(`/emails/receiving/${encodeURIComponent(id)}`);
+  if (!full.ok) console.error("inbound body", id, full.status, full.error);
+  if (!full.ok && (full.status === 404 || onlyIfFull)) return { ignored: "unavailable", error: full.error };
+  const src = full.ok ? { ...meta, ...full.data } : meta;
+  const headers = src.headers && typeof src.headers === "object" ? src.headers : {};
+  const from = String(headers.from || headers.From || addrText(src.from) || "");
+  const people = addrList(src.to, src.cc, src.received_for);
+  if (!isCaffeineMail(people) && (full.ok || /@maestro-pro\.app/i.test(people.join(" ")))) return { skip: true, ignored: "recipient" };
+  // Our own "new reply" notifications must never come back in as mail.
+  if (/noreply@thecaffeinemediacompany\.com/i.test(from) || String(headers["x-caffeine-notification"] || headers["X-Caffeine-Notification"] || "") === "1") return { skip: true, ignored: "notification" };
+
+  const attachments = [];
+  if (full.ok && Array.isArray(src.attachments) && src.attachments.length) {
+    const listed = await resendGet(`/emails/receiving/${encodeURIComponent(id)}/attachments`);
+    if (!listed.ok) console.error("inbound attachments", id, listed.error);
+    let total = 0;
+    for (const a of (listed.ok ? (Array.isArray(listed.data) ? listed.data : listed.data.data || []) : src.attachments)) {
+      if (a.content_disposition === "inline" && a.content_id) continue;   // already inside the HTML
+      const file = { filename: a.filename || a.name || "attachment", content_type: a.content_type || a.type || "", size: a.size || 0 };
+      if (a.download_url && (a.size || 0) + total <= MAX_STORED_FILES) {
+        try {
+          const r = await fetch(a.download_url);
+          if (r.ok) { const buf = Buffer.from(await r.arrayBuffer()); if (buf.length + total <= MAX_STORED_FILES) { file.content = buf.toString("base64"); total += buf.length; } }
+        } catch (e) { console.error("inbound attachment download", e?.message); }
+      }
+      attachments.push(file);
+    }
+  }
+  const at = new Date(src.created_at || Date.now());
+  const msg = {
+    id, resendId: id, folder: "inbox", from: from || "Unknown sender", to: addrList(src.to).join(", ") || addrList(src.received_for).join(", "), cc: addrList(src.cc).join(", "),
+    subject: src.subject || "(no subject)", text: src.text || "", html: src.html || "", attachments, date: (isNaN(at) ? new Date() : at).toISOString(), read: false,
+    messageId: String(src.message_id || headers["message-id"] || ""), ...(full.ok ? {} : { pending: true, pendingError: full.error }),
+  };
+  await saveMessage(msg);
+  if (notify) { try { await notifyReply(msg, headers); } catch (e) { console.error("notifyReply", e?.message); } }
+  return { id, pending: !full.ok };
+}
+
+let lastSync = 0;
+/** Brings in anything Resend has received that the inbox does not have yet. A few at a time; `more` says there is still a backlog. */
+async function syncInbox() {
+  if (Date.now() - lastSync < 10e3) return { ok: true, added: 0 };
+  const listed = await resendGet("/emails/receiving?limit=100");
+  if (!listed.ok) return { ok: false, error: listed.error };
+  lastSync = Date.now();
+  const known = new Set([...(await listMessages("inbox", "")).flatMap((m) => [m.id, m.resendId]), ...(await loadSkipped())]);
+  const fresh = (listed.data.data || []).filter((e) => e.id && !known.has(e.id)).reverse();   // oldest first
+  const skip = [];
+  let added = 0, tried = 0, more = false, error = "";
+  for (const e of fresh) {
+    const people = addrList(e.to, e.cc);
+    if (people.length && !isCaffeineMail(people) && people.every((a) => /@maestro-pro\.app>?$/i.test(a.trim()))) { skip.push(e.id); continue; }   // the support desk's mail
+    if (tried >= 8) { more = true; break; }
+    tried++;
+    try {
+      const r = await importReceived(e);
+      if (r.skip) skip.push(e.id); else if (r.id) { added++; if (r.pending) error = "Resend would not give the body of an email."; }
+    } catch (err) { console.error("sync import", e.id, err?.message); error = "An email could not be stored."; }
+  }
+  if (skip.length) await addSkipped(skip);
+  if (more) lastSync = 0;
+  return { ok: !error, added, more, ...(error && { error }) };
+}
+
+async function mailInbound(req, res) {
   if (req.method !== "POST") return fail(res, 405, "Method not allowed.");
   // Optional shared secret: set CAFFEINE_INBOUND_SECRET and append ?secret=... to the webhook URL.
   const inboundSecret = process.env.CAFFEINE_INBOUND_SECRET || "";
@@ -1104,86 +1201,14 @@ async function mailInbound(req, res) {
   const type = String(body.type || "");
   if (type && type !== "email.received") return res.status(200).json({ ok: true, ignored: type });
   const data = body.data || body;
-  let from = (data.from && (typeof data.from === "string" ? data.from : data.from.email || data.from.address)) || "";
-  if (String(from).toLowerCase().includes("noreply@thecaffeinemediacompany.com")) {
-    return res.status(200).json({ ok: true, ignored: "notification" });
-  }
-  const toList = Array.isArray(data.to) ? data.to : (data.to ? [data.to] : []);
-  let to = toList.map((x) => (typeof x === "string" ? x : (x.email || x.address || ""))).filter(Boolean).join(", ");
-  if (!to && Array.isArray(data.received_for)) to = data.received_for.join(", ");
-  let subject = data.subject || "";
-  let text = data.text || data.body || "";
-  let html = data.html || "";
-  let headers = data.headers || {};
-  const emailId = data.email_id || data.id;
-  if (!emailId && !from) return res.status(200).json({ ok: true, ignored: "empty" });
-
-  // Webhooks carry metadata only: fetch the body from the received-email API.
-  let fetched = false;
-  if (emailId && process.env.RESEND_API_KEY) {
-    try {
-      const r = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}`, {
-        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-      });
-      if (r.ok) {
-        fetched = true;
-        const j = await r.json();
-        text = j.text || text;
-        html = j.html || html;
-        subject = j.subject || subject;
-        if (!from) from = j.from || "";
-        if (!to && (j.to || j.received_for)) to = (j.to || j.received_for).join(", ");
-        if (j.headers) headers = j.headers;
-      }
-    } catch (e) { console.error("inbound body", e?.message); }
-  }
-
-  const notifHeader = headers["x-caffeine-notification"] || headers["X-Caffeine-Notification"];
-  if (String(notifHeader || "") === "1") return res.status(200).json({ ok: true, ignored: "notification" });
-
-  // If the body could not be loaded, ask Resend to retry rather than storing an empty email.
-  if (emailId && !fetched && !text && !html) return fail(res, 500, "Could not load message.");
-
-  // Attachments: list metadata, then download each one while its signed URL is valid.
-  let attItems = Array.isArray(data.attachments) ? data.attachments : [];
-  if (emailId && process.env.RESEND_API_KEY) {
-    try {
-      const r = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(emailId)}/attachments`, {
-        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-      });
-      if (r.ok) {
-        const j = await r.json();
-        const list = Array.isArray(j) ? j : (j.data || j.attachments || []);
-        if (list.length) attItems = list;
-      }
-    } catch (e) { console.error("inbound attachments", e?.message); }
-  }
-  const attList = [];
-  for (const a of attItems) {
-    const name = a.filename || a.name || "attachment";
-    let content = a.content || "";
-    if (!content && a.download_url) {
-      try {
-        const r = await fetch(a.download_url);
-        if (r.ok) content = Buffer.from(await r.arrayBuffer()).toString("base64");
-      } catch (e) { console.error("inbound attachment download", e?.message); }
-    }
-    if (!content) continue; // metadata only; skip so the UI does not show a dead file
-    attList.push({ filename: name, content, content_type: a.content_type || a.type });
-  }
-
-  if (emailId) {
-    try {
-      const existing = await listMessages("inbox", "");
-      if (existing.some((m) => m.resendId === emailId)) return res.status(200).json({ ok: true, duplicate: true });
-    } catch (e) { console.error("inbound dedupe", e?.message); }
-  }
-  const msg = { id: newId(), folder: "inbox", from: from || "Unknown sender", to, subject: subject || "(no subject)", text, html, attachments: attList, date: new Date().toISOString(), read: false, resendId: emailId };
-  try { await saveMessage(msg); }
-  catch (e) { console.error("saveMessage (inbound)", e?.message); return fail(res, 500, "Could not store message."); }
-  try { await notifyReply(msg, headers); }
-  catch (e) { console.error("notifyReply", e?.message); }
-  res.status(200).json({ ok: true, id: msg.id });
+  const id = String(data.email_id || data.id || "");
+  if (!id) return res.status(200).json({ ok: true, ignored: "empty" });
+  if ((await listMessages("inbox", "")).some((m) => m.id === id || m.resendId === id)) return res.status(200).json({ ok: true, duplicate: true });
+  let out;
+  try { out = await importReceived({ ...data, id }, { notify: true }); }
+  catch (e) { console.error("saveMessage (inbound)", e?.message); return fail(res, 500, "Could not store message."); }   // Resend sends it again
+  if (out.skip) await addSkipped([id]).catch(() => {});
+  res.status(200).json({ ok: true, ...out });
 }
 
 async function mailList(req, res) {
@@ -1194,15 +1219,17 @@ async function mailList(req, res) {
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const folder = String(req.query?.folder || "inbox");
   const q = String(req.query?.q || "");
+  let sync;
+  if (folder === "inbox") { try { sync = await syncInbox(); } catch (e) { console.error("mail sync", e?.message); sync = { ok: false, error: "The inbox could not be checked for new mail." }; } }
   let list = await listMessages(folder, q);
   // Defensive cleanup: drop records created by malformed webhook payloads.
-  const junk = list.filter((m) => (!m.from || m.from === "Unknown sender") && (!m.subject || m.subject === "(no subject)"));
+  const junk = list.filter((m) => !m.resendId && (!m.from || m.from === "Unknown sender") && (!m.subject || m.subject === "(no subject)"));
   if (junk.length) {
     for (const m of junk) { try { await deleteMessage(m.id); } catch (e) { console.error("prune", e?.message); } }
     const drop = new Set(junk.map((m) => m.id));
     list = list.filter((m) => !drop.has(m.id));
   }
-  res.status(200).json({ ok: true, messages: list });
+  res.status(200).json({ ok: true, messages: list, ...(sync && { sync }) });
 }
 
 async function mailMessage(req, res) {
@@ -1213,8 +1240,12 @@ async function mailMessage(req, res) {
   if (!((adminPw && key === adminPw) || (mpKey && key === mpKey))) return fail(res, 401, "Unauthorised.");
   const id = String(req.query?.id || "");
   if (!id) return fail(res, 400, "Missing id.");
-  const msg = await loadMessage(id);
+  let msg = await loadMessage(id);
   if (!msg) return fail(res, 404, "Not found.");
+  if (msg.pending && msg.resendId) {   // the body could not be read when it arrived: try again now
+    const again = await importReceived({ id: msg.resendId }, { onlyIfFull: true }).catch(() => ({}));
+    if (again.id) msg = (await loadMessage(id)) || msg;
+  }
   await markRead(id, true);
   res.status(200).json({ ok: true, message: msg });
 }
