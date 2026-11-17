@@ -1,6 +1,6 @@
 # Which plan do I need?
 
-Path: Guide > Plans and licences > Plans and pricing > Which plan do I need?
+Path: Guide > Plans > Plans and pricing > Which plan do I need?
 URL: https://maestro-pro.app/guide/compare-plans/
 Summary: A quick way to choose between Free, Performer and Professional.
 

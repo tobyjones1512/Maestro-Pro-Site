@@ -1,7 +1,7 @@
 {
  "site": "https://maestro-pro.app",
  "about": "Every Maestro Pro guide, grouped. Each page has an HTML url and a Markdown url.",
- "generated": "2026-11-10",
+ "generated": "2026-11-17",
  "groups": [
   {
    "title": "Start here",
@@ -774,12 +774,12 @@
    ]
   },
   {
-   "title": "Plans and licences",
+   "title": "Plans",
    "topics": [
     {
      "slug": "plans-and-pricing",
      "title": "Plans and pricing",
-     "summary": "Free, Performer and Professional: what each plan includes, and how to buy.",
+     "summary": "Free, Performer and Professional: what each plan includes.",
      "url": "https://maestro-pro.app/guide/plans-and-pricing/",
      "md": "https://maestro-pro.app/guide/plans-and-pricing.md",
      "keywords": [
@@ -791,14 +791,11 @@
       "free",
       "performer",
       "professional",
-      "buy",
-      "licence",
+      "subscribe",
       "how much"
      ],
      "see": [
-      "compare-plans",
-      "buy-on-the-website",
-      "licences-and-keys"
+      "compare-plans"
      ],
      "children": [
       {
@@ -835,8 +832,7 @@
        ],
        "see": [
         "compare-plans",
-        "professional-plan",
-        "buy-on-the-website"
+        "professional-plan"
        ],
        "children": []
       },
@@ -860,7 +856,6 @@
        ],
        "see": [
         "compare-plans",
-        "buy-on-the-website",
         "open-the-score-editor"
        ],
        "children": []
@@ -888,52 +883,9 @@
        "children": []
       },
       {
-       "slug": "buy-on-the-website",
-       "title": "Buy Professional on this website",
-       "summary": "Pay monthly or yearly on the website, then recover your licence key and install the app.",
-       "url": "https://maestro-pro.app/guide/buy-on-the-website/",
-       "md": "https://maestro-pro.app/guide/buy-on-the-website.md",
-       "keywords": [
-        "buy",
-        "purchase",
-        "website",
-        "professional",
-        "pay",
-        "monthly",
-        "yearly",
-        "licence",
-        "order"
-       ],
-       "see": [
-        "licences-and-keys",
-        "install-and-testflight",
-        "money-back-guarantee"
-       ],
-       "children": []
-      },
-      {
-       "slug": "website-or-in-app",
-       "title": "Website or in-app: which is cheaper?",
-       "summary": "Professional bought on the website costs less than Performer bought in the app, and includes the editor.",
-       "url": "https://maestro-pro.app/guide/website-or-in-app/",
-       "md": "https://maestro-pro.app/guide/website-or-in-app.md",
-       "keywords": [
-        "cheaper",
-        "website vs app",
-        "in-app purchase",
-        "apple subscription",
-        "price difference"
-       ],
-       "see": [
-        "buy-on-the-website",
-        "performer-plan"
-       ],
-       "children": []
-      },
-      {
        "slug": "prices-and-currency",
        "title": "Prices and currencies",
-       "summary": "Website prices are in pounds sterling or the local equivalent, and app prices show in your own currency.",
+       "summary": "Prices for plans are shown in the app, in your own currency.",
        "url": "https://maestro-pro.app/guide/prices-and-currency/",
        "md": "https://maestro-pro.app/guide/prices-and-currency.md",
        "keywords": [
@@ -947,8 +899,7 @@
         "how much"
        ],
        "see": [
-        "plans-and-pricing",
-        "website-or-in-app"
+        "plans-and-pricing"
        ],
        "children": []
       },
@@ -966,311 +917,7 @@
         "in-app"
        ],
        "see": [
-        "performer-plan",
-        "website-or-in-app"
-       ],
-       "children": []
-      }
-     ]
-    },
-    {
-     "slug": "licences-and-keys",
-     "title": "Licences and keys",
-     "summary": "How your licence key works, how to enter it and what to do if you lose it.",
-     "url": "https://maestro-pro.app/guide/licences-and-keys/",
-     "md": "https://maestro-pro.app/guide/licences-and-keys.md",
-     "keywords": [
-      "licence",
-      "license",
-      "key",
-      "licence key",
-      "activate",
-      "paywall",
-      "already have a licence key"
-     ],
-     "see": [
-      "enter-your-licence-key",
-      "recover-your-licence-key",
-      "devices-per-licence",
-      "manage-your-licence-in-the-app"
-     ],
-     "children": [
-      {
-       "slug": "enter-your-licence-key",
-       "title": "Enter your licence key in the app",
-       "summary": "On the paywall, tap Already have a licence key? and type your key.",
-       "url": "https://maestro-pro.app/guide/enter-your-licence-key/",
-       "md": "https://maestro-pro.app/guide/enter-your-licence-key.md",
-       "keywords": [
-        "enter key",
-        "activate",
-        "paywall",
-        "already have a licence key",
-        "unlock",
-        "type key"
-       ],
-       "see": [
-        "recover-your-licence-key",
-        "licence-key-not-working"
-       ],
-       "children": []
-      },
-      {
-       "slug": "recover-your-licence-key",
-       "title": "Recover a lost licence key",
-       "summary": "Enter the email address you paid with and the key is emailed to you.",
-       "url": "https://maestro-pro.app/guide/recover-your-licence-key/",
-       "md": "https://maestro-pro.app/guide/recover-your-licence-key.md",
-       "keywords": [
-        "lost key",
-        "recover key",
-        "forgot key",
-        "resend key",
-        "where is my key",
-        "licence key email"
-       ],
-       "see": [
-        "enter-your-licence-key",
-        "several-licence-keys"
-       ],
-       "children": []
-      },
-      {
-       "slug": "manage-your-licence-in-the-app",
-       "title": "Manage your licence in the app",
-       "summary": "With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.",
-       "url": "https://maestro-pro.app/guide/manage-your-licence-in-the-app/",
-       "md": "https://maestro-pro.app/guide/manage-your-licence-in-the-app.md",
-       "keywords": [
-        "manage licence",
-        "settings",
-        "remove a device",
-        "request cancellation",
-        "cancel licence",
-        "licence key settings",
-        "manage subscription"
-       ],
-       "see": [
-        "remove-a-device",
-        "how-to-request-a-refund",
-        "devices-per-licence"
-       ],
-       "children": []
-      },
-      {
-       "slug": "devices-per-licence",
-       "title": "Use your licence on up to 3 devices",
-       "summary": "A licence bought on the website works on up to 3 devices. Education licences have no limit.",
-       "url": "https://maestro-pro.app/guide/devices-per-licence/",
-       "md": "https://maestro-pro.app/guide/devices-per-licence.md",
-       "keywords": [
-        "devices",
-        "three devices",
-        "3 devices",
-        "device limit",
-        "how many devices",
-        "another device",
-        "new iphone",
-        "new ipad",
-        "share licence",
-        "limit reached"
-       ],
-       "see": [
-        "remove-a-device",
-        "enter-your-licence-key",
-        "buy-for-your-organisation"
-       ],
-       "children": []
-      },
-      {
-       "slug": "remove-a-device",
-       "title": "Remove a device from your licence",
-       "summary": "Use the devices page on the key page to see where your licence is used and remove a device.",
-       "url": "https://maestro-pro.app/guide/remove-a-device/",
-       "md": "https://maestro-pro.app/guide/remove-a-device.md",
-       "keywords": [
-        "remove device",
-        "revoke device",
-        "sign out device",
-        "free a place",
-        "device limit reached",
-        "old iphone",
-        "sold device",
-        "lost device",
-        "devices page"
-       ],
-       "see": [
-        "devices-per-licence",
-        "recover-your-licence-key",
-        "licence-key-not-working"
-       ],
-       "children": []
-      },
-      {
-       "slug": "several-licence-keys",
-       "title": "If you have more than one licence key",
-       "summary": "If you have subscribed more than once, the email lists every active key with its plan.",
-       "url": "https://maestro-pro.app/guide/several-licence-keys/",
-       "md": "https://maestro-pro.app/guide/several-licence-keys.md",
-       "keywords": [
-        "multiple keys",
-        "two keys",
-        "more than one licence",
-        "several licences",
-        "which key"
-       ],
-       "see": [
-        "recover-your-licence-key",
-        "licence-key-not-working"
-       ],
-       "children": []
-      },
-      {
-       "slug": "licence-key-not-working",
-       "title": "My licence key is not working",
-       "summary": "Check the key, check it is still active, and recover it again if needed.",
-       "url": "https://maestro-pro.app/guide/licence-key-not-working/",
-       "md": "https://maestro-pro.app/guide/licence-key-not-working.md",
-       "keywords": [
-        "key not working",
-        "invalid key",
-        "key rejected",
-        "licence invalid",
-        "wrong key",
-        "expired key"
-       ],
-       "see": [
-        "recover-your-licence-key",
-        "enter-your-licence-key",
-        "several-licence-keys"
-       ],
-       "children": []
-      }
-     ]
-    },
-    {
-     "slug": "install-and-testflight",
-     "title": "Install with TestFlight",
-     "summary": "Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store.",
-     "url": "https://maestro-pro.app/guide/install-and-testflight/",
-     "md": "https://maestro-pro.app/guide/install-and-testflight.md",
-     "keywords": [
-      "install",
-      "testflight",
-      "download",
-      "install link",
-      "invitation",
-      "app store",
-      "get the app"
-     ],
-     "see": [
-      "install-with-testflight",
-      "lost-the-testflight-link",
-      "enter-your-licence-key"
-     ],
-     "children": [
-      {
-       "slug": "install-with-testflight",
-       "title": "Install Maestro Pro step by step",
-       "summary": "Install TestFlight, accept the invitation, install Maestro Pro, then enter your key.",
-       "url": "https://maestro-pro.app/guide/install-with-testflight/",
-       "md": "https://maestro-pro.app/guide/install-with-testflight.md",
-       "keywords": [
-        "install steps",
-        "accept invitation",
-        "testflight install",
-        "how to install",
-        "first launch"
-       ],
-       "see": [
-        "enter-your-licence-key",
-        "lost-the-testflight-link"
-       ],
-       "children": []
-      },
-      {
-       "slug": "lost-the-testflight-link",
-       "title": "I lost the TestFlight link",
-       "summary": "The key email includes the TestFlight link, and the install page has it too.",
-       "url": "https://maestro-pro.app/guide/lost-the-testflight-link/",
-       "md": "https://maestro-pro.app/guide/lost-the-testflight-link.md",
-       "keywords": [
-        "lost link",
-        "testflight link",
-        "install link",
-        "download link",
-        "where is the link",
-        "invitation"
-       ],
-       "see": [
-        "recover-your-licence-key",
-        "install-with-testflight"
-       ],
-       "children": []
-      }
-     ]
-    },
-    {
-     "slug": "refunds-and-cancellation",
-     "title": "Refunds and cancellation",
-     "summary": "The 14-day money-back guarantee, and how to cancel a licence bought on the website.",
-     "url": "https://maestro-pro.app/guide/refunds-and-cancellation/",
-     "md": "https://maestro-pro.app/guide/refunds-and-cancellation.md",
-     "keywords": [
-      "refund",
-      "cancel",
-      "cancellation",
-      "money back",
-      "guarantee",
-      "cancel licence",
-      "stop paying"
-     ],
-     "see": [
-      "money-back-guarantee",
-      "how-to-request-a-refund",
-      "after-the-14-days",
-      "refund-for-app-store-subscriptions"
-     ],
-     "children": [
-      {
-       "slug": "money-back-guarantee",
-       "title": "The 14-day money-back guarantee",
-       "summary": "Ask for a full refund within 14 days of your first payment, once the payment has cleared.",
-       "url": "https://maestro-pro.app/guide/money-back-guarantee/",
-       "md": "https://maestro-pro.app/guide/money-back-guarantee.md",
-       "keywords": [
-        "guarantee",
-        "14 day",
-        "money back",
-        "refund window",
-        "full refund",
-        "day 8",
-        "cleared"
-       ],
-       "see": [
-        "refund-timing",
-        "how-to-request-a-refund"
-       ],
-       "children": []
-      },
-      {
-       "slug": "how-to-request-a-refund",
-       "title": "How to request a refund or cancel",
-       "summary": "Use the cancellation page with your licence key and follow the steps.",
-       "url": "https://maestro-pro.app/guide/how-to-request-a-refund/",
-       "md": "https://maestro-pro.app/guide/how-to-request-a-refund.md",
-       "keywords": [
-        "request refund",
-        "how to cancel",
-        "cancel licence",
-        "cancellation page",
-        "refund request"
-       ],
-       "see": [
-        "refund-timing",
-        "money-back-guarantee",
-        "recover-your-licence-key",
-        "refund-for-app-store-subscriptions"
+        "performer-plan"
        ],
        "children": []
       },
@@ -1290,90 +937,7 @@
         "apple account refund"
        ],
        "see": [
-        "manage-an-apple-subscription",
-        "how-to-request-a-refund",
-        "website-or-in-app"
-       ],
-       "children": []
-      },
-      {
-       "slug": "refund-timing",
-       "title": "When can I get a refund?",
-       "summary": "Refunds are made from day 8 to day 14 after the first payment, once it has cleared.",
-       "url": "https://maestro-pro.app/guide/refund-timing/",
-       "md": "https://maestro-pro.app/guide/refund-timing.md",
-       "keywords": [
-        "refund timing",
-        "day 7",
-        "day 8",
-        "too early",
-        "payment cleared",
-        "when refund",
-        "how long"
-       ],
-       "see": [
-        "money-back-guarantee",
-        "after-the-14-days"
-       ],
-       "children": []
-      },
-      {
-       "slug": "after-the-14-days",
-       "title": "Cancelling after the 14 days",
-       "summary": "No refund, but you can cancel going forward, and how that works differs for yearly and monthly plans.",
-       "url": "https://maestro-pro.app/guide/after-the-14-days/",
-       "md": "https://maestro-pro.app/guide/after-the-14-days.md",
-       "keywords": [
-        "cancel after 14 days",
-        "no refund",
-        "late cancel",
-        "cancel yearly",
-        "cancel monthly",
-        "cancellation fee"
-       ],
-       "see": [
-        "cancel-a-yearly-licence",
-        "cancel-a-monthly-licence",
-        "refund-timing"
-       ],
-       "children": []
-      },
-      {
-       "slug": "cancel-a-yearly-licence",
-       "title": "Cancel a yearly licence",
-       "summary": "Your yearly subscription is cancelled and the key works until the end of the year you paid for.",
-       "url": "https://maestro-pro.app/guide/cancel-a-yearly-licence/",
-       "md": "https://maestro-pro.app/guide/cancel-a-yearly-licence.md",
-       "keywords": [
-        "cancel yearly",
-        "annual",
-        "cancel annual licence",
-        "stop renewal",
-        "yearly cancel"
-       ],
-       "see": [
-        "after-the-14-days",
-        "how-to-request-a-refund"
-       ],
-       "children": []
-      },
-      {
-       "slug": "cancel-a-monthly-licence",
-       "title": "Cancel a monthly licence",
-       "summary": "Monthly licences are on a 12-month contract, so cancelling early costs one month plus half of the remaining term.",
-       "url": "https://maestro-pro.app/guide/cancel-a-monthly-licence/",
-       "md": "https://maestro-pro.app/guide/cancel-a-monthly-licence.md",
-       "keywords": [
-        "cancel monthly",
-        "monthly contract",
-        "12 month",
-        "early cancellation fee",
-        "cancellation fee",
-        "monthly cancel"
-       ],
-       "see": [
-        "after-the-14-days",
-        "how-to-request-a-refund"
+        "manage-an-apple-subscription"
        ],
        "children": []
       }
@@ -1382,7 +946,7 @@
     {
      "slug": "education-and-schools",
      "title": "Education and schools",
-     "summary": "How schools, colleges and tutors can get Maestro Pro, including volume licensing outside the App Store.",
+     "summary": "How schools, colleges and tutors can get Maestro Pro, including Apple's volume purchasing.",
      "url": "https://maestro-pro.app/guide/education-and-schools/",
      "md": "https://maestro-pro.app/guide/education-and-schools.md",
      "keywords": [
@@ -1392,14 +956,12 @@
       "students",
       "teachers",
       "tutors",
-      "volume licensing",
+      "volume purchasing",
       "music service",
       "class"
      ],
      "see": [
-      "apple-volume-purchasing",
-      "buy-for-your-organisation",
-      "student-licence"
+      "apple-volume-purchasing"
      ],
      "children": [
       {
@@ -1418,49 +980,7 @@
         "roll out"
        ],
        "see": [
-        "buy-for-your-organisation",
         "free-plan"
-       ],
-       "children": []
-      },
-      {
-       "slug": "buy-for-your-organisation",
-       "title": "Buy for a whole organisation",
-       "summary": "One licence for unlimited students and teachers, £499 a year, bought direct and outside the App Store.",
-       "url": "https://maestro-pro.app/guide/buy-for-your-organisation/",
-       "md": "https://maestro-pro.app/guide/buy-for-your-organisation.md",
-       "keywords": [
-        "organisation licence",
-        "school licence",
-        "499",
-        "unlimited students",
-        "volume licence",
-        "direct purchase",
-        "site licence"
-       ],
-       "see": [
-        "apple-volume-purchasing",
-        "recover-your-licence-key"
-       ],
-       "children": []
-      },
-      {
-       "slug": "student-licence",
-       "title": "The student licence",
-       "summary": "Students can buy Professional for £48 a year or £6 a month on a 12-month contract.",
-       "url": "https://maestro-pro.app/guide/student-licence/",
-       "md": "https://maestro-pro.app/guide/student-licence.md",
-       "keywords": [
-        "student",
-        "student price",
-        "student licence",
-        "students discount",
-        "48",
-        "6 pounds"
-       ],
-       "see": [
-        "buy-for-your-organisation",
-        "how-to-request-a-refund"
        ],
        "children": []
       }
