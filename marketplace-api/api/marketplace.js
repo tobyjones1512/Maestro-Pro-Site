@@ -1323,7 +1323,7 @@ async function mailReply(req, res) {
   res.status(200).json({ ok: true, id: result && result.id });
 }
 
-const routes = { "admin-email": adminEmail, "mail-inbound": mailInbound, "mail-list": mailList, "mail-message": mailMessage, "mail-markread": mailMarkRead, "mail-delete": mailDelete, "mail-reply": mailReply };
+const routes = { "admin-email": adminEmail, "mail-inbound": mailInbound, "mail-list": mailList, "mail-message": mailMessage, "mail-markread": mailMarkRead, "mail-delete": mailDelete, "mail-reply": mailReply, reactivate, "close-account": closeAccount, "apple-pay-session": applePaySession, "seller-code": sellerCode, "seller-verify": sellerVerify, "tax-report": taxReport, "dispute-appeal": disputeAppeal, "dispute-appeal-info": disputeAppealInfo, "dispute-appeal-decide": disputeAppealDecide, release, "dispute-list": disputeList, item, preview, remove, "signin-verify": signinVerify, "dispute-file": disputeFile, "dispute-respond": disputeRespond, "dispute-decide": disputeDecide, edit, appeal, escalation, "evidence-file": evidenceFile, "buyer-code": buyerCode, "buyer-verify": buyerVerify, "buyer-purchases": buyerPurchases, refund, list, guidelines: guidelinesInfo, buy, webhook, order, download, signup, "fee-webhook": feeWebhook, "fee-retry": feeRetry, "fee-pay": feePay, signin, "connect-start": connectStart, callback, merchant, withdraw, upload, publish, sweep: sweepRoute };
 export default async function handler(req, res) {
   if (cors(req, res)) return;
   const fn = routes[req.query?.fn];
