@@ -55,7 +55,7 @@ const out = () => { $("out").hidden = false; $("in").hidden = true; ready(); };
 async function load() {
   if (!key) return out();
   let d;
-  try { d = await api("buyer-purchases", { key, header: "X-MP-Buyer" }); } catch { try { localStorage.removeItem(K); } catch {} key = ""; return out(); }
+  try { d = await api("buyer-purchases", { key, header: "X-MP-Buyer" }); } catch (e) { if (e.message === "Not signed in.") { try { localStorage.removeItem(K); } catch {} key = ""; } else $("m").textContent = e.message; return out(); }   // only a real "not signed in" forgets the key; any other error is shown, not hidden
   const nx = new URLSearchParams(location.search).get("next"); if (nx && /^\/marketplace\/[\w\/?=&.-]*$/.test(nx)) return (location.href = nx);
   $("out").hidden = true; $("in").hidden = false; ready(); $("who").textContent = d.email;
   const day = (t) => new Date(t).toLocaleDateString(undefined, { dateStyle: "medium" });
