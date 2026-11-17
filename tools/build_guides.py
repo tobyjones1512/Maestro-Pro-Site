@@ -14,7 +14,7 @@ Run: python3 tools/build_guides.py
 import re, os, html, json, glob, datetime, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))); os.chdir(ROOT)
 SITE = "https://maestro-pro.app"
-GROUPS = ["Start here", "Plans and licences", "Practise", "Sound and words", "Write and keep", "Together", "Settings and help", "Your devices and privacy"]
+GROUPS = ["Start here", "Plans", "Practise", "Sound and words", "Write and keep", "Together", "Settings and help", "Your devices and privacy"]
 OVERVIEW_GROUP = {  # the hand-written overview pages and where they sit
  "getting-started": "Start here", "your-library": "Start here", "playing-a-score": "Start here",
  "tuner-wait-for-me": "Practise", "record-review": "Practise", "scales-arpeggios": "Practise", "annotating": "Practise",

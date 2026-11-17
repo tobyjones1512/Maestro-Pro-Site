@@ -41,39 +41,17 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Notes and bars that light up](https://maestro-pro.app/guide/note-and-bar-highlighting/): Notes glow as they sound and a soft wash marks the bar; this needs the Performer plan or above.
   - [The Inspector](https://maestro-pro.app/guide/use-the-inspector/): The Inspector holds tempo, practice speed, loop, key, instrument and backing tracks.
 
-## Plans and licences
-- [Plans and pricing](https://maestro-pro.app/guide/plans-and-pricing/): Free, Performer and Professional: what each plan includes, and how to buy.
+## Plans
+- [Plans and pricing](https://maestro-pro.app/guide/plans-and-pricing/): Free, Performer and Professional: what each plan includes.
   - [The Free plan](https://maestro-pro.app/guide/free-plan/): What you get for nothing: up to three scores, viewing, lyrics files, your own audio, GitHub and scales.
   - [The Performer plan](https://maestro-pro.app/guide/performer-plan/): Everything except the score editor, with a library of any size.
   - [The Professional plan](https://maestro-pro.app/guide/professional-plan/): Everything, including the score editor, medleys and version history with GitHub sync.
   - [Which plan do I need?](https://maestro-pro.app/guide/compare-plans/): A quick way to choose between Free, Performer and Professional.
-  - [Buy Professional on this website](https://maestro-pro.app/guide/buy-on-the-website/): Pay monthly or yearly on the website, then recover your licence key and install the app.
-  - [Website or in-app: which is cheaper?](https://maestro-pro.app/guide/website-or-in-app/): Professional bought on the website costs less than Performer bought in the app, and includes the editor.
-  - [Prices and currencies](https://maestro-pro.app/guide/prices-and-currency/): Website prices are in pounds sterling or the local equivalent, and app prices show in your own currency.
+  - [Prices and currencies](https://maestro-pro.app/guide/prices-and-currency/): Prices for plans are shown in the app, in your own currency.
   - [Manage a subscription bought in the app](https://maestro-pro.app/guide/manage-an-apple-subscription/): Performer and Professional bought in the app are managed in your Apple Account settings.
-- [Licences and keys](https://maestro-pro.app/guide/licences-and-keys/): How your licence key works, how to enter it and what to do if you lose it.
-  - [Enter your licence key in the app](https://maestro-pro.app/guide/enter-your-licence-key/): On the paywall, tap Already have a licence key? and type your key.
-  - [Recover a lost licence key](https://maestro-pro.app/guide/recover-your-licence-key/): Enter the email address you paid with and the key is emailed to you.
-  - [Manage your licence in the app](https://maestro-pro.app/guide/manage-your-licence-in-the-app/): With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.
-  - [Use your licence on up to 3 devices](https://maestro-pro.app/guide/devices-per-licence/): A licence bought on the website works on up to 3 devices. Education licences have no limit.
-  - [Remove a device from your licence](https://maestro-pro.app/guide/remove-a-device/): Use the devices page on the key page to see where your licence is used and remove a device.
-  - [If you have more than one licence key](https://maestro-pro.app/guide/several-licence-keys/): If you have subscribed more than once, the email lists every active key with its plan.
-  - [My licence key is not working](https://maestro-pro.app/guide/licence-key-not-working/): Check the key, check it is still active, and recover it again if needed.
-- [Install with TestFlight](https://maestro-pro.app/guide/install-and-testflight/): Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store.
-  - [Install Maestro Pro step by step](https://maestro-pro.app/guide/install-with-testflight/): Install TestFlight, accept the invitation, install Maestro Pro, then enter your key.
-  - [I lost the TestFlight link](https://maestro-pro.app/guide/lost-the-testflight-link/): The key email includes the TestFlight link, and the install page has it too.
-- [Refunds and cancellation](https://maestro-pro.app/guide/refunds-and-cancellation/): The 14-day money-back guarantee, and how to cancel a licence bought on the website.
-  - [The 14-day money-back guarantee](https://maestro-pro.app/guide/money-back-guarantee/): Ask for a full refund within 14 days of your first payment, once the payment has cleared.
-  - [How to request a refund or cancel](https://maestro-pro.app/guide/how-to-request-a-refund/): Use the cancellation page with your licence key and follow the steps.
   - [Refunds for subscriptions bought in the app](https://maestro-pro.app/guide/refund-for-app-store-subscriptions/): If you subscribed inside the app through the App Store, Apple handles the refund, not us.
-  - [When can I get a refund?](https://maestro-pro.app/guide/refund-timing/): Refunds are made from day 8 to day 14 after the first payment, once it has cleared.
-  - [Cancelling after the 14 days](https://maestro-pro.app/guide/after-the-14-days/): No refund, but you can cancel going forward, and how that works differs for yearly and monthly plans.
-  - [Cancel a yearly licence](https://maestro-pro.app/guide/cancel-a-yearly-licence/): Your yearly subscription is cancelled and the key works until the end of the year you paid for.
-  - [Cancel a monthly licence](https://maestro-pro.app/guide/cancel-a-monthly-licence/): Monthly licences are on a 12-month contract, so cancelling early costs one month plus half of the remaining term.
-- [Education and schools](https://maestro-pro.app/guide/education-and-schools/): How schools, colleges and tutors can get Maestro Pro, including volume licensing outside the App Store.
+- [Education and schools](https://maestro-pro.app/guide/education-and-schools/): How schools, colleges and tutors can get Maestro Pro, including Apple's volume purchasing.
   - [Apple volume purchasing](https://maestro-pro.app/guide/apple-volume-purchasing/): Schools can roll the free version out through Apple School Manager or Apple Business Manager.
-  - [Buy for a whole organisation](https://maestro-pro.app/guide/buy-for-your-organisation/): One licence for unlimited students and teachers, £499 a year, bought direct and outside the App Store.
-  - [The student licence](https://maestro-pro.app/guide/student-licence/): Students can buy Professional for £48 a year or £6 a month on a 12-month contract.
 
 ## Practise
 - [Tuner & Wait for Me](https://maestro-pro.app/guide/tuner-wait-for-me/): Maestro Pro can listen through the microphone: to tune your instrument, to train a steady note, and to wait for you to play a score note by note. Sound is analysed on the device and is never recorded or sent anywhere.

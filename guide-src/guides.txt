@@ -67,14 +67,13 @@ On the Free plan you can keep up to three scores and view the sheet music for ea
 
 The built-in synth instruments play the score, but nothing follows along on the page: there is no note highlighting, bar highlighting or moving line until Performer. Nothing that needs the internet is included, and there is no equaliser, key changes or other tools.
 
-## plans-and-pricing | group:Plans and licences | Plans and pricing
-summary: Free, Performer and Professional: what each plan includes, and how to buy.
-keywords: plans, pricing, price, cost, subscription, free, performer, professional, buy, licence, how much
-see: compare-plans, buy-on-the-website, licences-and-keys
+## plans-and-pricing | group:Plans | Plans and pricing
+summary: Free, Performer and Professional: what each plan includes.
+keywords: plans, pricing, price, cost, subscription, free, performer, professional, subscribe, how much
+see: compare-plans
 
 Maestro Pro has three plans: Free, Performer and Professional. The paid plans are subscriptions, managed in your Apple Account settings, and their prices are shown in the app in your own currency.
 
-Buying on this website is for Professional only, not Performer. It is £10 per month on a 12-month contract or £89 per year, or the equivalent in your local currency. That is cheaper than buying the Performer plan in the app, and it includes the score editor.
 
 ## free-plan | plans-and-pricing | The Free plan
 summary: What you get for nothing: up to three scores, viewing, lyrics files, your own audio, GitHub and scales.
@@ -88,22 +87,22 @@ It does not include note, bar or moving-line highlighting, anything that needs t
 ## performer-plan | plans-and-pricing | The Performer plan
 summary: Everything except the score editor, with a library of any size.
 keywords: performer, performer plan, subscription, in-app, what does performer include
-see: compare-plans, professional-plan, buy-on-the-website
+see: compare-plans, professional-plan
 
 Performer includes everything except the score editor. You get a library of any size, and notes, bars and a moving line that follow the music.
 
 It also includes Search Scores and lyrics online, key changes and the equaliser, backing tracks and Apple Music, Play Together, the tuner, Wait for Me, recording and review, annotation, and export and print.
 
-Performer is a subscription you start inside the app, managed in your Apple Account settings. It is not sold on this website.
+Performer is a subscription you start inside the app, managed in your Apple Account settings.
 
 ## professional-plan | plans-and-pricing | The Professional plan
 summary: Everything, including the score editor, medleys and version history with GitHub sync.
 keywords: professional, professional plan, editor, write music, medley, version history, github sync, github, git, repo
-see: compare-plans, buy-on-the-website, open-the-score-editor
+see: compare-plans, open-the-score-editor
 
 Professional includes everything, including the score editor. You can write and change music, build medleys, and keep version history with branches, merges and GitHub sync.
 
-You can buy Professional on this website for £10 per month on a 12-month contract or £89 per year. A licence bought on the website works on up to 3 devices. It can also be bought in the app as a subscription.
+Professional is a subscription you start inside the app, managed in your Apple Account settings.
 
 ## compare-plans | plans-and-pricing | Which plan do I need?
 summary: A quick way to choose between Free, Performer and Professional.
@@ -116,268 +115,50 @@ see: free-plan, performer-plan, professional-plan
 
 Teachers and schools can also read [Education and schools](education-and-schools).
 
-## buy-on-the-website | plans-and-pricing | Buy Professional on this website
-summary: Pay monthly or yearly on the website, then recover your licence key and install the app.
-keywords: buy, purchase, website, professional, pay, monthly, yearly, licence, order
-see: licences-and-keys, install-and-testflight, money-back-guarantee
-
-Go to the [buy page](/buy/), enter your name and email, choose £89 per year or £10 per month (a 12-month contract), and continue to the secure payment page.
-
-After you pay, [recover your licence key](/key.html) using the email address you paid with. We email you the key and the TestFlight install link. In the app, tap "Already have a licence key?" on the paywall and enter it.
-
-A licence bought on the website works on up to 3 devices. You can [remove a device](remove-a-device) at any time to free its place.
-
-If you already have an active licence for your email address, the buy page tells you and links to key recovery instead of letting you pay twice.
-
-## website-or-in-app | plans-and-pricing | Website or in-app: which is cheaper?
-summary: Professional bought on the website costs less than Performer bought in the app, and includes the editor.
-keywords: cheaper, website vs app, in-app purchase, apple subscription, price difference
-see: buy-on-the-website, performer-plan
-
-Buying Professional on this website is cheaper than buying the Performer plan in the app, and it includes the score editor. Performer is not sold on the website.
-
-Plans bought inside the app are subscriptions managed in your Apple Account settings, and refunds for them are requested from [Apple](https://support.apple.com/en-us/118223). A licence bought on the website is managed with us: your key arrives by email and cancellation is requested on the [cancellation page](/cancel/).
-
 ## prices-and-currency | plans-and-pricing | Prices and currencies
-summary: Website prices are in pounds sterling or the local equivalent, and app prices show in your own currency.
+summary: Prices for plans are shown in the app, in your own currency.
 keywords: price, currency, pounds, gbp, dollars, euros, local currency, how much
-see: plans-and-pricing, website-or-in-app
+see: plans-and-pricing
 
-Prices on the website are in pounds sterling, or the equivalent in your local currency. Prices for plans bought in the app are shown in the app, in your own currency.
+Prices for the paid plans are shown in the app, in your own currency, and are the price Apple charges.
 
 ## manage-an-apple-subscription | plans-and-pricing | Manage a subscription bought in the app
 summary: Performer and Professional bought in the app are managed in your Apple Account settings.
 keywords: apple subscription, manage subscription, cancel app subscription, apple account, in-app
-see: performer-plan, website-or-in-app
+see: performer-plan
 
-The paid plans bought inside the app are subscriptions, managed in your Apple Account settings. (If your plan comes from a licence key instead, Settings shows Manage Licence: see [Manage your licence in the app](manage-your-licence-in-the-app).) That is where you change or stop them. To ask for a refund on a subscription bought in the app, see [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions). Licences bought on the website are different: see [Refunds and cancellation](refunds-and-cancellation).
+The paid plans bought inside the app are subscriptions, managed in your Apple Account settings. That is where you change or stop them. To ask for a refund on a subscription bought in the app, see [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions).
 
-## licences-and-keys | group:Plans and licences | Licences and keys
-summary: How your licence key works, how to enter it and what to do if you lose it.
-keywords: licence, license, key, licence key, activate, paywall, already have a licence key
-see: enter-your-licence-key, recover-your-licence-key, devices-per-licence, manage-your-licence-in-the-app
-
-A licence bought on the website comes with a licence key. You enter the key in the app to unlock it. Maestro Pro needs a licence to be used. A licence works on up to 3 devices.
-
-The key is emailed to the address you paid with, together with the TestFlight link to install the app. If you lose it, you can have it sent again from the [key page](/key.html).
-
-## enter-your-licence-key | licences-and-keys | Enter your licence key in the app
-summary: On the paywall, tap Already have a licence key? and type your key.
-keywords: enter key, activate, paywall, already have a licence key, unlock, type key
-see: recover-your-licence-key, licence-key-not-working
-
-1. Open Maestro Pro.
-2. On the paywall, tap **Already have a licence key?**
-3. Enter your licence key.
-
-The key works on up to 3 devices. If you are told the limit has been reached, [remove a device](remove-a-device) you no longer use and enter the key again.
-
-If you do not have your key to hand, [recover your licence key](/key.html) first.
-
-## recover-your-licence-key | licences-and-keys | Recover a lost licence key
-summary: Enter the email address you paid with and the key is emailed to you.
-keywords: lost key, recover key, forgot key, resend key, where is my key, licence key email
-see: enter-your-licence-key, several-licence-keys
-
-Open the [key page](/key.html), enter the email address you paid with, and press **Email me my key**. If we find your payment, we email you your licence key along with the TestFlight link to install the app.
-
-The key is only ever sent to your inbox, never shown on the page. Use the email address you paid with. If nothing arrives, check your spam folder.
-
-## manage-your-licence-in-the-app | licences-and-keys | Manage your licence in the app
-summary: With a licence key, Settings shows Manage Licence: remove a device or request a cancellation.
-keywords: manage licence, settings, remove a device, request cancellation, cancel licence, licence key settings, manage subscription
-see: remove-a-device, how-to-request-a-refund, devices-per-licence
-
-When your plan comes from a licence key, **Settings** shows **Manage Licence** in place of Manage Subscription (which is for plans bought with the App Store).
-
-Tap **Manage Licence** and choose:
-
-- **Remove A Device** opens the [devices page](/key/devices/), where you enter your key to see the devices using it and remove one. See [Remove a device from your licence](remove-a-device).
-- **Request Cancellation** opens the [cancellation page](/cancel/), which checks your key and shows what will happen before anything is cancelled or charged. See [How to request a refund or cancel](how-to-request-a-refund).
-
-Both pages open inside the app.
-
-## devices-per-licence | licences-and-keys | Use your licence on up to 3 devices
-summary: A licence bought on the website works on up to 3 devices. Education licences have no limit.
-keywords: devices, three devices, 3 devices, device limit, how many devices, another device, new iphone, new ipad, share licence, limit reached
-see: remove-a-device, enter-your-licence-key, buy-for-your-organisation
-
-A licence bought on the website works on up to **3 devices**: for example an iPhone, an iPad and a Mac. Enter the same key on each one. A device is counted the first time it is used with the key, and the key is checked each time the app is opened.
-
-If you try a fourth device, Maestro Pro says the licence is already in use on 3 devices. [Remove a device](remove-a-device) you no longer use to free its place, then enter your key again.
-
-A device that has not been used for 60 days stops counting automatically. If you delete the app and install it again, that counts as a new device until the old one is removed or ages out, so remove the old one if you reach the limit.
-
-Education licences, bought for a whole organisation, have no device limit. See [Buy for a whole organisation](buy-for-your-organisation).
-
-## remove-a-device | licences-and-keys | Remove a device from your licence
-summary: Use the devices page on the key page to see where your licence is used and remove a device.
-keywords: remove device, revoke device, sign out device, free a place, device limit reached, old iphone, sold device, lost device, devices page
-see: devices-per-licence, recover-your-licence-key, licence-key-not-working
-
-1. Open the [devices page](/key/devices/).
-2. Enter your licence key and choose **Show my devices**.
-3. Find the device you no longer use. If you are not sure which it is, open Maestro Pro on it and choose **Refresh**: the device you just used moves to the top with a new last used time.
-4. Choose **Remove** next to the device you want to take off.
-
-The place is free straight away, so you can enter your key on another device. A removed device is signed out the next time Maestro Pro checks the licence, which is each time the app is opened. You can use **Remove all devices** to start again.
-
-If you do not have your key, [recover your licence key](/key.html) first.
-
-## several-licence-keys | licences-and-keys | If you have more than one licence key
-summary: If you have subscribed more than once, the email lists every active key with its plan.
-keywords: multiple keys, two keys, more than one licence, several licences, which key
-see: recover-your-licence-key, licence-key-not-working
-
-If you have subscribed more than once with the same email address, the key email lists every active key and names the plan each one belongs to. Use the key for the plan you want to use. Cancelled keys are not included.
-
-## licence-key-not-working | licences-and-keys | My licence key is not working
-summary: Check the key, check it is still active, and recover it again if needed.
-keywords: key not working, invalid key, key rejected, licence invalid, wrong key, expired key
-see: recover-your-licence-key, enter-your-licence-key, several-licence-keys
-
-- Check the key was typed exactly as sent. Copying it from the email is the safest way.
-- If the key was cancelled, it stops working after the date given in the cancellation email.
-- If you have more than one key, try the one for your current plan. See [more than one licence key](several-licence-keys).
-- If it says the licence is already in use on 3 devices, [remove a device](remove-a-device) and try again.
-- [Recover your licence key](/key.html) to get a fresh email with every active key.
-
-## install-and-testflight | group:Plans and licences | Install with TestFlight
-summary: Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store.
-keywords: install, testflight, download, install link, invitation, app store, get the app
-see: install-with-testflight, lost-the-testflight-link, enter-your-licence-key
-
-Maestro Pro is installed through Apple's TestFlight app until it reaches the App Store, which is coming soon. You need a licence to use it.
-
-## install-with-testflight | install-and-testflight | Install Maestro Pro step by step
-summary: Install TestFlight, accept the invitation, install Maestro Pro, then enter your key.
-keywords: install steps, accept invitation, testflight install, how to install, first launch
-see: enter-your-licence-key, lost-the-testflight-link
-
-1. Install **TestFlight** from the App Store on your iPhone, iPad or Mac.
-2. Open the Maestro Pro invitation and tap **Accept**, then **Install**.
-3. Open Maestro Pro. Tap "Already have a licence key?" on the paywall and enter your key.
-
-The install link comes in the email that carries your licence key.
-
-## lost-the-testflight-link | install-and-testflight | I lost the TestFlight link
-summary: The key email includes the TestFlight link, and the install page has it too.
-keywords: lost link, testflight link, install link, download link, where is the link, invitation
-see: recover-your-licence-key, install-with-testflight
-
-The email that carries your licence key also includes the TestFlight install link, so [recovering your licence key](/key.html) sends it again. The [install page](/install/) shows the link as well.
-
-## refunds-and-cancellation | group:Plans and licences | Refunds and cancellation
-summary: The 14-day money-back guarantee, and how to cancel a licence bought on the website.
-keywords: refund, cancel, cancellation, money back, guarantee, cancel licence, stop paying
-see: money-back-guarantee, how-to-request-a-refund, after-the-14-days, refund-for-app-store-subscriptions
-
-Licences bought on the website have a 14-day money-back guarantee. Refunds and cancellations cannot be done by email: they are requested on the [cancellation page](/cancel/), which checks your licence key and shows exactly what will happen before anything is cancelled or charged.
-
-**Subscribed inside the app through the App Store?** Apple handles those payments, so ask Apple for the refund: [Request a refund for apps or content you bought from Apple](https://support.apple.com/en-us/118223). See [Refunds for subscriptions bought in the app](refund-for-app-store-subscriptions).
-
-## money-back-guarantee | refunds-and-cancellation | The 14-day money-back guarantee
-summary: Ask for a full refund within 14 days of your first payment, once the payment has cleared.
-keywords: guarantee, 14 day, money back, refund window, full refund, day 8, cleared
-see: refund-timing, how-to-request-a-refund
-
-If Maestro Pro is not for you, you can ask for a full refund within 14 days of your first payment. Bank payments take about a week to clear, and a payment can only be refunded once it has. So you can ask from the 8th day on and by the 14th day.
-
-When the refund is made, your licence, subscription and any future payments are cancelled.
-
-## how-to-request-a-refund | refunds-and-cancellation | How to request a refund or cancel
-summary: Use the cancellation page with your licence key and follow the steps.
-keywords: request refund, how to cancel, cancel licence, cancellation page, refund request
-see: refund-timing, money-back-guarantee, recover-your-licence-key, refund-for-app-store-subscriptions
-
-This is for licences bought on this website. If you subscribed inside the app through the App Store, ask Apple instead: [request a refund from Apple](https://support.apple.com/en-us/118223).
-
-1. Have your licence key ready. If you have lost it, [recover your licence key](/key.html) first.
-2. Open the [cancellation page](/cancel/) and enter your key.
-3. Check what the page says will happen. Nothing is cancelled or charged until you confirm.
-4. You may be asked why you are cancelling, then confirm.
-
-You receive a confirmation email saying the licence has been cancelled, any refund or fee, and the last day you can use the licence.
-
-## refund-for-app-store-subscriptions | refunds-and-cancellation | Refunds for subscriptions bought in the app
+## refund-for-app-store-subscriptions | plans-and-pricing | Refunds for subscriptions bought in the app
 summary: If you subscribed inside the app through the App Store, Apple handles the refund, not us.
 keywords: app store refund, apple refund, in-app refund, performer refund, subscribed in app, report a problem, apple account refund
-see: manage-an-apple-subscription, how-to-request-a-refund, website-or-in-app
+see: manage-an-apple-subscription
 
-If you subscribed inside the app, Apple took the payment and Apple decides refunds, so we cannot refund it and our cancellation page will not find it. Ask Apple directly: [request a refund for apps or content you bought from Apple](https://support.apple.com/en-us/118223).
+If you subscribed inside the app, Apple took the payment and Apple decides refunds, so we cannot refund it. Ask Apple directly: [request a refund for apps or content you bought from Apple](https://support.apple.com/en-us/118223).
 
 Apple's page walks you through it. In short, you sign in with the Apple Account that bought the subscription, choose the purchase and say why you want a refund. Apple replies by email with its decision.
 
 To stop the subscription renewing, cancel it in your Apple Account settings. See [manage a subscription bought in the app](manage-an-apple-subscription).
 
-Not sure where you bought it? A licence key that arrived by email means you bought on this website, so use the [cancellation page](/cancel/). No key, and you subscribed on the paywall inside the app, means Apple.
 
-## refund-timing | refunds-and-cancellation | When can I get a refund?
-summary: Refunds are made from day 8 to day 14 after the first payment, once it has cleared.
-keywords: refund timing, day 7, day 8, too early, payment cleared, when refund, how long
-see: money-back-guarantee, after-the-14-days
 
-- **Days 0 to 7:** the payment has not cleared yet, so it cannot be refunded. The cancellation page tells you the date to come back, the 8th day after your payment.
-- **Days 8 to 14:** you can be refunded in full.
-- **Day 15 onwards:** the guarantee has ended. See [after the 14 days](after-the-14-days).
-
-## after-the-14-days | refunds-and-cancellation | Cancelling after the 14 days
-summary: No refund, but you can cancel going forward, and how that works differs for yearly and monthly plans.
-keywords: cancel after 14 days, no refund, late cancel, cancel yearly, cancel monthly, cancellation fee
-see: cancel-a-yearly-licence, cancel-a-monthly-licence, refund-timing
-
-After the 14 days we cannot refund your payments, but you can cancel so that nothing more is taken. What happens depends on how you pay:
-
-- [Yearly licence](cancel-a-yearly-licence): the subscription is cancelled and your key keeps working to the end of the year you paid for.
-- [Monthly licence](cancel-a-monthly-licence): a cancellation fee is taken, then your remaining payments stop.
-
-## cancel-a-yearly-licence | refunds-and-cancellation | Cancel a yearly licence
-summary: Your yearly subscription is cancelled and the key works until the end of the year you paid for.
-keywords: cancel yearly, annual, cancel annual licence, stop renewal, yearly cancel
-see: after-the-14-days, how-to-request-a-refund
-
-After the 14 days, cancelling a yearly licence stops it renewing. Your licence key keeps working until the end of the year you paid for, and the cancellation email gives that date.
-
-## cancel-a-monthly-licence | refunds-and-cancellation | Cancel a monthly licence
-summary: Monthly licences are on a 12-month contract, so cancelling early costs one month plus half of the remaining term.
-keywords: cancel monthly, monthly contract, 12 month, early cancellation fee, cancellation fee, monthly cancel
-see: after-the-14-days, how-to-request-a-refund
-
-Monthly licences are on a 12-month contract. After the 14 days, ending it early costs one month plus half of the remaining term. The cancellation page shows the exact amount before you confirm, and collects it from the bank account you already paid from. Your remaining monthly payments are then cancelled and your key keeps working until the date in the confirmation email.
-
-## education-and-schools | group:Plans and licences | Education and schools
-summary: How schools, colleges and tutors can get Maestro Pro, including volume licensing outside the App Store.
-keywords: education, school, college, students, teachers, tutors, volume licensing, music service, class
-see: apple-volume-purchasing, buy-for-your-organisation, student-licence
+## education-and-schools | group:Plans | Education and schools
+summary: How schools, colleges and tutors can get Maestro Pro, including Apple's volume purchasing.
+keywords: education, school, college, students, teachers, tutors, volume purchasing, music service, class
+see: apple-volume-purchasing
 
 Maestro Pro is for music schools, music services, colleges and private tutors as well as individuals. The [education page](/education/) describes how it helps students practise and tutors teach.
 
-There are two ways to buy for a group: Apple's volume purchasing for the free version, and a single licence for a whole organisation bought direct from us.
+Schools can roll out the free version through Apple's volume purchasing, and each person who needs a paid plan subscribes on their own Apple Account.
 
 ## apple-volume-purchasing | education-and-schools | Apple volume purchasing
 summary: Schools can roll the free version out through Apple School Manager or Apple Business Manager.
 keywords: apple school manager, apple business manager, volume purchase, apps and books, mdm, jamf, roll out
-see: buy-for-your-organisation, free-plan
+see: free-plan
 
 Apple lets schools and organisations buy apps in bulk through **Apps and Books** in Apple School Manager or Apple Business Manager, both free to enrol and needing the organisation to be verified by Apple.
 
 The free version of Maestro Pro can be rolled out to every device this way. Performer and Professional are subscriptions, and Apple's volume purchasing covers apps rather than subscriptions, so each person who needs a paid plan subscribes on their own Apple Account. Volume purchasing is not offered in every country or region.
-
-## buy-for-your-organisation | education-and-schools | Buy for a whole organisation
-summary: One licence for unlimited students and teachers, £499 a year, bought direct and outside the App Store.
-keywords: organisation licence, school licence, 499, unlimited students, volume licence, direct purchase, site licence
-see: apple-volume-purchasing, recover-your-licence-key
-
-You can buy one licence that covers a whole school, college, music service or tuition business, straight from us and outside the App Store. It is **£499 a year for unlimited students and teachers**, with every Maestro Pro feature, including the score editor, medleys and version history with GitHub sync.
-
-There is no per-seat counting and no Apple School Manager or Apple Business Manager set-up. An organisation licence has no device limit, unlike a single licence, which works on up to 3 devices (see [Use your licence on up to 3 devices](devices-per-licence)). You pay through our secure payment page, then [recover your licence key](/key.html) with the email address you paid with. The details are on the [education page](/education/).
-
-## student-licence | education-and-schools | The student licence
-summary: Students can buy Professional for £48 a year or £6 a month on a 12-month contract.
-keywords: student, student price, student licence, students discount, 48, 6 pounds
-see: buy-for-your-organisation, how-to-request-a-refund
-
-The [students page](/students/) sells Professional to students at £48 per year, or £6 per month on a 12-month contract. A student licence works on up to 3 devices. After you pay, use the [students key page](/students/key.html) to have your licence key emailed to you.
 
 ## supported-file-types | your-library | Supported file types
 summary: PDF, MusicXML, MIDI, karaoke, lyrics, CD+Graphics and Maestro Pro files can all be imported.

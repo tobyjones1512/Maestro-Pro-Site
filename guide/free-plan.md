@@ -1,6 +1,6 @@
 # The Free plan
 
-Path: Guide > Plans and licences > Plans and pricing > The Free plan
+Path: Guide > Plans > Plans and pricing > The Free plan
 URL: https://maestro-pro.app/guide/free-plan/
 Summary: What you get for nothing: up to three scores, viewing, lyrics files, your own audio, GitHub and scales.
 
