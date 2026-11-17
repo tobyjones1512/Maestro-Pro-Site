@@ -1,0 +1,341 @@
+.mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:16px;margin:1.4em 0}
+.mp-card{display:block;padding:18px;border:1px solid var(--hair);border-radius:14px;text-decoration:none;color:var(--fg);background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%);transition:border-color .2s,transform .2s}
+.mp-card:hover{border-color:var(--hl);transform:translateY(-2px)}
+.mp-card b{display:block;font-family:var(--serif);font-size:1.2rem;line-height:1.2}
+.mp-card small{display:block;color:var(--fg2);margin-top:4px}
+.mp-card .mp-price{margin-top:12px;font-weight:700;color:var(--hl)}
+.pay input[type=number],.pay input[type=password],.pay textarea{display:block;width:100%;margin-top:6px;padding:12px 14px;font:inherit;color:var(--fg);background:var(--bg);border:1.5px solid var(--hair);border-radius:9px}
+.pay input[type=file]{display:block;margin-top:6px;max-width:100%}
+.pay input[type=checkbox]{margin-right:8px}
+.pay--wide{max-width:36rem}
+.pay__msg{min-height:1.4em;margin-top:.8em}
+.gl{margin-top:2em}
+.gl__toc{columns:2;padding-left:0;list-style:none}
+.gl__item{margin:1.2em 0;scroll-margin-top:5rem}
+.gl__item h3{font-size:1.05rem;margin:0 0 .3em}
+.gl__item h3 a{color:var(--hl);text-decoration:none;font-variant-numeric:tabular-nums;margin-right:.4em}
+.gl__item:target{outline:2px solid var(--hl);outline-offset:6px;border-radius:6px}
+.mp-status{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;border:1px solid var(--hair)}
+.mp-status--ready{color:#1e7e34;border-color:#1e7e34}.mp-status--refused{color:#c0392b;border-color:#c0392b}.mp-status--wait{color:var(--fg2)}
+.mp-table{width:100%;border-collapse:collapse;margin:1em 0}.mp-table th,.mp-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--hair);vertical-align:top}
+.mp-reason{margin:6px 0 0;padding:10px 14px;border-left:3px solid #c0392b;background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%);font-size:.92rem}
+@media(max-width:600px){.gl__toc{columns:1}}
+.pay fieldset{border:0;padding:0;margin:1em 0}.pay fieldset label{display:block;margin:.3em 0}.pay select[multiple]{display:block;width:100%;margin-top:8px;font:inherit}
+.mp-note{margin:1em 0 0;font-size:.85rem;line-height:1.5;color:var(--fg2)}
+
+/* Marketplace pages: calmer buttons and type than the rest of the site's forms */
+body.read .pay__btn{display:inline-block;width:auto;padding:8px 18px;font-size:.9rem;border-radius:8px}
+body.read main.plain{font-size:1rem}
+
+/* Merchant console: a full-window app laid out like App Store Connect, in the site's own walnut, brass and amber */
+body.console{--bg:#15100B;--fg:#F3EBDA;--fg2:#B7A98A;--hair:#32271C;--hl:#F6A828;--side:#1E1710;--card:#1E1710;--page:#15100B;--ok:#7FCB8B;--bad:#F2776B;--wait:#F6A828;
+  background:var(--page);color:var(--fg);font:400 .875rem/1.5 var(--sans);caret-color:var(--hl);accent-color:var(--hl)}
+.console a{color:var(--hl)}
+.console h1,.console h2,.console h3{color:var(--fg)}
+.console .app{min-height:100vh;display:flex;flex-direction:column}
+.console .cbar{display:flex;align-items:center;gap:12px;height:46px;padding:0 18px;background:var(--side);border-bottom:1px solid var(--hair);position:sticky;top:0;z-index:5}
+.console .cbar a.brand{line-height:1;display:flex;align-items:center;gap:9px;color:var(--fg);text-decoration:none;font:700 .95rem var(--serif)}
+.console .cbar img{width:24px;height:24px;border-radius:6px}
+.console .cbar .sp{flex:1}
+.console .cbar .who{color:var(--fg2);font-size:.8rem;line-height:1}
+.console .cbar img{display:block}
+.console .cbar .pay__btn{line-height:1.2}
+.console .shell{flex:1;display:grid;grid-template-columns:210px minmax(0,1fr)}
+.console .side{background:var(--side);border-right:1px solid var(--hair);padding:16px 10px;position:sticky;top:46px;height:calc(100vh - 46px);overflow:auto}
+.console .side small{display:block;margin:0 10px 6px;color:var(--fg2);font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.console .side button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:6px 10px;border-radius:7px;font-size:.85rem;color:var(--fg)}
+.console .side button:hover{background:rgba(246,168,40,.1)}
+.console .side button[aria-selected=true]{background:rgba(246,168,40,.18);color:var(--hl);font-weight:600}
+.console .side button:focus-visible{outline:2px solid var(--hl);outline-offset:1px}
+.console .side i{font-style:normal;font-size:.7rem;font-weight:700;background:var(--hl);color:#15100B;border-radius:99px;padding:0 6px}
+.console .page{padding:24px clamp(18px,3vw,48px) 56px;min-width:0}
+.console .page h1{font:700 1.45rem/1.2 var(--serif);margin:0 0 4px}
+.console .page .sub{color:var(--fg2);margin:0 0 16px;font-size:.85rem}
+.console .page h2{font:600 .95rem var(--sans);margin:24px 0 8px}
+.console .row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.console .card{background:var(--card);border:1px solid var(--hair);border-radius:10px;overflow:hidden}
+.console .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:12px;margin:0 0 6px}
+.console .stat{background:var(--card);border:1px solid var(--hair);border-radius:10px;padding:12px 14px}
+.console .stat small{display:block;color:var(--fg2);font-size:.72rem;font-weight:600}
+.console .stat b{display:block;font-size:1.35rem;font-weight:600;line-height:1.3;font-variant-numeric:tabular-nums}
+.console .mp-table{margin:0;width:100%}
+.console .mp-table th{font-size:.7rem;font-weight:600;color:var(--fg2);padding:8px 14px;background:transparent;border-bottom:1px solid var(--hair);text-transform:uppercase;letter-spacing:.05em}
+.console .mp-table td{padding:11px 14px;border-bottom:1px solid var(--hair);vertical-align:middle}
+.console .mp-table tr:last-child td{border-bottom:0}
+.console .mp-table td:nth-child(n+3){font-variant-numeric:tabular-nums}
+.console .mp-table small,.console small{color:var(--fg2)}
+.console .mp-status{border:0;padding:0;font-weight:500;font-size:.85rem;display:inline-flex;align-items:center;gap:7px;color:var(--fg)}
+.console .mp-status::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--wait)}
+.console .mp-status--ready::before{background:var(--ok)}.console .mp-status--refused::before{background:var(--bad)}
+.console .mp-status--ready,.console .mp-status--refused,.console .mp-status--wait{color:var(--fg)}
+.console .mp-reason{border-left-color:var(--bad);background:rgba(242,119,107,.08);border-radius:6px;margin-top:8px;font-size:.82rem}
+.console .empty{padding:36px 18px;text-align:center;color:var(--fg2)}
+.console .pay__btn{display:inline-block;width:auto;background:var(--hl);color:#15100B;border:0;border-radius:7px;padding:5px 12px;font:600 .8rem var(--sans);letter-spacing:0;text-transform:none}
+.console .pay__btn:hover{background:#FFB94A;color:#15100B}
+.console .pay__btn--ghost{background:transparent;color:var(--hl);border:1px solid var(--hair)}
+.console .pay__btn--ghost:hover{background:rgba(246,168,40,.12);color:var(--hl)}
+.console .pay input:not([type=checkbox]):not([type=radio]),.console .pay textarea,.console .pay select{font:inherit;font-size:.85rem;padding:7px 10px;border-radius:7px;border:1px solid var(--rule);background:var(--walnut);color:var(--fg)}
+.console .pay label.field,.console .pay fieldset legend{font-size:.82rem;color:var(--fg2)}
+.console .pay label.field{display:block;margin:10px 0}
+.console .pay fieldset{border:1px solid var(--hair);border-radius:8px;padding:10px 14px;margin:12px 0}
+.console .form{padding:18px}
+.console .notice{background:rgba(246,168,40,.1);border:1px solid rgba(246,168,40,.35);border-radius:8px;padding:10px 14px;margin:0 0 16px;color:var(--fg)}
+.console dl{margin:0}.console dl div{display:flex;justify-content:space-between;gap:16px;padding:11px 16px;border-bottom:1px solid var(--hair)}.console dl div:last-child{border-bottom:0}
+.console dt{color:var(--fg2)}.console dd{margin:0;font-weight:500;text-align:right}
+.console .signin{min-height:100vh;display:grid;place-items:center;padding:24px}
+.console .signin .card{width:100%;max-width:24rem;padding:26px}
+.console .signin img{width:48px;height:48px;border-radius:11px;margin-bottom:12px}
+.console .signin h1{font:700 1.35rem var(--serif);margin:0 0 6px}
+.console [hidden]{display:none!important}
+.console dialog{border:1px solid var(--hair);border-radius:12px;background:var(--bg);color:var(--fg);padding:20px;width:min(32rem,calc(100vw - 32px))}
+.console dialog::backdrop{background:rgba(0,0,0,.6)}
+.console .mp-reason .pay__btn{margin-top:6px}
+
+/* the upload form: versions, kept files, and the country and continent tickboxes */
+.mp-ver{margin:12px 0}
+.mp-kept label{display:block;margin:2px 0}
+.mp-regions{margin-top:8px;max-height:22rem;overflow:auto;border:1px solid var(--hair);border-radius:8px;padding:6px 12px}
+.mp-cont{margin:8px 0}
+.mp-cont__all{display:block;padding:4px 0;border-bottom:1px solid var(--hair)}
+.mp-cont__list{columns:3 11rem;column-gap:16px;margin-top:4px}
+.mp-cont__list label{display:block;break-inside:avoid;font-size:.85em;padding:1px 0}
+.pay .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+@media(max-width:820px){
+  .console .shell{grid-template-columns:1fr}
+  .console .side{position:static;height:auto;display:flex;gap:6px;overflow-x:auto;padding:8px 10px;border-right:0;border-bottom:1px solid var(--hair)}
+  .console .side small{display:none}
+  .console .side button{width:auto;white-space:nowrap}
+  .console .card{overflow-x:auto}
+  .console .cbar .who{display:none}
+}
+.console dialog h2{font:600 1.05rem/1.3 var(--sans);margin:0 0 6px}
+.console dialog .sub{font-size:.82rem}
+.top__links a.top__acct,.top__links a.top__sell{display:inline-flex;align-items:center;padding:7px 16px 6px;border-radius:999px;border:2px solid var(--amber)!important;font-weight:700;font-size:.9rem;line-height:1.2;text-decoration:none;background-image:none!important}
+.top__links a.top__acct{color:var(--cream)}
+.top__links a.top__acct:hover{background:var(--amber);color:var(--walnut)}
+.top__links a.top__sell{background:var(--amber);color:var(--walnut)!important}
+.top__links a.top__sell:hover{background:var(--amber-deep);border-color:var(--amber-deep)!important}
+.mp-tools{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:1em 0 .4em}
+.mp-tools input[type=search],.mp-tools select{font:inherit;font-size:.9rem;padding:7px 10px;border:1px solid var(--hair);border-radius:8px;background:var(--bg);color:var(--fg)}
+.mp-tools input[type=search]{flex:1 1 14rem;min-width:10rem}
+.mp-tools label{font-size:.9rem;display:flex;gap:6px;align-items:center}
+.mp-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.mp-chip{font-size:.72rem;font-weight:700;padding:1px 8px;border-radius:99px;border:1px solid var(--hair);color:var(--fg2)}
+.mp-chip--free{border-color:#1e7e34;color:#1e7e34}
+.mp-legend{font-size:.85rem;color:var(--fg2);margin:.2em 0 0}
+main.mp-wide{max-width:none;padding-left:clamp(16px,3vw,48px);padding-right:clamp(16px,3vw,48px)}
+main.mp-wide>p{max-width:80ch}
+main.mp-wide .mp-grid{grid-template-columns:repeat(auto-fill,minmax(16rem,1fr))}
+.mp-id{font-variant-numeric:tabular-nums;letter-spacing:.04em;opacity:.8}
+
+/* console: buttons never carry the site's top margin, so they line up in bars and rows */
+.console .pay__btn,.console .pay__btn--ghost{margin:0;line-height:1.2}
+.console .pay__btn--ghost{box-shadow:inset 0 0 0 1px var(--fg2);color:var(--fg)}
+.console .pay__btn--ghost:hover{box-shadow:inset 0 0 0 1px var(--hl);background:rgba(246,168,40,.1)}
+.console .cbar .pay__btn{padding:6px 14px}
+.console .row{margin-bottom:16px;align-items:center}
+.console .row .sub{margin-bottom:0}
+#debugfield[hidden]{display:none}
+
+/* Item page: details and files on the left, checkout on the right */
+.mp-buy{display:grid;grid-template-columns:minmax(0,1fr) 22rem;gap:clamp(20px,4vw,48px);align-items:start;max-width:72rem;margin:0 auto}
+.mp-buy[hidden]{display:none}
+.mp-buy h1{margin:0 0 .15em}
+.mp-buy h2{font-size:1.15rem;margin:1.4em 0 .5em}
+.mp-buy__box h2{margin-top:0}
+.mp-by{margin:0 0 .8em}
+.mp-meta{color:var(--fg2);font-size:.9rem;margin:.4em 0 0}
+.mp-buy__box{position:sticky;top:16px;padding:20px;border:1px solid var(--hair);border-radius:14px;background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%)}
+.mp-files{border:1px solid var(--hair);border-radius:12px;padding:12px 16px;margin:0 0 12px;background:color-mix(in srgb,var(--bg) 94%,var(--fg) 6%)}
+.mp-files h3{margin:0 0 8px;font-size:1rem}
+.mp-files ul{list-style:none;margin:0;padding:0}
+.mp-files li{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--hair)}
+.mp-files li:first-child{border-top:0}
+.mp-files__n{flex:1;min-width:0;overflow-wrap:anywhere}
+.mp-files small{color:var(--fg2)}
+.mp-files .pay__btn{padding:4px 12px;font-size:.8rem;margin:0}
+.mp-preview{border:1px solid var(--hair);border-radius:12px;padding:12px;margin-top:12px}
+.mp-preview__bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.mp-preview iframe{width:100%;height:30rem;border:0;border-radius:8px;background:#fff}
+.mp-preview audio{width:100%}
+.mp-tip{border:0;padding:0;margin:14px 0 6px}
+.mp-tip legend{font-weight:600;margin-bottom:6px;padding:0}
+.mp-tip__opts{display:flex;flex-wrap:wrap;gap:8px}
+.mp-tip__opts label{margin:0}
+.mp-tip__opts input{position:absolute;opacity:0;pointer-events:none}
+.mp-tip__opts span{display:inline-block;padding:6px 14px;border:1px solid var(--hair);border-radius:999px;cursor:pointer;font-size:.9rem}
+.mp-tip__opts input:checked+span{background:var(--hl);border-color:var(--hl);color:var(--walnut);font-weight:700}
+.mp-tip__opts input:focus-visible+span{outline:2px solid var(--hl);outline-offset:2px}
+.mp-sum{margin:14px 0;padding:10px 0;border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.mp-sum div{display:flex;justify-content:space-between;padding:3px 0}
+.mp-sum dt,.mp-sum dd{margin:0}
+.mp-sum__total{font-weight:700;font-size:1.05rem}
+@media(max-width:820px){.mp-buy{grid-template-columns:1fr}.mp-buy__box{position:static}}
+
+/* Dispute cards in the console */
+.console .dcard{padding:20px 22px;margin:0 0 16px;max-width:52rem;overflow:visible}
+.console .dcard__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 14px}
+.console .dcard__head h2{margin:0;font:600 1.05rem/1.3 var(--sans)}
+.console .dcard__sub{margin:2px 0 0;color:var(--fg2);font-size:.8rem}
+.console .dcard__meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:12px 20px;margin:0 0 14px}
+.console .dcard__meta dt{color:var(--fg2);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:0 0 2px}
+.console .dcard__meta dd{margin:0}
+.console .dcard__claim{margin:0 0 14px;padding:10px 14px;border-left:3px solid var(--hl);background:rgba(246,168,40,.06);border-radius:0 8px 8px 0;white-space:pre-wrap}
+.console .dcard__row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px}
+.console .dcard__lbl{display:block;color:var(--fg2);font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.console .dcard__resp{margin:0 0 14px}
+.console .dcard__resp p{margin:4px 0 0}
+.console .dcard__act{border-top:1px solid var(--hair);padding-top:14px;margin-top:4px}
+.console .dcard__act textarea{display:block;width:100%;box-sizing:border-box;margin:6px 0 12px;padding:10px 12px;font:inherit;color:var(--fg);background:var(--page);border:1px solid var(--hair);border-radius:8px;resize:vertical}
+.console .dcard__act textarea:focus{outline:2px solid var(--hl);outline-offset:1px}
+.console .dcard__btns{display:flex;flex-wrap:wrap;gap:10px}
+
+.mp-done{max-width:36rem;padding:20px 22px;border:1px solid var(--hl);border-radius:14px;background:color-mix(in srgb,var(--bg) 94%,var(--hl) 6%)}
+.mp-done h2{margin:0 0 .5em;font-style:normal}
+.mp-done:focus{outline:none}
+.console .dcard__file{display:block;margin:6px 0 4px;color:var(--fg2);font:inherit;font-size:.85rem;max-width:100%}
+
+/* File preview window */
+dialog.mp-viewer{width:min(920px,94vw);max-height:92vh;padding:0;border:1px solid var(--hair,#32271C);border-radius:14px;background:var(--card,#1E1710);color:var(--fg,#F3EBDA);overflow:hidden}
+dialog.mp-viewer::backdrop{background:rgba(10,7,4,.78)}
+.mp-viewer__bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--hair,#32271C)}
+.mp-viewer__bar b{overflow-wrap:anywhere}
+.mp-viewer__body{padding:16px;max-height:calc(92vh - 64px);overflow:auto;display:grid;place-items:center}
+.mp-viewer__body iframe{width:100%;height:70vh;border:0;border-radius:6px;background:#fff}
+.mp-viewer__body img{max-width:100%;max-height:70vh;object-fit:contain;border-radius:6px}
+.mp-viewer__body pre{margin:0;width:100%;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.5 ui-monospace,Menlo,monospace;align-self:start}
+
+/* produced music */
+.mp-cover{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;margin:0 0 10px;background:var(--hair)}
+.mp-cover--big{width:12rem;margin:0 0 14px}
+.mp-kind label{display:block;margin:.3em 0}
+.mp-track{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:0 0 8px;counter-increment:trk}
+.mp-track::before{content:counter(trk) ".";position:absolute;margin-left:-1.6rem;color:var(--fg2)}
+.mp-tracks{counter-reset:trk;padding-left:1.6rem;margin:10px 0}
+.mp-track input[type=text]{font:inherit;padding:7px 10px;border:1px solid var(--hair);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
+.mp-track input[type=file]{min-width:0;font-size:.85rem}
+.mp-track .pay__btn{margin:0;padding:5px 12px;font-size:.8rem}
+@media(max-width:600px){.mp-track{grid-template-columns:1fr}}
+.mp-dist__when{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}.mp-dist label{display:block;margin:.3em 0}
+.mp-genres{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:2px 12px}.mp-genres legend{grid-column:1/-1}.mp-genres label{margin:.15em 0}.mp-chip--genre{opacity:.85}
+/* Checkout email field: same look as the site's other inputs */
+.mp-buy__box .field{display:block;margin:0 0 1em;font-weight:600;font-size:.92rem;color:var(--fg)}
+.mp-buy__box .field input{display:block;box-sizing:border-box;width:100%;margin-top:6px;padding:12px 14px;font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1.5px solid var(--hair);border-radius:9px;transition:border-color .2s,box-shadow .2s}
+.mp-buy__box .field input::placeholder{color:var(--fg2)}
+.mp-buy__box .field input:hover{border-color:var(--fg2)}
+.mp-buy__box .field input:focus{outline:0;border-color:var(--hl);box-shadow:0 0 0 3px color-mix(in srgb,var(--hl) 28%,transparent)}
+dialog.mp-gate{width:min(26rem,92vw);padding:24px;border:1px solid var(--hair,#32271C);border-radius:14px;background:var(--card,#1E1710);color:var(--fg,#F3EBDA)}dialog.mp-gate::backdrop{background:rgba(10,7,4,.78)}dialog.mp-gate h2{margin:0 0 .4em;font-size:1.15rem}
+.mp-status--dist{color:#a37a00;border-color:#d9a400}.console .mp-status--dist{color:var(--fg)}.console .mp-status--dist::before{background:#F2C230}
+.plain a.pay__btn{color:var(--walnut);text-decoration:none;display:inline-block;width:auto;text-align:center;margin:0 10px 10px 0}.plain a.pay__btn:hover{color:var(--walnut)}
+@media(max-width:640px){.top__toggle~.top__links{gap:10px;padding-top:10px}.top__toggle~.top__links a{border-bottom:0;padding:10px 0}.top__toggle~.top__links a.top__acct,.top__toggle~.top__links a.top__sell{justify-content:center;padding:11px 16px 10px;font-size:1rem}.top__toggle~.top__links a:not(.top__acct):not(.top__sell){padding:6px 4px}}
+.mp-xml{background:#fff;border-radius:10px;padding:10px;overflow:auto;max-height:70vh;color:#111}.mp-xml svg{max-width:100%;height:auto}
+.mp-signin{display:grid;gap:10px}.mp-signin p{margin:0}
+/* Merchant console on phones: tabs that scroll, tables that become stacked cards, full-width fields, finger-sized buttons */
+@media(max-width:820px){
+  .console .cbar{padding:0 12px;gap:8px}.console .cbar a.brand{font-size:.85rem;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .console .side{scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:46px;z-index:4}
+  .console .side::-webkit-scrollbar{display:none}
+  .console .side button{flex:none;padding:9px 14px;border-radius:99px;font-size:.88rem;border:1px solid var(--hair)}
+  .console .side button[aria-selected=true]{border-color:var(--hl)}
+  .console .page{padding:18px 14px 48px}
+  .console .page h1{font-size:1.25rem}
+  .console .row{flex-direction:column;align-items:stretch}
+  .console .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .console .stat b{font-size:1.15rem;overflow-wrap:anywhere}
+  .console .form{padding:14px}
+  .console .card{overflow:visible}
+  /* tables become one card per row */
+  .console .mp-table,.console .mp-table tbody,.console .mp-table tr,.console .mp-table td{display:block;width:100%}
+  .console .mp-table thead{display:none}
+  .console .mp-table tr{padding:12px 14px;border-bottom:1px solid var(--hair)}
+  .console .mp-table tr:last-child{border-bottom:0}
+  .console .mp-table td{padding:3px 0;border:0;text-align:left!important;overflow-wrap:anywhere}
+  .console .mp-table td:last-child{display:flex;flex-wrap:wrap;gap:8px;padding-top:8px}
+  .console .mp-table td .pay__btn{flex:1 1 8rem;text-align:center;padding:10px 12px}
+  /* forms */
+  .console .pay input:not([type=checkbox]):not([type=radio]),.console .pay textarea,.console .pay select{width:100%;box-sizing:border-box;font-size:16px;padding:10px 12px;min-height:44px}
+  .console .pay input[type=file]{font-size:.85rem;min-height:0;padding:8px}
+  .console .pay input[type=checkbox],.console .pay input[type=radio]{width:20px;height:20px;flex:none}
+  .console .pay label:not(.field){display:flex;align-items:flex-start;gap:10px;padding:5px 0}
+  .console .pay fieldset{padding:10px 12px;min-width:0}
+  .console .pay .row{flex-direction:column}.console .pay .row .pay__btn,.console .pay>.pay__btn{width:100%;padding:12px 14px;font-size:.95rem}
+  .mp-dist__when{flex-direction:column}
+  .mp-cont__list{columns:1}.mp-regions{max-height:16rem}
+  .mp-track{grid-template-columns:1fr}
+  .console dl div{flex-direction:column;gap:2px}.console dd{text-align:left}
+  .console dialog{padding:16px;width:calc(100vw - 24px)}
+  .console .mp-reason .pay__btn{width:100%}
+}
+@media(max-width:820px){.console .shell{grid-template-rows:auto minmax(0,1fr);align-content:start}.console .side{align-items:center;align-self:start;height:auto!important;padding:10px 12px}.console .side button{align-self:center;height:auto;line-height:1.2}}
+
+/* The footer sits at the bottom of the page, or at the bottom of the screen when the page is short. */
+body.read{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+/* In a column the auto side margins would shrink these to their content: they take the full width, keeping the widths they had (padding included). */
+body.read>.top,body.read>main,body.read>.foot{width:100%;box-sizing:border-box}
+body.read>main.plain{max-width:calc(70ch + 2*var(--gutter))}
+body.read>main.mp-wide{max-width:none}
+body.read>.foot{max-width:calc(var(--max) + 2*var(--gutter));margin-top:auto}
+body.read>main{flex:0 0 auto}
+/* A spinner in the middle of the screen while the buyer account loads. */
+html.wait main.plain{visibility:hidden}
+html.wait::after{content:"";position:fixed;left:calc(50% - 17px);top:calc(50% - 17px);width:34px;height:34px;box-sizing:border-box;z-index:9;border:3px solid rgba(128,128,128,.3);border-top-color:#F6A828;border-radius:50%;animation:mpspin .8s linear infinite}
+@keyframes mpspin{to{transform:rotate(360deg)}}
+
+/* Account tab sections: a padded panel each, with the form sitting flat inside it. */
+.console .card.box{padding:20px 22px;margin-top:16px;overflow:visible}
+.console .card.box h2{margin:0 0 8px;font:600 1rem var(--sans);width:auto;max-width:none}
+.console .card.box p{margin:0 0 14px;max-width:68ch;color:var(--fg2)}
+.console .card.box p b{color:var(--fg)}
+.console .card.box .pay{background:none;border:0;box-shadow:none;padding:0;margin:0;max-width:28rem}
+.console .card.box .pay label.field{margin:0 0 12px}
+.console .card.box .pay__msg{margin:10px 0 0;min-height:1.2em}
+.console .card.danger{border-color:rgba(242,119,107,.45)}
+.console .card.danger h2{color:var(--bad)}
+.console .pay__btn--danger{background:var(--bad);color:#15100B}
+.console .pay__btn--danger:hover{background:#FF8A7E;color:#15100B}
+.console .card.box .pay__msg:empty{display:none}
+/* Add Product: one flat form in its panel (not a box inside a box), wider fields, genres in columns. */
+.console .card.form{padding:24px clamp(16px,3vw,32px);overflow:visible}
+.console .card.form .pay{background:none;border:0;box-shadow:none;padding:0;margin:0;max-width:46rem}
+.console .card.form .pay fieldset{margin:16px 0;padding:14px 16px 12px;background:rgba(255,255,255,.02)}
+.console .card.form .pay fieldset legend{padding:0 6px;font-weight:600}
+.console .card.form .pay input[type=file]{width:100%;box-sizing:border-box;padding:8px;background:var(--page);border:1px solid var(--hair);border-radius:7px;color:var(--fg2)}
+.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])){display:flex;flex-wrap:wrap;gap:0 12px}
+.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])) label{flex:0 0 calc(25% - 9px);min-width:8.5rem;margin:.2em 0}
+.console .card.form .pay>.pay__btn[type=submit]{margin-top:6px;padding:8px 20px;font-size:.9rem}
+@media(max-width:700px){.console .card.form .pay fieldset:has(input[type=checkbox]):not(:has(input[type=radio])) label{flex-basis:calc(50% - 6px);min-width:0}}
+
+/* Paying on the item page: Apple Pay, then a card form made of Mollie's hosted fields. */
+.mp-ap{display:none;width:100%;height:46px;margin:0 0 10px;border:0;cursor:pointer;border-radius:10px}
+@supports (-webkit-appearance:-apple-pay-button){.mp-ap:not([hidden]){display:block;-webkit-appearance:-apple-pay-button;-apple-pay-button-type:buy;-apple-pay-button-style:black}}
+@media (prefers-color-scheme:dark){@supports (-webkit-appearance:-apple-pay-button){.mp-ap{-apple-pay-button-style:white-outline}}}
+.mp-or{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--fg2);font-size:.85rem}
+.mp-or::before,.mp-or::after{content:"";flex:1;height:1px;background:var(--hair)}
+#payui.is-busy{opacity:.6;pointer-events:none}
+#payui .field{display:block;margin:0 0 12px}
+.mp-lab{display:block;font-weight:600;font-size:.88rem;margin-bottom:6px}
+.mp-comp{min-height:44px;padding:0 12px;border:1.5px solid var(--hair);border-radius:9px;background:var(--bg);display:flex;align-items:center;box-sizing:border-box}
+.mp-comp.has-focus,.mp-comp:focus-within{border-color:var(--hl)}
+.mp-comp iframe{width:100%}
+.mp-comp__err{display:block;min-height:1em;margin-top:4px;color:var(--bad,#c0392b);font-size:.82rem}
+.mp-comp__row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#cardpay{width:100%;padding:12px 14px;font-size:1rem}
+html.app #payui{display:none!important}
+
+/* The payment box: over the page, with the page dimmed behind it. */
+.mp-dlg{width:min(26rem,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:22px;border:1px solid var(--hair);border-radius:16px;background:var(--bg);color:var(--fg);box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.mp-dlg::backdrop{background:rgba(10,7,4,.62);backdrop-filter:blur(3px)}
+.mp-dlg__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mp-dlg__head h2{margin:0;font-size:1.25rem}
+.mp-dlg__x{all:unset;cursor:pointer;font-size:1.6rem;line-height:1;padding:0 4px;color:var(--fg2)}
+.mp-dlg__x:hover{color:var(--hl)}
+.mp-dlg__sum{margin:6px 0 16px;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* Seller's proceeds preview under the price field. */
+.mp-proceeds{margin:4px 0 14px;padding:12px 14px;border:1px solid var(--hair);border-radius:9px;background:rgba(255,255,255,.03);font-size:.85rem}
+.mp-proceeds dl{margin:8px 0}
+.mp-proceeds dl>div{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.mp-proceeds dt,.mp-proceeds dd{margin:0}
+.mp-proceeds dd{font-variant-numeric:tabular-nums}
+.mp-proceeds__you{border-top:1px solid var(--hair);margin-top:4px;padding-top:6px!important;font-weight:700}
+.mp-proceeds small{display:block;color:var(--fg2)}

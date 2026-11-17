@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/api/marketplace-:fn", "destination": "/api/marketplace?fn=:fn" }
+  ],
+  "functions": {
+    "api/marketplace.js": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/marketplace-sweep", "schedule": "0 6 * * *" }
+  ]
+}

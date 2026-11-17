@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Buy | Maestro Pro Marketplace</title>
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="stylesheet" href="/assets/maestro.css">
+<link rel="stylesheet" href="/assets/marketplace.css?v=27">
+</head>
+<body class="read">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="top__brand" href="/"><img width="160" height="160" src="/assets/app-icon-160.png" alt="">Maestro Pro Marketplace</a>
+  <nav class="top__links" aria-label="Primary"><a href="/marketplace/">Marketplace</a><a class="top__acct" href="/marketplace/account/">Account</a><a class="top__sell" href="/marketplace/onboard/">Sell</a></nav>
+</header>
+<main id="main" class="plain mp-wide">
+<div id="item" class="mp-buy" hidden>
+  <section class="mp-buy__info">
+    <img id="art" class="mp-cover mp-cover--big" alt="" hidden>
+    <h1 id="t"></h1>
+    <p class="mp-by"><b id="c"></b> <small class="mp-id" id="code"></small></p>
+    <p id="d"></p>
+    <p class="mp-meta" id="meta"></p>
+    <h2>What you get</h2>
+    <div id="vers"></div>
+    <div class="mp-preview" id="pv" hidden></div>
+  </section>
+  <form id="f" class="mp-buy__box" novalidate>
+    <h2>Checkout</h2>
+    <fieldset class="mp-tip">
+      <legend>Add a tip (optional)</legend>
+      <div class="mp-tip__opts">
+        <label><input type="radio" name="tip" value="0"><span>0%</span></label>
+        <label><input type="radio" name="tip" value="5" checked><span>5%</span></label>
+        <label><input type="radio" name="tip" value="10"><span>10%</span></label>
+        <label><input type="radio" name="tip" value="15"><span>15%</span></label>
+        <label><input type="radio" name="tip" value="custom"><span>Custom</span></label>
+      </div>
+      <label class="field mp-tip__custom" id="cw" hidden><span id="cwl">Tip</span><input name="custom" type="number" inputmode="decimal" min="0" max="500" step="0.01" placeholder="0.00"></label>
+    </fieldset>
+    <dl class="mp-sum">
+      <div><dt id="spl">Price</dt><dd id="sp"></dd></div>
+      <div id="txr" hidden><dt id="txl">Tax</dt><dd id="tx"></dd></div>
+      <div><dt>Tip</dt><dd id="st"></dd></div>
+      <div class="mp-sum__total"><dt>Total</dt><dd id="sx"></dd></div>
+    </dl>
+    <dialog id="paydlg" class="mp-dlg" aria-labelledby="pdt">
+    <div id="payui">
+      <div class="mp-dlg__head"><h2 id="pdt">Pay</h2><button type="button" id="pdx" class="mp-dlg__x" aria-label="Close">&times;</button></div>
+      <p class="mp-dlg__sum" id="pdsum"></p>
+      <button type="button" id="ap" class="mp-ap" hidden aria-label="Pay with Apple Pay"></button>
+      <p class="mp-or" id="apor" hidden>or pay by card</p>
+      <div id="cardui">
+        <div class="field"><span class="mp-lab">Name on card</span><div id="c-holder" class="mp-comp"></div><small class="mp-comp__err" id="e-cardHolder"></small></div>
+        <div class="field"><span class="mp-lab">Card number</span><div id="c-number" class="mp-comp"></div><small class="mp-comp__err" id="e-cardNumber"></small></div>
+        <div class="mp-comp__row">
+          <div class="field"><span class="mp-lab">Expiry date</span><div id="c-expiry" class="mp-comp"></div><small class="mp-comp__err" id="e-expiryDate"></small></div>
+          <div class="field"><span class="mp-lab">Security code</span><div id="c-cvc" class="mp-comp"></div><small class="mp-comp__err" id="e-verificationCode"></small></div>
+        </div>
+        <button type="button" id="cardpay" class="pay__btn" disabled>Pay by card</button>
+      </div>
+      <p class="pay__msg" id="paymsg" role="status"></p>
+      <p class="mp-note" id="stmt"></p>
+    </div>
+    </dialog>
+    <button class="pay__btn" type="submit">Continue to payment</button>
+    <p class="pay__msg" role="status"></p>
+    <p class="mp-note" id="taxnote"></p>
+    <p class="mp-note">You can cancel within 14 days for a full refund (<a href="/marketplace/guidelines/#s7">see the refund rules</a>). Your purchases are kept in your <a href="/marketplace/account/">buyer account</a>, which you can also open in the Maestro Pro app.</p>
+  </form>
+</div>
+<p id="err"></p>
+</main>
+<footer class="foot">
+  <nav aria-label="Footer"><a href="/">Maestro Pro</a><a href="/marketplace/guidelines/">Guidelines</a><a href="/marketplace/disputes/">Report copyright</a><a href="/support/">Support</a><a href="/privacy/">Privacy</a></nav>
+  <p>&copy; <span id="yr">2026</span> The Caffeine Media Company.</p>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear()</script>
+<script src="/assets/nav.js" defer></script>
+<script type="module">
+import { api, esc, breakdown, money } from "/assets/marketplace.js?v=25";
+const $ = (id) => document.getElementById(id), id = new URLSearchParams(location.search).get("id"), f = $("f");
+const kb = (n) => (n > 1e6 ? (n / 1e6).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1e3)) + " KB");
+let d, l, key = "", payOpen = null;
+const dec = () => (d.currency === "JPY" || d.currency === "ISK" ? 0 : 2);
+// the tip in US dollars; a custom tip is typed in the buyer's own currency, so it is exact in that currency
+const customLocal = () => { const n = Math.round(Number(f.custom.value || 0) * 10 ** dec()) / 10 ** dec(); return Number.isFinite(n) ? Math.min(Math.max(n, 0), 500 * d.rate) : 0; };
+const tipPct = () => (f.tip.value === "custom" ? 0 : Number(f.tip.value));
+const tipBody = () => (f.tip.value === "custom" ? { local: customLocal() } : { percent: tipPct() });
+const tipUSD = () => {
+  const v = f.tip.value;
+  if (v === "custom") return customLocal() / d.rate;
+  return Math.round(l.priceUSD * Number(v)) / 100;
+};
+const taxOf = () => { const v = TAXES[d.country]; return v ? { name: v[0], rate: v[1], inclusive: Boolean(v[2]) } : { name: "", rate: 0, inclusive: false }; };
+let TAXES = {};
+function totals() {
+  const t = tipUSD(), x = taxOf(), b = breakdown(l.priceUSD, t, d, x, tipPct());
+  $("cw").hidden = f.tip.value !== "custom"; $("cwl").textContent = `Tip in ${d.currency}`;
+  $("spl").textContent = x.rate ? "Price, before tax" : "Price";
+  $("sp").textContent = money(b.net, d.currency);
+  $("txr").hidden = !x.rate; $("txl").textContent = `${x.name} (${+(x.rate * 100).toFixed(1)}%)`; $("tx").textContent = money(b.tax, d.currency);
+  $("st").textContent = t ? money(b.tip, d.currency) : "None"; $("sx").textContent = money(b.total, d.currency);
+  $("taxnote").textContent = x.rate ? (x.inclusive ? `The price shown on the Marketplace includes ${x.name}.` : `${x.name} is added to the price at checkout.`) : "";
+}
+function preview(file, name) {
+  const box = $("pv");
+  box.hidden = false;
+  box.innerHTML = `<div class="mp-preview__bar"><b>${esc(name)}</b><button type="button" class="pay__btn pay__btn--ghost" data-close>Close preview</button></div>` + (file.kind === "pdf"
+    ? `<iframe title="Preview of ${esc(name)}" src="${esc(file.preview)}#toolbar=0&navpanes=0&view=FitH"></iframe><p class="mp-note">A preview of the first page. The full file is yours after you buy.</p>`
+    : file.kind === "xml" ? `<div class="mp-xml" id="xml">Loading the first bars…</div><p class="mp-note">The first eight bars. The full score is yours after you buy.</p>`
+    : `<audio controls controlsList="nodownload noplaybackrate" src="${esc(file.preview)}"></audio><p class="mp-note">A short clip. The full recording is yours after you buy.</p>`);
+  if (file.kind === "xml") drawXml(file.preview);
+  box.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+// ---- Paying on the page: Apple Pay, or a card typed into Mollie Components (Mollie-hosted fields: card details never reach our servers).
+// Both pay a price quoted by the server (signed, so the amount paid is the amount shown). The old button to Mollie's own page stays if this can't start.
+function pay() {
+  let Q = null, seq = 0, mollie = null, comps = null;
+  const dlg = $("paydlg"), say = (t) => { $("paymsg").textContent = t || ""; };
+  const call = (extra) => api("buy", { method: "POST", key, header: "X-MP-Buyer", body: { id, tip: tipBody(), ...extra } });
+  let working = false;
+  const busy = (on) => { working = on; $("cardpay").disabled = on || !comps; $("ap").disabled = on; $("payui").classList.toggle("is-busy", on); };
+  const done = (r) => {
+    if (r.url) return (location.href = r.url);   // the bank's check for a card
+    if (r.status !== "paid") throw new Error("The payment wasn't completed. You have not been charged.");
+    location.href = `/marketplace/thanks/?o=${r.order}&t=${r.token}`;
+  };
+  const lost = (err) => { say(err.message); if (/Sign in/.test(err.message)) { try { localStorage.removeItem("mp-buyer-key"); } catch {} } };
+
+  async function mount(q) {
+    if (comps || !q.profileId) return;
+    if (!window.Mollie) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://js.mollie.com/v1/mollie.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
+    mollie = window.Mollie(q.profileId, { locale: "en_GB", testmode: q.testmode });
+    const cs = getComputedStyle(document.body), base = { color: cs.color, fontSize: "16px", "::placeholder": { color: "#8a7d68" } };
+    const at = { cardHolder: "#c-holder", cardNumber: "#c-number", expiryDate: "#c-expiry", verificationCode: "#c-cvc" };
+    comps = {};
+    for (const [type, sel] of Object.entries(at)) {
+      const c = mollie.createComponent(type, { styles: { base } });
+      c.mount(sel);
+      c.addEventListener("change", (e) => { $("e-" + type).textContent = e.error && e.touched ? e.error : ""; });
+      comps[type] = c;
+    }
+  }
+  async function refresh() {
+    const mine = ++seq; Q = null; busy(true); say("");
+    try { const q = await call({ quote: true }); if (mine !== seq) return; Q = q; $("stmt").textContent = (q.statement ? `Your bank statement should show "${q.statement}", the seller's business name, not Maestro Pro.` : "Your bank statement should show the seller's business name, not Maestro Pro.") + " The exact wording depends on your bank, which may add its own prefix."; await mount(q); }
+    catch (err) { if (mine === seq) lost(err); return; }
+    if (mine === seq) busy(false);
+  }
+  // The pay button on the page opens this box over the page: the price is quoted afresh for the tip chosen, then the card form and Apple Pay are shown.
+  const sub = f.querySelector("button[type=submit]");
+  if (sub) sub.textContent = "Pay";
+  payOpen = () => {
+    $("pdt").textContent = l.title; $("pdsum").textContent = "Total " + $("sx").textContent;
+    dlg.showModal(); refresh();
+  };
+  $("pdx").addEventListener("click", () => { if (!working) dlg.close(); });
+  dlg.addEventListener("cancel", (e) => { if (working) e.preventDefault(); });
+  dlg.addEventListener("click", (e) => { if (e.target === dlg && !working) dlg.close(); });
+
+  $("cardpay").addEventListener("click", async () => {
+    if (!Q || !comps) return;
+    busy(true); say("");
+    try {
+      const { token, error } = await mollie.createToken();
+      if (error) throw new Error(error.message || "Check the card details and try again.");
+      done(await call({ quoteToken: Q.token, cardToken: token }));
+    } catch (err) { lost(err); busy(false); }
+  });
+
+  if (window.ApplePaySession && ApplePaySession.canMakePayments()) {
+    $("ap").hidden = false; $("apor").hidden = false;
+    $("ap").addEventListener("click", () => {
+      if (!Q) return;
+      const n = (v) => Number(v) !== 0, lines = [{ label: l.title, amount: Q.net }, ...(n(Q.tax) ? [{ label: Q.taxName, amount: Q.tax }] : []), ...(n(Q.tip) ? [{ label: "Tip", amount: Q.tip }] : [])];
+      const s = new ApplePaySession(3, { countryCode: "GB", currencyCode: Q.currency, supportedNetworks: ["visa", "masterCard", "amex", "maestro", "vPay"], merchantCapabilities: ["supports3DS"], lineItems: lines, total: { label: "Maestro Pro Marketplace", amount: Q.total } });
+      s.onvalidatemerchant = async (e) => {
+        try { s.completeMerchantValidation(await api("apple-pay-session", { method: "POST", key, header: "X-MP-Buyer", body: { validationUrl: e.validationURL, domain: location.hostname } })); }
+        catch (err) { s.abort(); lost(err); }
+      };
+      s.onpaymentauthorized = async (e) => {
+        try {
+          const r = await call({ quoteToken: Q.token, applePayToken: JSON.stringify(e.payment.token) });
+          if (r.status !== "paid") throw new Error("The payment wasn't completed. You have not been charged.");
+          s.completePayment(ApplePaySession.STATUS_SUCCESS);
+          done(r);
+        } catch (err) { s.completePayment(ApplePaySession.STATUS_FAILURE); lost(err); }
+      };
+      s.begin();
+    });
+  }
+  refresh();
+}
+async function drawXml(url) {
+  const el = $("xml");
+  try {
+    if (!window.opensheetmusicdisplay) await new Promise((ok, no) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdisplay.min.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
+    const xml = await (await fetch(url)).text(), page = document.createElement("div");
+    page.style.width = "960px";   // always laid out at one width, four bars to a row, then scaled to fit the screen
+    el.textContent = ""; el.append(page);
+    const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(page, { autoResize: false, drawTitle: true });
+    osmd.EngravingRules.RenderXMeasuresPerLineAkaSystem = 4;
+    await osmd.load(xml); osmd.render();
+    page.querySelectorAll("svg").forEach((v) => { const w = parseFloat(v.getAttribute("width")) || 960, h = parseFloat(v.getAttribute("height")) || 0; v.setAttribute("viewBox", `0 0 ${w} ${h}`); v.removeAttribute("width"); v.removeAttribute("height"); v.style.width = "100%"; v.style.height = "auto"; });
+    page.style.width = "100%";
+  } catch { el.textContent = "The preview couldn't be shown."; }
+}
+try {
+  d = await api("item", { query: { id } }); l = d.listing;
+  document.title = l.title + " | Maestro Pro Marketplace";
+  if (l.cover) { $("art").src = l.cover; $("art").hidden = false; }
+  $("t").textContent = l.title; $("c").textContent = l.composer; $("code").textContent = "ID " + l.code; $("d").textContent = l.description;
+  $("meta").innerHTML = `${(l.genres || []).length ? esc(l.genres.join(", ")) + " &middot; " : ""}${l.type ? esc(l.type) + " &middot; " : ""}By ${esc(l.sellerName)}`;
+  $("vers").innerHTML = l.detail.map((v, i) => `<div class="mp-files"><h3>${esc(v.label || (l.detail.length > 1 ? "Main version" : "Files"))}</h3><ul>${v.files.map((x, k) => `<li><span class="mp-chip">${esc(x.type || "File")}</span><span class="mp-files__n">${esc(x.title || x.name)}</span><small>${kb(x.size)}</small>${x.preview ? `<button type="button" class="pay__btn pay__btn--ghost" data-p="${i}.${k}">Preview</button>` : ""}</li>`).join("")}</ul></div>`).join("");
+  $("vers").addEventListener("click", (e) => { const b = e.target.closest("[data-p]"); if (!b) return; const [i, k] = b.dataset.p.split(".").map(Number); preview(l.detail[i].files[k], l.detail[i].files[k].name); });
+  $("pv").addEventListener("click", (e) => { if (e.target.closest("[data-close]")) { $("pv").hidden = true; $("pv").innerHTML = ""; } });
+  TAXES = d.taxes || {};   // an older server sends no tax table: no tax is shown
+  f.custom.step = dec() ? "0.01" : "1";
+  try { key = localStorage.getItem("mp-buyer-key") || ""; } catch {}
+  if (!key) {   // buying needs a buyer account
+    const next = encodeURIComponent(location.pathname + location.search);
+    f.querySelector("button[type=submit]").outerHTML = `<div class="mp-signin"><p><b>Sign in to buy.</b> Everything you buy is kept in your buyer account, so you can download it again and open it in the Maestro Pro app.</p><a class="pay__btn" href="/marketplace/account/?next=${next}">Sign in or create an account</a></div>`;
+  }
+  f.addEventListener("input", totals); totals();
+  if (key && !document.documentElement.classList.contains("app")) pay();   // (in the Maestro Pro app nothing is sold: it has its own cart)
+  $("item").hidden = false;
+  f.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const m = f.querySelector(":scope > .pay__msg"), b = f.querySelector("button[type=submit]");
+    if (!b) return;
+    if (payOpen) return payOpen();   // paying happens in the box over the page
+    b.disabled = true; m.textContent = "";
+    const tip = tipBody();
+    try { location.href = (await api("buy", { method: "POST", key, header: "X-MP-Buyer", body: { id, tip } })).url; }
+    catch (err) { m.textContent = err.message; b.disabled = false; if (/Sign in/.test(err.message)) { try { localStorage.removeItem("mp-buyer-key"); } catch {} } }
+  });
+} catch (e) { $("err").textContent = e.message; }
+</script>
+</body>
+</html>

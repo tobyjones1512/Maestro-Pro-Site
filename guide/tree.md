@@ -186,6 +186,16 @@ Every guide, grouped. HTML pages are at https://maestro-pro.app/guide/<slug>/ an
   - [Import does nothing or a file is greyed out](https://maestro-pro.app/guide/import-does-nothing-or-greyed-out/): Choose All Files in the Files browser, or drag the file onto the window.
   - [Jazz tunes need the internet](https://maestro-pro.app/guide/jazz-tunes-need-internet/): Jazz tunes need an internet connection the first time you add them.
   - [An overfull bar in the editor](https://maestro-pro.app/guide/overfull-bar-in-editor/): Turn Free Editing off, or delete a note and the editor will tidy the bar.
+- [Buttons and icons](https://maestro-pro.app/guide/buttons-and-icons/): Every button and icon in Maestro Pro, with a picture of it and what it does.
+  - [Playback bar icons](https://maestro-pro.app/guide/icons-playback-bar/): What each icon does: Go to Beginning, Previous Bar, Play, Next Bar and more.
+  - [Score toolbar icons](https://maestro-pro.app/guide/icons-score-toolbar/): What each icon does: Edit Score, Annotate, Wait for Me, Record Myself and more.
+  - [Library icons](https://maestro-pro.app/guide/icons-library/): What each icon does: Settings, Help, Add, Import Score and more.
+  - [Editor toolbar icons](https://maestro-pro.app/guide/icons-editor-toolbar/): What each icon does: Listen, Help, Undo, Redo and more.
+  - [Editing mode icons](https://maestro-pro.app/guide/icons-editing-modes/): What each icon does: Notes, Rests, Marks, Dynamics and more.
+  - [Editing window buttons](https://maestro-pro.app/guide/icons-editor-window/): What each icon does: Close, Minimise, Fit to Contents, Back.
+  - [Editing window icons for notes](https://maestro-pro.app/guide/icons-editor-notes/): What each icon does: Sharp, Flat, Natural, Tie to the Next Note and more.
+  - [Editing window icons for bars](https://maestro-pro.app/guide/icons-editor-bars/): What each icon does: Copy Bar, Cut Bar, Paste Bars, Duplicate and more.
+  - [Mute, solo and hide staff icons](https://maestro-pro.app/guide/icons-staves/): What each icon does: Mute, Solo, Hide Staff, Show Staff.
 
 ## Your devices and privacy
 - [Devices and compatibility](https://maestro-pro.app/guide/devices-and-compatibility/): Which iPhones, iPads and Macs run Maestro Pro, and what is optional.

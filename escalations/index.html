@@ -130,7 +130,7 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
 .set textarea{min-height:420px;font:13px/1.5 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
 .set .num{width:90px}.set label{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .set .row2{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.app[data-tab=settings] .panes{grid-template-columns:1fr}.app[data-tab=settings] .list{display:none}
+.app[data-tab=settings] .panes,.app[data-tab=disputes] .panes,.app[data-tab=tax] .panes{grid-template-columns:1fr}.app[data-tab=settings] .list,.app[data-tab=disputes] .list,.app[data-tab=tax] .list{display:none}
 @media(max-width:820px){
  .panes{grid-template-columns:1fr}
  .list{border-right:0}
@@ -138,7 +138,24 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
  .app:not([data-open=true]) .view{display:none}
  .back{display:inline-flex}
 }
-.app[data-tab=settings] .view{display:block}
+.app[data-tab=settings] .view,.app[data-tab=disputes] .view,.app[data-tab=tax] .view{display:block}
+.dis{max-width:900px;display:grid;gap:14px}
+.dis h2{font:700 20px var(--serif);margin:0}
+.dis__bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.dcase{border:1px solid var(--rule);border-radius:12px;background:var(--walnut-2);padding:16px 18px;display:grid;gap:12px}
+.dcase__head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.dcase__head h3{margin:0;font:700 17px var(--sans)}
+.dcase__sub{margin:2px 0 0;color:var(--brass-dim);font-size:13px}
+.dcase__meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 18px;margin:0}
+.dcase__meta dt{color:var(--brass-dim);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.dcase__meta dd{margin:2px 0 0}
+.dcase__quote{margin:0;padding:10px 14px;border-left:3px solid var(--amber);background:rgba(246,168,40,.06);border-radius:0 8px 8px 0;white-space:pre-wrap}
+.dcase__lbl{color:var(--brass-dim);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px}
+.dcase__files{display:flex;gap:8px;flex-wrap:wrap}
+.dcase textarea{min-height:60px;resize:vertical}
+.dcase__btns{display:flex;gap:10px;flex-wrap:wrap}
+.taxwrap{overflow:auto;border:1px solid var(--rule);border-radius:10px}table.tax{border-collapse:collapse;width:100%;font-size:13px}table.tax th,table.tax td{padding:8px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--rule)}table.tax thead th{color:var(--brass-dim);font-size:11px;text-transform:uppercase;letter-spacing:.06em}table.tax tfoot th{background:rgba(246,168,40,.08)}
+.pill--ok{border-color:var(--ok);color:var(--ok)}.pill--bad{border-color:var(--bad);color:var(--bad)}
 </style>
 </head>
 <body>
@@ -158,6 +175,8 @@ dialog.viewer::backdrop{background:rgba(10,7,4,.78)}
     <div class="tabs" role="tablist" aria-label="Desk">
       <button class="tab" role="tab" id="tab-esc" aria-selected="true" data-tab="esc">Escalations<span class="badge" id="openCount" hidden>0</span></button>
       <button class="tab" role="tab" id="tab-all" aria-selected="false" data-tab="all">Support chains</button>
+      <button class="tab" role="tab" id="tab-dis" aria-selected="false" data-tab="disputes">Copyright disputes<span class="badge" id="disCount" hidden>0</span></button>
+      <button class="tab" role="tab" id="tab-tax" aria-selected="false" data-tab="tax">Tax</button>
       <button class="tab" role="tab" id="tab-set" aria-selected="false" data-tab="settings">Settings</button>
     </div>
     <span class="sp"></span>
@@ -211,6 +230,8 @@ function setTab(t){
   $("statusFilter").hidden=t!=="esc";$("app").dataset.tab=t;
   $("app").removeAttribute("data-open");state.cur=null;state.thread=null;$("view").replaceChildren(el("p","empty","Choose a chain."));
   if(t==="settings"){renderSettings();return}
+  if(t==="disputes"){renderDisputes();return}
+  if(t==="tax"){renderTax();return}
   renderList();
 }
 function showErr(err){var v=$("view");var n=el("p","err",err.message);v.prepend(n)}
@@ -591,6 +612,170 @@ function renderChips(){
     x.addEventListener("click",function(){state.picked.splice(i,1);renderChips()});c.append(x);box.append(c);
   });
 }
+// ---- Copyright disputes (the Marketplace's Dispute Resolution Centre). The owner's Marketplace key is asked for once per browser session.
+var MP="https://maestro-marketplace-api.vercel.app/api/marketplace-",MPK="desk-mp-key";
+function mpCall(fn,opts){
+  var key="";try{key=sessionStorage.getItem(MPK)||""}catch(e){}
+  opts=opts||{};
+  return fetch(MP+fn,{method:opts.body?"POST":"GET",headers:Object.assign({"X-MP-Key":key},opts.body?{"Content-Type":"application/json"}:{}),body:opts.body?JSON.stringify(opts.body):undefined})
+   .then(function(r){if(opts.blob&&r.ok)return r.blob();return r.json().catch(function(){return {}}).then(function(j){if(r.status===401){try{sessionStorage.removeItem(MPK)}catch(e){}throw new Error("The Marketplace key was not accepted.")}if(!r.ok)throw new Error(j.error||"Something went wrong.");return j})});
+}
+function showBlob(blob,name){
+  var e=name.split(".").pop().toLowerCase(),type={pdf:"application/pdf",png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",txt:"text/plain"}[e];
+  var dlg=document.getElementById("viewer");
+  if(!dlg){
+    dlg=document.createElement("dialog");dlg.id="viewer";dlg.className="viewer";dlg.setAttribute("aria-label","Attachment");document.body.append(dlg);
+    dlg.addEventListener("click",function(ev){if(ev.target===dlg)dlg.close()});
+    dlg.addEventListener("close",function(){if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=""}dlg.replaceChildren()});
+  }
+  if(viewerUrl){URL.revokeObjectURL(viewerUrl);viewerUrl=""}
+  var inn=el("div","viewer__in"),head=el("div","viewer__head");head.append(el("h3",null,name));
+  var cl=el("button","btn btn--ghost btn--sm","Close");cl.type="button";cl.addEventListener("click",function(){dlg.close()});head.append(cl);
+  var tabs=el("div","viewer__tabs");tabs.hidden=true;var body=el("div","viewer__body");inn.append(head,tabs,body);dlg.replaceChildren(inn);
+  if(!dlg.open)dlg.showModal();
+  if(!type){body.append(el("p",null,"There's no preview for this kind of file."));return}
+  if(type==="text/plain"){blob.text().then(function(x){body.append(el("pre",null,x.length>200000?x.slice(0,200000)+"\n\n[Shortened]":x))});return}
+  viewerUrl=URL.createObjectURL(new Blob([blob],{type:type}));
+  if(/^image\//.test(type)){var im=document.createElement("img");im.alt=name;im.src=viewerUrl;body.append(im)}
+  else{var fr=document.createElement("iframe");fr.title=name;fr.src=viewerUrl;body.append(fr)}
+}
+function disputeCard(d,max,reload){
+  var c=el("article","dcase"),open=d.status==="open"||d.status==="responded";
+  var h=el("div","dcase__head"),l=el("div");l.append(el("h3",null,d.title),el("p","dcase__sub","Item ID "+(d.code?"MP-"+d.code:"unknown")+" · "+d.seller+" · item "+d.itemStatus));
+  var pc=d.status==="upheld"?"pill pill--bad":d.status==="dismissed"?"pill pill--ok":"pill pill--open";
+  h.append(l,el("span",pc,d.status));c.append(h);
+  var m=el("dl","dcase__meta");
+  [["Filed by",d.claimant.name+(d.claimant.org?", "+d.claimant.org:"")+" <"+d.claimant.email+">"+(d.via==="support"?" (support bot)":"")],["Filed",when(d.created)],["Their work",d.work],["Merchant strikes",d.strikes+" of "+max],open?["Merchant must respond by",new Date(d.respondBy).toLocaleDateString("en-GB")]:null].forEach(function(p){
+    if(!p)return;var w=el("div");w.append(el("dt",null,p[0]),el("dd",null,p[1]));m.append(w)});
+  c.append(m,el("blockquote","dcase__quote",d.details));
+  function files(list,label){
+    if(!list||!list.length)return;var w=el("div");w.append(el("span","dcase__lbl",label));var f=el("div","dcase__files");
+    list.forEach(function(x){var b=el("button","btn btn--ghost btn--sm",x.name);b.type="button";b.addEventListener("click",function(){
+      mpCall("evidence-file?path="+encodeURIComponent(x.path),{blob:true}).then(function(bl){showBlob(bl,x.name)}).catch(function(e){alert(e.message)})});f.append(b)});
+    w.append(f);c.append(w);
+  }
+  files(d.files,"Claimant evidence");
+  if(d.response){var r=el("div");r.append(el("span","dcase__lbl","Merchant response, "+when(d.response.at)),el("blockquote","dcase__quote",d.response.text));c.append(r);files(d.response.files,"Merchant evidence")}
+  else if(open)c.append(el("p","hint","The merchant has not responded yet."));
+  if(d.decision){c.append(el("p","hint","Decided "+when(d.decision.at)+(d.decision.note?": "+d.decision.note:"")))}
+  if(d.appeal){
+    var ap=el("div");ap.append(el("span","dcase__lbl","Appeal by the "+(d.appeal.by==="seller"?"merchant":"rights holder")+", "+when(d.appeal.at)),el("blockquote","dcase__quote",d.appeal.text));c.append(ap);files(d.appeal.files,"Appeal evidence");
+    if(d.appeal.outcome)c.append(el("p","hint","Appeal "+d.appeal.outcome+", "+when(d.appeal.decidedAt)+(d.appeal.note?": "+d.appeal.note:"")));
+    else{
+      var sel2=d.status==="upheld",an=el("textarea","field");an.maxLength=600;an.placeholder="Note to both sides (optional)";an.setAttribute("aria-label","Note to both sides");
+      var ab=el("div","dcase__btns"),ov=el("button","btn",sel2?"Overturn: dismiss, remove the strike, put back on sale":"Overturn: uphold, remove the item and give a strike"),rj=el("button","btn btn--ghost","Reject the appeal: the decision stands");ov.type=rj.type="button";
+      var go=function(overturn){
+        if(!confirm(overturn?(sel2?"Overturn? The dispute is dismissed, the strike is removed and the item goes back on sale.":"Overturn? The dispute is upheld, the item is removed for good and the merchant gets a strike."):"Reject the appeal? The earlier decision stands."))return;
+        ov.disabled=rj.disabled=true;
+        mpCall("dispute-appeal-decide",{body:{id:d.id,overturn:overturn,note:an.value}}).then(reload).catch(function(e){alert(e.message);ov.disabled=rj.disabled=false});
+      };
+      ov.addEventListener("click",function(){go(true)});rj.addEventListener("click",function(){go(false)});
+      ab.append(ov,rj);c.append(an,ab);
+    }
+  }
+  if(open){
+    var ta=el("textarea","field");ta.maxLength=600;ta.placeholder="Note to both sides (optional)";ta.setAttribute("aria-label","Note to both sides");
+    var bt=el("div","dcase__btns"),up=el("button","btn","Uphold: remove item and give a strike"),dm=el("button","btn btn--ghost","Dismiss: put back on sale");up.type=dm.type="button";
+    function decide(uphold){
+      if(!confirm(uphold?"Uphold this dispute? The item is removed for good and the merchant gets a strike"+(d.strikes+1>=max?" (this bars the merchant and withdraws all their items)":"")+".":"Dismiss this dispute and put the item back on sale?"))return;
+      up.disabled=dm.disabled=true;
+      mpCall("dispute-decide",{body:{id:d.id,uphold:uphold,note:ta.value}}).then(reload).catch(function(e){alert(e.message);up.disabled=dm.disabled=false});
+    }
+    up.addEventListener("click",function(){decide(true)});dm.addEventListener("click",function(){decide(false)});
+    bt.append(up,dm);c.append(ta,bt);
+  }
+  return c;
+}
+function renderDisputes(show){
+  var v=$("view"),w=el("div","dis");v.replaceChildren(w);
+  var key="";try{key=sessionStorage.getItem(MPK)||""}catch(e){}
+  if(!key){
+    w.append(el("h2",null,"Copyright disputes"),el("p","hint","Enter your Marketplace admin key to manage disputes. It is kept only for this browser session."));
+    var f=el("form"),i=el("input","field");i.type="password";i.required=true;i.setAttribute("aria-label","Marketplace admin key");i.autocomplete="off";
+    var b=el("button","btn","Open disputes");b.type="submit";var m=el("p","err");f.style.cssText="display:grid;gap:10px;max-width:380px";f.append(i,b,m);w.append(f);
+    f.addEventListener("submit",function(e){e.preventDefault();try{sessionStorage.setItem(MPK,i.value)}catch(x){}mpCall("dispute-list").then(function(){renderDisputes()}).catch(function(err){m.textContent=err.message})});
+    return;
+  }
+  w.append(el("p","empty","Loading..."));
+  mpCall("dispute-list").then(function(j){
+    w.replaceChildren();
+    var openN=j.disputes.filter(function(d){return d.status==="open"||d.status==="responded"||(d.appeal&&!d.appeal.outcome)}).length;
+    var badge=$("disCount");badge.hidden=!openN;badge.textContent=openN;
+    var bar=el("div","dis__bar");bar.append(el("h2",null,"Copyright disputes"));
+    var sel=el("select","field");sel.style.maxWidth="160px";sel.setAttribute("aria-label","Show");
+    [["open","Needs a decision"],["all","All"],["upheld","Upheld"],["dismissed","Dismissed"]].forEach(function(o){var op=el("option",null,o[1]);op.value=o[0];sel.append(op)});
+    var sp=el("span","sp"),rl=el("button","btn btn--ghost btn--sm","Reload");rl.type="button";var ck=el("button","btn btn--ghost btn--sm","Change key");ck.type="button";
+    bar.append(sp,sel,rl,ck);w.append(bar);
+    var list=el("div");list.style.cssText="display:grid;gap:14px";w.append(list);
+    function draw(){
+      list.replaceChildren();
+      var f=sel.value,rows=j.disputes.filter(function(d){return f==="all"||(f==="open"?(d.status==="open"||d.status==="responded"||(d.appeal&&!d.appeal.outcome)):d.status===f)});
+      if(!rows.length)list.append(el("p","empty",f==="open"?"No disputes need a decision.":"Nothing here."));
+      rows.forEach(function(d){list.append(disputeCard(d,j.max,function(){renderDisputes()}))});
+    }
+    sel.addEventListener("change",draw);rl.addEventListener("click",function(){renderDisputes()});
+    ck.addEventListener("click",function(){try{sessionStorage.removeItem(MPK)}catch(e){}renderDisputes()});
+    draw();
+  }).catch(function(err){w.replaceChildren(el("p","err",err.message));if(/key was not accepted/.test(err.message))renderDisputes()});
+}
+// ---- Tax: every sale with the tax collected, by country, as a spreadsheet you can preview here and download.
+function csv(head,rows){
+  var q=function(v){v=v==null?"":String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  return "﻿"+[head].concat(rows).map(function(r){return r.map(q).join(",")}).join("\r\n");
+}
+function saveCsv(name,text){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type:"text/csv"}));a.download=name;document.body.append(a);a.click();a.remove()}
+function renderTax(){
+  var v=$("view"),w=el("div","dis");v.replaceChildren(w);
+  var key="";try{key=sessionStorage.getItem(MPK)||""}catch(e){}
+  if(!key){
+    w.append(el("h2",null,"Tax"),el("p","hint","Enter your Marketplace admin key to see the tax ledger. It is kept only for this browser session."));
+    var f=el("form"),i=el("input","field");i.type="password";i.required=true;i.setAttribute("aria-label","Marketplace admin key");i.autocomplete="off";
+    var b=el("button","btn","Open tax ledger");b.type="submit";var m=el("p","err");f.style.cssText="display:grid;gap:10px;max-width:380px";f.append(i,b,m);w.append(f);
+    f.addEventListener("submit",function(e){e.preventDefault();try{sessionStorage.setItem(MPK,i.value)}catch(x){}mpCall("tax-report").then(function(){renderTax()}).catch(function(err){m.textContent=err.message})});
+    return;
+  }
+  w.append(el("p","empty","Loading..."));
+  mpCall("tax-report").then(function(j){
+    w.replaceChildren();
+    var rows=j.rows,months=[];rows.forEach(function(r){var m=new Date(r.t).toISOString().slice(0,7);if(months.indexOf(m)<0)months.push(m)});
+    var bar=el("div","dis__bar");bar.append(el("h2",null,"Tax collected"));
+    var sel=el("select","field");sel.style.maxWidth="170px";sel.setAttribute("aria-label","Period");
+    [["all","All time"]].concat(months.map(function(m){return [m,m]})).forEach(function(o){var op=el("option",null,o[1]);op.value=o[0];sel.append(op)});
+    var sp=el("span","sp"),b1=el("button","btn btn--ghost btn--sm","Download summary (CSV)"),b2=el("button","btn btn--ghost btn--sm","Download all sales (CSV)"),ck=el("button","btn btn--ghost btn--sm","Change key");b1.type=b2.type=ck.type="button";
+    bar.append(sp,sel,b1,b2,ck);w.append(bar);
+    w.append(el("p","hint","Each country's tax is shown in that country's currency, which is what you report and pay in (a sale paid in another currency is converted at the rate on the day it was recorded). A refunded sale's tax is taken off. Rates are drafts: have your accountant check them."));
+    var out=el("div");out.style.cssText="display:grid;gap:18px";w.append(out);
+    var usd=function(n){return n.toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})};
+    function pick(){return rows.filter(function(r){return sel.value==="all"||new Date(r.t).toISOString().slice(0,7)===sel.value})}
+    function summary(list){
+      var by={};
+      list.forEach(function(r){var k=r.cc||"Other",s=by[k]||(by[k]={cc:k,name:r.name,rate:r.rate,cur:r.lcur,sales:0,refunds:0,net:0,collected:0,refunded:0,usd:0});
+        s.sales++;s.collected+=r.ltax;if(r.status==="refunded"){s.refunds++;s.refunded+=r.ltax}else{s.net+=r.lnet;s.usd+=r.taxUSD}});
+      return Object.keys(by).sort().map(function(k){return by[k]});
+    }
+    function table(head,body,foot){
+      var t=el("table","tax"),th=el("thead"),tr=el("tr");head.forEach(function(h){tr.append(el("th",null,h))});th.append(tr);t.append(th);
+      var tb=el("tbody");body.forEach(function(r){var x=el("tr");r.forEach(function(c){x.append(el("td",null,c))});tb.append(x)});t.append(tb);
+      if(foot){var tf=el("tfoot"),x=el("tr");foot.forEach(function(c){x.append(el("th",null,c))});tf.append(x);t.append(tf)}
+      var wrap=el("div","taxwrap");wrap.append(t);return wrap;
+    }
+    function draw(){
+      out.replaceChildren();var list=pick(),S=summary(list);
+            if(!list.length){out.append(el("p","empty","No sales with tax recorded for this period."));return}
+      out.append(el("h3",null,"By country"));
+      out.append(table(["Country","Tax","Rate","Currency","Sales","Sales excl. tax","Tax collected","Refunded","Tax to pay","Tax to pay (USD)"],
+        S.map(function(s){return [s.cc,s.name||"No tax",s.rate?(+(s.rate*100).toFixed(2))+"%":"",s.cur,s.sales,usd(s.net),usd(s.collected),usd(s.refunded),usd(s.collected-s.refunded),usd(s.usd)]}),
+        ["Total","","","",S.reduce(function(n,s){return n+s.sales},0),"","","","",usd(S.reduce(function(n,s){return n+s.usd},0))]));
+      out.append(el("h3",null,"Sales"+(list.length>200?" (the latest 200; the download has all "+list.length+")":"")));
+      out.append(table(["Date","Order","Item","Seller","Country","Tax","Rate","Currency","Excl. tax","Tax","Tip","Total","Tax (USD)","Tax in "+"country currency","Status"],
+        list.slice(0,200).map(function(r){return [new Date(r.t).toISOString().slice(0,10),r.id.slice(0,8).toUpperCase(),r.item,r.seller,r.cc||"Other",r.name,r.rate?(+(r.rate*100).toFixed(2))+"%":"",r.currency,usd(r.net),usd(r.tax),usd(r.tip),usd(r.total),usd(r.taxUSD),r.lcur+" "+usd(r.ltax),r.status]})));
+    }
+    b1.addEventListener("click",function(){var S=summary(pick());saveCsv("maestro-tax-summary-"+sel.value+".csv",csv(["Country","Tax","Rate","Currency","Sales","Refunded sales","Sales excl. tax","Tax collected","Refunded","Tax to pay","Tax to pay (USD)"],S.map(function(s){return [s.cc,s.name,s.rate,s.cur,s.sales,s.refunds,s.net.toFixed(2),s.collected.toFixed(2),s.refunded.toFixed(2),(s.collected-s.refunded).toFixed(2),s.usd.toFixed(2)]})))});
+    b2.addEventListener("click",function(){saveCsv("maestro-tax-sales-"+sel.value+".csv",csv(["Date","Order","Item","Seller","Country","Tax","Rate","Currency","Excl. tax","Tax","Tip","Total","Excl. tax (USD)","Tax (USD)","Country currency","Excl. tax (country currency)","Tax (country currency)","Status"],pick().map(function(r){return [new Date(r.t).toISOString(),r.id,r.item,r.seller,r.cc,r.name,r.rate,r.currency,r.net,r.tax,r.tip,r.total,r.netUSD,r.taxUSD,r.lcur,r.lnet,r.ltax,r.status]})))});
+    sel.addEventListener("change",draw);ck.addEventListener("click",function(){try{sessionStorage.removeItem(MPK)}catch(e){}renderTax()});
+    draw();
+  }).catch(function(err){w.replaceChildren(el("p","err",err.message));if(/key was not accepted/.test(err.message))renderTax()});
+}
 function renderSettings(){
   var v=$("view");v.replaceChildren(el("p","empty","Loading..."));
   call("GET","?view=settings").then(function(j){
@@ -663,7 +848,11 @@ function loadGuides(){
         [top].concat(top.children||[]).forEach(function(x){state.flat.push({slug:x.slug,title:x.title,summary:x.summary||"",keywords:(x.keywords||[]).map(function(k){return k.toLowerCase()}),group:g.title})});
       });
     });
-  }).catch(function(){state.flat=[]});
+  }).catch(function(){state.flat=[]}).then(function(){
+    return fetch("/marketplace-api/lib/guidelines.json").then(function(r){return r.json()}).then(function(g){
+      g.sections.forEach(function(s){s.items.forEach(function(i){state.flat.push({slug:"mg:"+i.id,title:"Guideline "+i.id+": "+i.title,summary:i.text,keywords:["marketplace","guideline","merchant","seller"],group:"Marketplace guidelines"})})});
+    }).catch(function(){});
+  });
 }
 function start(){
   $("login").hidden=true;$("app").hidden=false;
